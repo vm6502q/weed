@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2026. All rights reserved.
 //
 // Weed is for minimalist AI/ML inference and backprogation in the style of Qrack.
 //
@@ -144,13 +144,11 @@ typedef std::function<vecCapIntGpu(const vecCapIntGpu&)> IncrementFunc;
 typedef std::function<vecCapInt(const vecCapInt&)> BdtFunc;
 typedef std::function<void(const vecCapInt&, const unsigned& cpu)> ParallelFuncBdt;
 
-class StateVector;
-class StateVectorArray;
-class StateVectorSparse;
+struct Storage;
 
-typedef std::shared_ptr<StateVector> StateVectorPtr;
-typedef std::shared_ptr<StateVectorArray> StateVectorArrayPtr;
-typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
+typedef std::unique_ptr<real1[]> RealPtr;
+typedef std::unique_ptr<complex[]> ComplexPtr;
+typedef std::shared_ptr<Storage> StoragePtr;
 
 typedef std::function<void(void)> DispatchFn;
 
