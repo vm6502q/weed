@@ -36,13 +36,13 @@ using std::size_t;
 #include "half.hpp"
 #endif
 
-#ifVCAPPOW < 8
+#if VCAPPOW < 8
 #define vecLenInt uint8_t
-#elifVCAPPOW < 16
+#elif VCAPPOW < 16
 #define vecLenInt uint16_t
-#elifVCAPPOW < 32
+#elif VCAPPOW < 32
 #define vecLenInt uint32_t
-#elif (CAPPOW < 64) || !defined(__SIZEOF_INT128__)
+#elif (VCAPPOW < 64) || !defined(__SIZEOF_INT128__)
 #define vecLenInt uint64_t
 #else
 #define vecLenInt unsigned __int128
@@ -60,13 +60,13 @@ using std::size_t;
 #define vecCapIntGpu unsigned __int128
 #endif
 
-#ifVCAPPOW < 6
+#if VCAPPOW < 6
 #define vecCapInt uint32_t
 #define WEED_MAX_DIM_POW 32
-#elifVCAPPOW < 7
+#elif VCAPPOW < 7
 #define vecCapInt uint64_t
 #define WEED_MAX_DIM_POW 64
-#elif (CAPPOW < 8) && defined(__SIZEOF_INT128__)
+#elif (VCAPPOW < 8) && defined(__SIZEOF_INT128__)
 #define vecCapInt unsigned __int128
 #define WEED_MAX_DIM_POW 128
 #elif BOOST_AVAILABLE
