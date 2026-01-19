@@ -9,8 +9,6 @@ Copyright (c) Daniel Strano and the Qrack contributors 2017-2026. All rights res
 
 The Weed logo was produced with assistance from "Elara," an OpenAI custom GPT, and it is in the **public domain**.
 
-We thank the Unitary Foundation for its generous support, in a project to help standardize benchmarks across quantum computer simulator software!  Thank you to any and all contributors!
-
 Licensed under the GNU Lesser General Public License V3.
 
 See [LICENSE.md](https://github.com/vm6502q/qrack/blob/main/LICENSE.md) in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
