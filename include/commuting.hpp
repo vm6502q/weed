@@ -21,10 +21,10 @@ struct CommutingKernel {
   void (*cpu_complex)(const Tensor &, const Tensor &, Tensor &);
   void (*cpu_mixed)(const Tensor &, const Tensor &, Tensor &);
   void (*cpu_promote)(const Tensor &, const Tensor &, Tensor &);
-  void (*opencl_real)(const Tensor &, const Tensor &, Tensor &);
-  void (*opencl_complex)(const Tensor &, const Tensor &, Tensor &);
-  void (*opencl_mixed)(const Tensor &, const Tensor &, Tensor &);
-  void (*opencl_promote)(const Tensor &, const Tensor &, Tensor &);
+  void (*gpu_real)(const Tensor &, const Tensor &, Tensor &);
+  void (*gpu_complex)(const Tensor &, const Tensor &, Tensor &);
+  void (*gpu_mixed)(const Tensor &, const Tensor &, Tensor &);
+  void (*gpu_promote)(const Tensor &, const Tensor &, Tensor &);
   
   void commuting(const Tensor &a, const Tensor &b, Tensor &out) {
     const bool isAComplex = a.storage->dtype == DType::COMPLEX;
@@ -35,8 +35,8 @@ struct CommutingKernel {
     }
     if (isAComplex && isBComplex) {
       switch (out.storage->device) {
-      case DeviceTag::OpenCL:
-        opencl_complex(a, b, out);
+      case DeviceTag::GPU:
+        gpu_complex(a, b, out);
         break;
       case DeviceTag::CPU:
       default:
@@ -44,8 +44,8 @@ struct CommutingKernel {
       }
     } else if (isAComplex) {
       switch (out.storage->device) {
-      case DeviceTag::OpenCL:
-        opencl_mixed(a, b, out);
+      case DeviceTag::GPU:
+        gpu_mixed(a, b, out);
         break;
       case DeviceTag::CPU:
       default:
@@ -53,8 +53,8 @@ struct CommutingKernel {
       }
     } else if (isBComplex) {
       switch (out.storage->device) {
-      case DeviceTag::OpenCL:
-        opencl_mixed(b, a, out);
+      case DeviceTag::GPU:
+        gpu_mixed(b, a, out);
         break;
       case DeviceTag::CPU:
       default:
@@ -62,8 +62,8 @@ struct CommutingKernel {
       }
     } else if (isOutComplex){
       switch (out.storage->device) {
-      case DeviceTag::OpenCL:
-        opencl_promote(a, b, out);
+      case DeviceTag::GPU:
+        gpu_promote(a, b, out);
         break;
       case DeviceTag::CPU:
       default:
@@ -71,8 +71,8 @@ struct CommutingKernel {
       }
     } else {
       switch (out.storage->device) {
-      case DeviceTag::OpenCL:
-        opencl_real(a, b, out);
+      case DeviceTag::GPU:
+        gpu_real(a, b, out);
         break;
       case DeviceTag::CPU:
       default:

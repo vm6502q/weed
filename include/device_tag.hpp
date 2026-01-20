@@ -14,9 +14,8 @@
 namespace Weed {
 enum DeviceTag {
   CPU = 1,
-  OpenCL = 2,
+  GPU = 2,
   Qrack = 3,
-  CUDA = 4,
   DEFAULT_DEVICE = CPU
 };
 } // namespace Weed

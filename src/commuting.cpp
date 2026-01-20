@@ -112,9 +112,9 @@ struct commuting_kernel : CommutingKernel {
 
     pfControl.par_for(0, n, fn);
   }
-  void opencl_real(const Tensor &a, const Tensor &b, Tensor &out) {}
-  void opencl_complex(const Tensor &a, const Tensor &b, Tensor &out) {}
-  void opencl_mixed(const Tensor &a, const Tensor &b, Tensor &out) {}
-  void opencl_promote(const Tensor &a, const Tensor &b, Tensor &out) {}
+  void gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {}
+  void gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {}
+  void gpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {}
+  void gpu_promote(const Tensor &a, const Tensor &b, Tensor &out) {}
 };
 } // namespace Weed
