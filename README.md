@@ -3,6 +3,9 @@
 # Weed
 Minimalist AI/ML inference and backprogation in the style of [Qrack](https://github.com/unitaryfoundation/qrack)
 
+## Development Status
+**Weed** is a rapidly-developing **work-in-progress**. It does not yet provide any functionality. Its ABI may change drastically and without notice.
+
 ## Copyright, License, and Acknowledgments
 
 Copyright (c) Daniel Strano and the Qrack contributors 2017-2026. All rights reserved.
