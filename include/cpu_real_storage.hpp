@@ -25,7 +25,7 @@ struct CpuRealStorage : Storage {
     ~CpuRealStorage() {}
 
 #if defined(__APPLE__)
-    real1* _aligned_state_vec_alloc(vecCapIntGpu allocSize)
+    static real1* _aligned_state_vec_alloc(vecCapIntGpu allocSize)
     {
         void* toRet;
         posix_memalign(&toRet, WEED_ALIGN_SIZE, allocSize);
@@ -33,7 +33,7 @@ struct CpuRealStorage : Storage {
     }
 #endif
 
-    std::unique_ptr<real1[], void (*)(real1*)> Alloc(vecCapIntGpu elemCount)
+    static std::unique_ptr<real1[], void (*)(real1*)> Alloc(vecCapIntGpu elemCount)
     {
 #if defined(__ANDROID__)
         return std::unique_ptr<real1[], void (*)(real1*)>(new real1[elemCount], [](real1* c) { delete c; });
