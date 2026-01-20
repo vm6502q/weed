@@ -26,6 +26,10 @@ struct Tensor {
   bool requires_grad;
   struct Node *grad_node;
 
-  Tensor() : offset(0U), requires_grad(false), grad_node(nullptr) {}
+  Tensor() : offset(0U), requires_grad(false), grad_node(nullptr) {
+    validate();
+  }
+
+  void validate() const;
 };
 } // namespace Weed
