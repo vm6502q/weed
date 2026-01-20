@@ -137,8 +137,6 @@ const vecCapInt ONE_BCI = 1U;
 const vecCapInt ZERO_BCI = 0U;
 constexpr vecLenInt bitsInCap = ((vecLenInt)1U) << ((vecLenInt)VCAPPOW);
 
-typedef std::shared_ptr<complex> BitOp;
-
 struct Storage;
 
 typedef std::unique_ptr<real1[], void (*)(real1 *)> RealPtr;
