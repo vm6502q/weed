@@ -21,6 +21,9 @@ struct Storage {
   DType dtype;
   vecCapIntGpu size;
 
+  Storage(DeviceTag dtg, DType dtp, vecCapIntGpu n)
+      : device(dtg), dtype(dtp), size(n) {}
+
   virtual ~Storage() {}
 };
 } // namespace Weed

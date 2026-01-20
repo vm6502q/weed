@@ -93,8 +93,7 @@ void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) {
   default_device_context = dcp;
 }
 
-GpuDevicePtr OCLEngine::GetWeedDevice(int64_t did)
-{
+GpuDevicePtr OCLEngine::GetWeedDevice(int64_t did) {
   if (did < 0) {
     did = GetDefaultDeviceID();
   }

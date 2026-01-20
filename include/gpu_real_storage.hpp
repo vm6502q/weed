@@ -12,7 +12,7 @@
 #pragma once
 
 #include "gpu_device.hpp"
-#include "storage.hpp"
+#include "real_storage.hpp"
 
 #if !ENABLE_OPENCL && !ENABLE_CUDA
 #error GPU files were included without either OpenCL and CUDA enabled.
@@ -21,17 +21,28 @@
 #include <list>
 
 namespace Weed {
-struct GpuRealStorage : Storage {
-  BufferPtr buffer;
+struct GpuRealStorage : RealStorage {
   GpuDevicePtr gpu;
+  BufferPtr buffer;
+  RealPtr array;
 
-  GpuRealStorage(vecCapIntGpu n, int64_t did) : buffer(nullptr) {
-    device = DeviceTag::GPU;
-    dtype = DType::COMPLEX;
-    size = n;
-    gpu = OCLEngine::Instance().GetWeedDevice(did);
+  GpuRealStorage(vecCapIntGpu n, int64_t did)
+      : RealStorage(DeviceTag::GPU, n),
+        gpu(OCLEngine::Instance().GetWeedDevice(did)),
+        array(nullptr, [](real1 *) {}) {
+    buffer = MakeBuffer(n);
   }
 
   ~GpuRealStorage() {}
+
+  BufferPtr MakeBuffer(vecCapIntGpu n) {
+    if (gpu->device_context->use_host_mem) {
+      array = Alloc(n);
+      return gpu->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+                             sizeof(real1) * n, array.get());
+    }
+
+    return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
+  }
 };
 } // namespace Weed

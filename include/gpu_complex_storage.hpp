@@ -11,8 +11,8 @@
 
 #pragma once
 
+#include "complex_storage.hpp"
 #include "gpu_device.hpp"
-#include "storage.hpp"
 
 #if !ENABLE_OPENCL && !ENABLE_CUDA
 #error GPU files were included without either OpenCL and CUDA enabled.
@@ -21,17 +21,28 @@
 #include <list>
 
 namespace Weed {
-struct GpuComplexStorage : Storage {
-  BufferPtr buffer;
+struct GpuComplexStorage : ComplexStorage {
   GpuDevicePtr gpu;
+  BufferPtr buffer;
+  ComplexPtr array;
 
-  GpuComplexStorage(vecCapIntGpu n, int64_t did) : buffer(nullptr) {
-    device = DeviceTag::GPU;
-    dtype = DType::COMPLEX;
-    size = n;
-    gpu = OCLEngine::Instance().GetWeedDevice(did);
+  GpuComplexStorage(vecCapIntGpu n, int64_t did)
+      : ComplexStorage(DeviceTag::GPU, n),
+        gpu(OCLEngine::Instance().GetWeedDevice(did)),
+        array(nullptr, [](complex *) {}) {
+    buffer = MakeBuffer(n);
   }
 
   ~GpuComplexStorage() {}
+
+  BufferPtr MakeBuffer(vecCapIntGpu n) {
+    if (gpu->device_context->use_host_mem) {
+      array = Alloc(n);
+      return gpu->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+                             sizeof(complex) * n, array.get());
+    }
+
+    return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
+  }
 };
 } // namespace Weed

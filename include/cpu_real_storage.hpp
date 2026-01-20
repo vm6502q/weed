@@ -11,51 +11,22 @@
 
 #pragma once
 
-#include "storage.hpp"
+#include "real_storage.hpp"
 
 namespace Weed {
-struct CpuRealStorage : Storage {
+struct CpuRealStorage : RealStorage {
   RealPtr data;
 
-  CpuRealStorage(vecCapIntGpu n) : data(Alloc(n)) {
-    device = DeviceTag::CPU;
-    dtype = DType::REAL;
-    size = n;
+  CpuRealStorage(vecCapIntGpu n)
+      : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {
+    std::fill(data.get(), data.get() + n, ZERO_R1);
+  }
+
+  CpuRealStorage(std::vector<real1> i)
+      : RealStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
+    std::copy(i.begin(), i.end(), data.get());
   }
 
   ~CpuRealStorage() {}
-
-#if defined(__APPLE__)
-  static real1 *_aligned_state_vec_alloc(vecCapIntGpu allocSize) {
-    void *toRet;
-    posix_memalign(&toRet, WEED_ALIGN_SIZE, allocSize);
-    return (real1 *)toRet;
-  }
-#endif
-
-  static std::unique_ptr<real1[], void (*)(real1 *)>
-  Alloc(vecCapIntGpu elemCount) {
-#if defined(__ANDROID__)
-    return std::unique_ptr<real1[], void (*)(real1 *)>(
-        new real1[elemCount], [](real1 *c) { delete c; });
-#else
-    size_t allocSize = sizeof(real1) * elemCount;
-    if (allocSize < WEED_ALIGN_SIZE) {
-      allocSize = WEED_ALIGN_SIZE;
-    }
-#if defined(__APPLE__)
-    return std::unique_ptr<real1[], void (*)(real1 *)>(
-        _aligned_state_vec_alloc(allocSize), [](real1 *c) { free(c); });
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-    return std::unique_ptr<real1[], void (*)(real1 *)>(
-        (real1 *)_aligned_malloc(allocSize, WEED_ALIGN_SIZE),
-        [](real1 *c) { _aligned_free(c); });
-#else
-    return std::unique_ptr<real1[], void (*)(real1 *)>(
-        (real1 *)aligned_alloc(WEED_ALIGN_SIZE, allocSize),
-        [](real1 *c) { free(c); });
-#endif
-#endif
-  }
 };
 } // namespace Weed

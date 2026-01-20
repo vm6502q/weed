@@ -294,6 +294,7 @@ install (FILES
 # Install weed library headers
 install (FILES
     include/add.hpp
+    include/complex_storage.hpp
     include/cpu_complex_storage.hpp
     include/cpu_real_storage.hpp
     include/device_tag.hpp
@@ -307,6 +308,7 @@ install (FILES
     include/node.hpp
     include/parameter.hpp
     include/queue_item.hpp
+    include/real_storage.hpp
     include/storage.hpp
     include/tensor.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/weed
