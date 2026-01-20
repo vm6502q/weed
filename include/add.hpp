@@ -31,7 +31,7 @@ void add(const Tensor &a, const Tensor &b, Tensor &out) {
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
   const bool isBComplex = b.storage->dtype == DType::COMPLEX;
   const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
-  if ((isAComplex || isBComplex) && !isOutComplex) {
+  if (!isOutComplex && (isAComplex || isBComplex)) {
       throw std::runtime_error("Cannot add complex tensors into real1 tensor!");
   }
   if (isAComplex && isBComplex) {
