@@ -15,21 +15,38 @@
 
 namespace Weed {
 struct AddKernel {
-  void (*cpu)(const Tensor &, const Tensor &, Tensor &);
-  void (*opencl)(const Tensor &, const Tensor &, Tensor &);
+  void (*cpu_real)(const Tensor &, const Tensor &, Tensor &);
+  void (*cpu_complex)(const Tensor &, const Tensor &, Tensor &);
+  void (*opencl_real)(const Tensor &, const Tensor &, Tensor &);
+  void (*opencl_complex)(const Tensor &, const Tensor &, Tensor &);
 };
 
 extern AddKernel add_kernel;
 
 void add(const Tensor &a, const Tensor &b, Tensor &out) {
-  switch (out.storage->device) {
-  case DeviceTag::OpenCL:
-    add_kernel.opencl(a, b, out);
+  switch (out.storage->dtype) {
+  case DType::COMPLEX:
+    switch (out.storage->device) {
+    case DeviceTag::OpenCL:
+      add_kernel.opencl_complex(a, b, out);
+      break;
+    case DeviceTag::CPU:
+    default:
+      add_kernel.cpu_complex(a, b, out);
+      break;
+    }
     break;
-  case DeviceTag::CPU:
+  case DType::REAL:
   default:
-    add_kernel.cpu(a, b, out);
-    break;
+    switch (out.storage->device) {
+    case DeviceTag::OpenCL:
+      add_kernel.opencl_real(a, b, out);
+      break;
+    case DeviceTag::CPU:
+    default:
+      add_kernel.cpu_real(a, b, out);
+      break;
+    }
   }
 }
 } // namespace Weed
