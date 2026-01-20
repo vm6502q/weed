@@ -1,14 +1,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2026. All rights reserved.
 //
-// This is a multithreaded, universal quantum register simulation, allowing
-// (nonphysical) register cloning and direct measurement of probability and
-// phase, to leverage what advantages classical emulation of qubits can have.
+// Weed is for minimalist AI/ML inference and backprogation in the style of
+// Qrack.
 //
 // Licensed under the GNU Lesser General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
-// for details.
+// See LICENSE.md in the project root or
+// https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 inline cmplx zmul(const cmplx lhs, const cmplx rhs)
 {
