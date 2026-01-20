@@ -25,15 +25,35 @@ struct GpuDevice {
   cl_int callbackError;
   size_t totalOclAllocSize;
   int64_t deviceID;
-  std::mutex queue_mutex;
-  cl::CommandQueue queue;
-  cl::Context context;
   DeviceContextPtr device_context;
+  cl::Context context;
+  cl::CommandQueue queue;
+  std::mutex queue_mutex;
   std::vector<EventVecPtr> wait_refs;
   std::list<QueueItem> wait_queue_items;
   std::vector<PoolItemPtr> poolItems;
 
-  GpuDevice() {}
+  GpuDevice(int64_t did = -1)
+    : callbackError(CL_SUCCESS)
+    , totalOclAllocSize(0U)
+    , deviceID(did)
+  {
+    const size_t deviceCount = OCLEngine::Instance().GetDeviceCount();
+
+    if (!deviceCount) {
+        throw std::runtime_error("GpuDevice::GpuDevice(): No available devices.");
+    }
+
+    if (did > ((int64_t)deviceCount)) {
+        throw std::runtime_error("GpuDevice::GpuDevice(): Requested device doesn't exist.");
+    }
+
+    clFinish();
+
+    device_context = OCLEngine::Instance().GetDeviceContextPtr(did);
+    context = device_context->context;
+    queue = device_context->queue;
+  }
   ~GpuDevice() {}
 
   BufferPtr MakeBuffer(cl_mem_flags flags, size_t size,
