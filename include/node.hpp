@@ -17,10 +17,10 @@
 
 namespace Weed {
 struct Node {
-  std::vector<const Tensor*> parents;
+  std::vector<const Tensor *> parents;
   std::function<void()> backward;
 
-  Node(std::vector<const Tensor*> p, std::function<void()> b)
-    : parents(p), backward(b) {}
+  Node(std::vector<const Tensor *> p, std::function<void()> b)
+      : parents(p), backward(b) {}
 };
 } // namespace Weed

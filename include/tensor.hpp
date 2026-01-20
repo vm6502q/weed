@@ -31,9 +31,9 @@ struct Tensor {
     validate();
   }
 
-  Tensor allocate_like(const Tensor& orig);
+  Tensor allocate_like(const Tensor &orig);
   void validate() const;
 
-  Tensor add(const Tensor& a, const Tensor& b);
+  Tensor add(const Tensor &a, const Tensor &b);
 };
 } // namespace Weed

@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "common/weed_types.hpp"
 #include "common/oclengine.hpp"
+#include "common/weed_types.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -22,48 +22,48 @@
 
 namespace Weed {
 struct bad_alloc : public std::bad_alloc {
-    std::string m;
+  std::string m;
 
-    bad_alloc(std::string message)
-        : m(message)
-    {
-        // Intentionally left blank.
-    }
+  bad_alloc(std::string message) : m(message) {
+    // Intentionally left blank.
+  }
 
-    const char* what() const noexcept { return m.c_str(); }
+  const char *what() const noexcept { return m.c_str(); }
 };
 
 struct PoolItem {
-    BufferPtr complexBuffer;
-    BufferPtr vciBuffer;
+  BufferPtr complexBuffer;
+  BufferPtr vciBuffer;
 
-    PoolItem(cl::Context& context)
-    {
-        complexBuffer = MakeBuffer(context, sizeof(complex) * CMPLX_ARG_LEN);
-        vciBuffer = MakeBuffer(context, sizeof(vecCapIntGpu) * VCI_ARG_LEN);
+  PoolItem(cl::Context &context) {
+    complexBuffer = MakeBuffer(context, sizeof(complex) * CMPLX_ARG_LEN);
+    vciBuffer = MakeBuffer(context, sizeof(vecCapIntGpu) * VCI_ARG_LEN);
+  }
+
+  ~PoolItem() {}
+
+  BufferPtr MakeBuffer(const cl::Context &context, size_t size) {
+    cl_int error;
+    BufferPtr toRet = std::unique_ptr<cl::Buffer>(new cl::Buffer(
+        context, CL_MEM_READ_ONLY, size, (void *)nullptr, &error));
+    if (error != CL_SUCCESS) {
+      if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
+        throw bad_alloc(
+            "CL_MEM_OBJECT_ALLOCATION_FAILURE in PoolItem::MakeBuffer()");
+      }
+      if (error == CL_OUT_OF_HOST_MEMORY) {
+        throw bad_alloc("CL_OUT_OF_HOST_MEMORY in PoolItem::MakeBuffer()");
+      }
+      if (error == CL_INVALID_BUFFER_SIZE) {
+        throw bad_alloc("CL_INVALID_BUFFER_SIZE in PoolItem::MakeBuffer()");
+      }
+      throw std::runtime_error(
+          "OpenCL error code on buffer allocation attempt: " +
+          std::to_string(error));
     }
 
-    ~PoolItem() {}
-
-    BufferPtr MakeBuffer(const cl::Context& context, size_t size)
-    {
-        cl_int error;
-        BufferPtr toRet = std::unique_ptr<cl::Buffer>(new cl::Buffer(context, CL_MEM_READ_ONLY, size, (void*)nullptr, &error));
-        if (error != CL_SUCCESS) {
-            if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
-                throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in PoolItem::MakeBuffer()");
-            }
-            if (error == CL_OUT_OF_HOST_MEMORY) {
-                throw bad_alloc("CL_OUT_OF_HOST_MEMORY in PoolItem::MakeBuffer()");
-            }
-            if (error == CL_INVALID_BUFFER_SIZE) {
-                throw bad_alloc("CL_INVALID_BUFFER_SIZE in PoolItem::MakeBuffer()");
-            }
-            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
-        }
-
-        return toRet;
-    }
+    return toRet;
+  }
 };
 
 typedef std::shared_ptr<PoolItem> PoolItemPtr;

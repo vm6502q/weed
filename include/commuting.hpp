@@ -12,10 +12,10 @@
 #pragma once
 
 #include "commuting_operation.hpp"
-#include "tensor.hpp"
 #include "storage.hpp"
+#include "tensor.hpp"
 
-#define _DEVICE_SWITCH(cpu, gpu, a, b)                                         \
+#define _DEVICE_SWITCH(cpu, gpu, a, b, out)                                    \
   switch (out.storage->device) {                                               \
   case DeviceTag::GPU:                                                         \
     gpu(a, b, out);                                                            \
@@ -25,17 +25,32 @@
     cpu(a, b, out);                                                            \
   }
 
+#define _DEVICE_SWITCH_INPLACE(cpu, gpu, a, out)                               \
+  switch (out->device) {                                                       \
+  case DeviceTag::GPU:                                                         \
+    gpu(a, out);                                                               \
+    break;                                                                     \
+  case DeviceTag::CPU:                                                         \
+  default:                                                                     \
+    cpu(a, out);                                                               \
+  }
+
 namespace Weed {
 struct CommutingKernel {
   CommutingOperation op;
   void (*cpu_real)(const Tensor &, const Tensor &, Tensor &);
   void (*cpu_complex)(const Tensor &, const Tensor &, Tensor &);
   void (*cpu_mixed)(const Tensor &, const Tensor &, Tensor &);
-  void (*cpu_promote)(const Tensor &, const Tensor &, Tensor &);
   void (*gpu_real)(const Tensor &, const Tensor &, Tensor &);
   void (*gpu_complex)(const Tensor &, const Tensor &, Tensor &);
   void (*gpu_mixed)(const Tensor &, const Tensor &, Tensor &);
-  void (*gpu_promote)(const Tensor &, const Tensor &, Tensor &);
+
+  void (*cpu_real_inplace)(const StoragePtr, StoragePtr);
+  void (*cpu_complex_inplace)(const StoragePtr, StoragePtr);
+  void (*cpu_mixed_inplace)(const StoragePtr, StoragePtr);
+  void (*gpu_real_inplace)(const StoragePtr, StoragePtr);
+  void (*gpu_complex_inplace)(const StoragePtr, StoragePtr);
+  void (*gpu_mixed_inplace)(const StoragePtr, StoragePtr);
 
   void commuting(const Tensor &a, const Tensor &b, Tensor &out) {
     const bool isAComplex = a.storage->dtype == DType::COMPLEX;
@@ -45,16 +60,34 @@ struct CommutingKernel {
       throw std::runtime_error(
           "Cannot combine complex tensors into real1 tensor!");
     }
+    if (isOutComplex && (!isAComplex && !isBComplex)) {
+      throw std::runtime_error("Output tensor dtype mismatch!");
+    }
     if (isAComplex && isBComplex) {
-      _DEVICE_SWITCH(cpu_complex, gpu_complex, a, b);
+      _DEVICE_SWITCH(cpu_complex, gpu_complex, a, b, out);
     } else if (isAComplex) {
-      _DEVICE_SWITCH(cpu_mixed, gpu_mixed, a, b);
+      _DEVICE_SWITCH(cpu_mixed, gpu_mixed, a, b, out);
     } else if (isBComplex) {
-      _DEVICE_SWITCH(cpu_mixed, gpu_mixed, b, a);
-    } else if (isOutComplex) {
-      _DEVICE_SWITCH(cpu_promote, gpu_promote, a, b);
+      _DEVICE_SWITCH(cpu_mixed, gpu_mixed, b, a, out);
     } else {
-      _DEVICE_SWITCH(cpu_real, gpu_real, a, b);
+      _DEVICE_SWITCH(cpu_real, gpu_real, a, b, out);
+    }
+  }
+
+  void commuting_inplace(const StoragePtr a, StoragePtr out) {
+    const bool isAComplex = a->dtype == DType::COMPLEX;
+    const bool isOutComplex = out->dtype == DType::COMPLEX;
+    if (!isOutComplex && isAComplex) {
+      throw std::runtime_error(
+          "Cannot combine complex tensors into real1 tensor!");
+    }
+    if (isOutComplex && !isAComplex) {
+      throw std::runtime_error("Output tensor dtype mismatch!");
+    }
+    if (isAComplex) {
+      _DEVICE_SWITCH_INPLACE(cpu_complex_inplace, gpu_complex_inplace, a, out);
+    } else {
+      _DEVICE_SWITCH_INPLACE(cpu_real_inplace, gpu_real_inplace, a, out);
     }
   }
 };

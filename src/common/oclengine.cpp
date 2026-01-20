@@ -68,11 +68,9 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_ADD_REAL, "add_real"),
     OCLKernelHandle(OCL_API_ADD_COMPLEX, "add_complex"),
     OCLKernelHandle(OCL_API_ADD_MIXED, "add_mixed"),
-    OCLKernelHandle(OCL_API_ADD_PROMOTE, "add_promote"),
     OCLKernelHandle(OCL_API_MUL_REAL, "mul_real"),
     OCLKernelHandle(OCL_API_MUL_COMPLEX, "mul_complex"),
-    OCLKernelHandle(OCL_API_MUL_MIXED, "mul_mixed"),
-    OCLKernelHandle(OCL_API_MUL_PROMOTE, "mul_promote")
+    OCLKernelHandle(OCL_API_MUL_MIXED, "mul_mixed")
 };
 // clang-format on
 

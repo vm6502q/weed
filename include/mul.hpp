@@ -23,4 +23,8 @@ MulKernel mul_kernel;
 void mul(const Tensor &a, const Tensor &b, Tensor &out) {
   mul_kernel.commuting(a, b, out);
 }
+
+void mul_inplace(const StoragePtr a, StoragePtr out) {
+  mul_kernel.commuting_inplace(a, out);
+}
 } // namespace Weed
