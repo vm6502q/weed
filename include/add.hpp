@@ -17,15 +17,24 @@ namespace Weed {
 struct AddKernel {
   void (*cpu_real)(const Tensor &, const Tensor &, Tensor &);
   void (*cpu_complex)(const Tensor &, const Tensor &, Tensor &);
+  void (*cpu_mixed)(const Tensor &, const Tensor &, Tensor &);
+  void (*cpu_promote)(const Tensor &, const Tensor &, Tensor &);
   void (*opencl_real)(const Tensor &, const Tensor &, Tensor &);
   void (*opencl_complex)(const Tensor &, const Tensor &, Tensor &);
+  void (*opencl_mixed)(const Tensor &, const Tensor &, Tensor &);
+  void (*opencl_promote)(const Tensor &, const Tensor &, Tensor &);
 };
 
 extern AddKernel add_kernel;
 
 void add(const Tensor &a, const Tensor &b, Tensor &out) {
-  switch (out.storage->dtype) {
-  case DType::COMPLEX:
+  const bool isAComplex = a.storage->dtype == DType::COMPLEX;
+  const bool isBComplex = b.storage->dtype == DType::COMPLEX;
+  const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
+  if ((isAComplex || isBComplex) && !isOutComplex) {
+      throw std::runtime_error("Cannot add complex tensors into real1 tensor!");
+  }
+  if (isAComplex && isBComplex) {
     switch (out.storage->device) {
     case DeviceTag::OpenCL:
       add_kernel.opencl_complex(a, b, out);
@@ -35,9 +44,37 @@ void add(const Tensor &a, const Tensor &b, Tensor &out) {
       add_kernel.cpu_complex(a, b, out);
       break;
     }
-    break;
-  case DType::REAL:
-  default:
+  } else if (isAComplex) {
+    switch (out.storage->device) {
+    case DeviceTag::OpenCL:
+      add_kernel.opencl_mixed(a, b, out);
+      break;
+    case DeviceTag::CPU:
+    default:
+      add_kernel.cpu_mixed(a, b, out);
+      break;
+    }
+  } else if (isBComplex) {
+    switch (out.storage->device) {
+    case DeviceTag::OpenCL:
+      add_kernel.opencl_mixed(b, a, out);
+      break;
+    case DeviceTag::CPU:
+    default:
+      add_kernel.cpu_mixed(b, a, out);
+      break;
+    }
+  } else if (isOutComplex){
+    switch (out.storage->device) {
+    case DeviceTag::OpenCL:
+      add_kernel.opencl_promote(a, b, out);
+      break;
+    case DeviceTag::CPU:
+    default:
+      add_kernel.cpu_promote(a, b, out);
+      break;
+    }
+  } else {
     switch (out.storage->device) {
     case DeviceTag::OpenCL:
       add_kernel.opencl_real(a, b, out);
