@@ -14,17 +14,16 @@
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
 
+#define CAST_STORAGE(out, in, type, ptr) type *out = static_cast<ptr*>(in.storage.get())->data.get() + in.offset
+
 namespace Weed {
 ParallelFor pfControl = ParallelFor();
 
 struct commuting_kernel : CommutingKernel {
   void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-    real1 *pa =
-        static_cast<CpuRealStorage *>(a.storage.get())->data.get() + a.offset;
-    real1 *pb =
-        static_cast<CpuRealStorage *>(b.storage.get())->data.get() + b.offset;
-    real1 *po = static_cast<CpuRealStorage *>(out.storage.get())->data.get() +
-                out.offset;
+    CAST_STORAGE(pa, a, real1, CpuRealStorage);
+    CAST_STORAGE(pb, b, real1, CpuRealStorage);
+    CAST_STORAGE(po, out, real1, CpuRealStorage);
 
     size_t n = out.storage->size;
  
@@ -45,13 +44,9 @@ struct commuting_kernel : CommutingKernel {
     pfControl.par_for(0, n, fn);
   }
   void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-    complex *pa = static_cast<CpuComplexStorage *>(a.storage.get())->data.get() +
-                a.offset;
-    complex *pb = static_cast<CpuComplexStorage *>(b.storage.get())->data.get() +
-                b.offset;
-    complex *po =
-        static_cast<CpuComplexStorage *>(out.storage.get())->data.get() +
-        out.offset;
+    CAST_STORAGE(pa, a, complex, CpuComplexStorage);
+    CAST_STORAGE(pb, b, complex, CpuComplexStorage);
+    CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
     size_t n = out.storage->size;
 
@@ -72,13 +67,9 @@ struct commuting_kernel : CommutingKernel {
     pfControl.par_for(0, n, fn);
   }
   void cpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
-    complex *pa = static_cast<CpuComplexStorage *>(a.storage.get())->data.get() +
-                a.offset;
-    real1 *pb = static_cast<CpuRealStorage *>(b.storage.get())->data.get() +
-                b.offset;
-    complex *po =
-        static_cast<CpuComplexStorage *>(out.storage.get())->data.get() +
-        out.offset;
+    CAST_STORAGE(pa, a, complex, CpuComplexStorage);
+    CAST_STORAGE(pb, b, real1, CpuRealStorage);
+    CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
     size_t n = out.storage->size;
 
@@ -99,13 +90,9 @@ struct commuting_kernel : CommutingKernel {
     pfControl.par_for(0, n, fn);
   }
   void cpu_promote(const Tensor &a, const Tensor &b, Tensor &out) {
-    real1 *pa = static_cast<CpuRealStorage *>(a.storage.get())->data.get() +
-                a.offset;
-    real1 *pb = static_cast<CpuRealStorage *>(b.storage.get())->data.get() +
-                b.offset;
-    complex *po =
-        static_cast<CpuComplexStorage *>(out.storage.get())->data.get() +
-        out.offset;
+    CAST_STORAGE(pa, a, real1, CpuRealStorage);
+    CAST_STORAGE(pb, b, real1, CpuRealStorage);
+    CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
     size_t n = out.storage->size;
 
