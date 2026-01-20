@@ -39,8 +39,6 @@ struct CpuComplexStorage : Storage {
     return std::unique_ptr<complex[], void (*)(complex *)>(
         new complex[elemCount], [](complex *c) { delete c; });
 #else
-    // elemCount is always a power of two, but might be smaller than
-    // WEED_ALIGN_SIZE
     size_t allocSize = sizeof(complex) * elemCount;
     if (allocSize < WEED_ALIGN_SIZE) {
       allocSize = WEED_ALIGN_SIZE;

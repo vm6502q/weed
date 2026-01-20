@@ -190,7 +190,7 @@ public:
     return preferredSizeMultiple
                ? preferredSizeMultiple
                : preferredSizeMultiple =
-                     calls[OCL_API_ADD]
+                     calls[OCL_API_ADD_REAL]
                          .getWorkGroupInfo<
                              CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
                              device);

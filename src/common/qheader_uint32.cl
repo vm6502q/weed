@@ -9,7 +9,7 @@
 // for details.
 
 #define ONE_BCI 1U
-#define vecCapIntOcl uint
-#define vecCapIntOcl2 uint2
-#define vecCapIntOcl4 uint4
+#define vecCapIntGpu uint
+#define vecCapIntGpu2 uint2
+#define vecCapIntGpu4 uint4
 #define vecLenInt uchar

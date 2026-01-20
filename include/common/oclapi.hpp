@@ -15,6 +15,12 @@
 
 namespace Weed {
 
-enum OCLAPI { OCL_API_UNKNOWN = 0, OCL_API_ADD = 1 };
+enum OCLAPI {
+   OCL_API_UNKNOWN = 0,
+   OCL_API_ADD_REAL = 1,
+   OCL_API_ADD_COMPLEX = 2,
+   OCL_API_ADD_MIXED = 3,
+   OCL_API_ADD_PROMOTE = 4
+};
 
 } // namespace Weed

@@ -39,8 +39,6 @@ struct CpuRealStorage : Storage {
     return std::unique_ptr<real1[], void (*)(real1 *)>(
         new real1[elemCount], [](real1 *c) { delete c; });
 #else
-    // elemCount is always a power of two, but might be smaller than
-    // WEED_ALIGN_SIZE
     size_t allocSize = sizeof(real1) * elemCount;
     if (allocSize < WEED_ALIGN_SIZE) {
       allocSize = WEED_ALIGN_SIZE;

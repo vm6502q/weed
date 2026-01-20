@@ -65,7 +65,10 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t &dev) {
 
 // clang-format off
 const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
-    OCLKernelHandle(OCL_API_ADD, "add"),
+    OCLKernelHandle(OCL_API_ADD_REAL, "add_real"),
+    OCLKernelHandle(OCL_API_ADD_COMPLEX, "add_complex"),
+    OCLKernelHandle(OCL_API_ADD_MIXED, "add_mixed"),
+    OCLKernelHandle(OCL_API_ADD_PROMOTE, "add_promote")
 };
 // clang-format on
 
