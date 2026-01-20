@@ -10,6 +10,10 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "tensor.hpp"
+#include "add.hpp"
+#include "cpu_real_storage.hpp"
+#include "cpu_complex_storage.hpp"
+#include "node.hpp"
 
 namespace Weed {
 void Tensor::validate() const {
@@ -43,5 +47,46 @@ void Tensor::validate() const {
   if (max_index >= storage->size) {
     throw std::out_of_range("Tensor view exceeds storage bounds");
   }
+}
+
+Tensor Tensor::allocate_like(const Tensor& orig)
+{
+  Tensor out;
+  out.requires_grad = orig.requires_grad;
+  vecCapIntGpu size = 0U;
+  for (size_t i = 0U; i < shape.size(); ++i) {
+      size += (orig.shape[i] - 1U) * orig.stride[i];
+  }
+  switch (orig.storage->dtype) {
+    case DType::COMPLEX:
+      out.storage = std::make_shared<CpuComplexStorage>(size);
+    case DType::REAL:
+    default:
+      out.storage = std::make_shared<CpuRealStorage>(size);
+  }
+
+  return out;
+}
+
+Tensor Tensor::add(const Tensor& a, const Tensor& b) {
+  Tensor out = allocate_like(a);
+
+  Weed::add(a, b, out);
+
+  if (a.requires_grad || b.requires_grad) {
+    out.grad_node = std::make_shared<Node>(
+      std::vector<const Tensor*>{ &a, &b },
+      [=]() {
+        if (a.requires_grad) {
+          add_inplace(a.grad, out.grad);
+        }
+        if (b.requires_grad) {
+          add_inplace(b.grad, out.grad);
+        }
+      }
+    );
+  }
+
+  return out;
 }
 } // namespace Weed

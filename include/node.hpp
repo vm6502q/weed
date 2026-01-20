@@ -13,10 +13,14 @@
 
 #include "tensor.hpp"
 
+#include <functional>
+
 namespace Weed {
 struct Node {
-  std::vector<Tensor *> parents;
-  Tensor grad;
+  std::vector<const Tensor*> parents;
   std::function<void()> backward;
+
+  Node(std::vector<const Tensor*> p, std::function<void()> b)
+    : parents(p), backward(b) {}
 };
 } // namespace Weed

@@ -13,6 +13,7 @@
 
 #include "commuting_operation.hpp"
 #include "tensor.hpp"
+#include "storage.hpp"
 
 #define _DEVICE_SWITCH(cpu, gpu, a, b)                                         \
   switch (out.storage->device) {                                               \

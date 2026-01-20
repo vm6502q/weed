@@ -23,4 +23,6 @@ AddKernel add_kernel;
 void add(const Tensor &a, const Tensor &b, Tensor &out) {
   add_kernel.commuting(a, b, out);
 }
+
+void add_inplace(const StoragePtr a, StoragePtr out);
 } // namespace Weed

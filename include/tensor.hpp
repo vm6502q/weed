@@ -11,25 +11,29 @@
 
 #pragma once
 
-#include "storage.hpp"
+#include "weed_types.hpp"
 
 #include <vector>
 
 namespace Weed {
 struct Tensor {
   StoragePtr storage;
+  StoragePtr grad;
 
   std::vector<vecCapIntGpu> shape;
   std::vector<vecCapIntGpu> stride;
   vecCapIntGpu offset;
 
   bool requires_grad;
-  struct Node *grad_node;
+  NodePtr grad_node;
 
   Tensor() : offset(0U), requires_grad(false), grad_node(nullptr) {
     validate();
   }
 
+  Tensor allocate_like(const Tensor& orig);
   void validate() const;
+
+  Tensor add(const Tensor& a, const Tensor& b);
 };
 } // namespace Weed
