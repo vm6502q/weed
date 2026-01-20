@@ -90,7 +90,7 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
 
   const std::vector<TensorPtr> parents =
       filterParents({a.get_ptr(), b.get_ptr()});
-  out.grad_node = std::make_shared<Node>(parents, [parents, out]() {
+  out.grad_node = std::make_shared<Node>(parents, [out](std::vector<TensorPtr> parents) {
     for (TensorPtr in : parents) {
       add_inplace(in->grad, out.grad);
     }
@@ -110,7 +110,7 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
 
   const std::vector<TensorPtr> parents =
       filterParents({a.get_ptr(), b.get_ptr()});
-  out.grad_node = std::make_shared<Node>(parents, [parents, out]() {
+  out.grad_node = std::make_shared<Node>(parents, [out](std::vector<TensorPtr> parents) {
     for (TensorPtr in : parents) {
       mul_inplace(in->grad, out.grad);
     }

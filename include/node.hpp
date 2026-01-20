@@ -18,9 +18,9 @@
 namespace Weed {
 struct Node {
   std::vector<TensorPtr> parents;
-  std::function<void()> backward;
+  std::function<void(std::vector<TensorPtr>)> backward;
 
-  Node(std::vector<TensorPtr> p, std::function<void()> b)
+  Node(std::vector<TensorPtr> p, std::function<void(std::vector<TensorPtr>)> b)
       : parents(p), backward(b) {}
 };
 } // namespace Weed
