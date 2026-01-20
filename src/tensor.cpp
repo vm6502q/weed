@@ -52,7 +52,6 @@ void Tensor::validate() const {
 
 Tensor Tensor::allocate_like(const Tensor &orig) {
   Tensor out;
-  out.requires_grad = orig.requires_grad;
   vecCapIntGpu size = 0U;
   for (size_t i = 0U; i < shape.size(); ++i) {
     size += (orig.shape[i] - 1U) * orig.stride[i];
@@ -88,13 +87,15 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
     return out;
   }
 
-  const std::vector<TensorPtr> parents =
-      filterParents({a.get_ptr(), b.get_ptr()});
-  out.grad_node = std::make_shared<Node>(parents, [out](std::vector<TensorPtr> parents) {
-    for (TensorPtr in : parents) {
-      add_inplace(in->grad, out.grad);
-    }
-  });
+  out.requires_grad = true;
+
+  out.grad_node =
+      std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
+                             [out](std::vector<TensorPtr> parents) {
+                               for (TensorPtr in : parents) {
+                                 add_inplace(in->grad, out.grad);
+                               }
+                             });
 
   return out;
 }
@@ -108,13 +109,15 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
     return out;
   }
 
-  const std::vector<TensorPtr> parents =
-      filterParents({a.get_ptr(), b.get_ptr()});
-  out.grad_node = std::make_shared<Node>(parents, [out](std::vector<TensorPtr> parents) {
-    for (TensorPtr in : parents) {
-      mul_inplace(in->grad, out.grad);
-    }
-  });
+  out.requires_grad = true;
+
+  out.grad_node =
+      std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
+                             [out](std::vector<TensorPtr> parents) {
+                               for (TensorPtr in : parents) {
+                                 mul_inplace(in->grad, out.grad);
+                               }
+                             });
 
   return out;
 }
