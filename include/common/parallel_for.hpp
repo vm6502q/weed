@@ -13,6 +13,8 @@
 
 #include "weed_functions.hpp"
 
+#include <functional>
+
 namespace Weed {
 
 // Called once per value between begin and end.

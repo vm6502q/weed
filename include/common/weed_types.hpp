@@ -17,7 +17,6 @@
 
 #include <complex>
 #include <cstddef>
-#include <functional>
 #include <limits>
 #include <math.h>
 #include <memory>
