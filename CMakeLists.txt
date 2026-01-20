@@ -24,7 +24,6 @@ add_library (weed STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
     src/commuting.cpp
-    src/gpu_storage.cpp
     src/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -88,6 +87,10 @@ message ("CPU work item stride power is: ${PSTRIDEPOW}")
 message ("Async CPU is: ${ENABLE_ASYNC}")
 message ("OpenCL (v2.0) out-of-order queue is: ${ENABLE_OOO_OCL}")
 message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
+
+if (ENABLE_OPENCL AND ENABLE_CUDA)
+  message(FATAL_ERROR "You cannot enable both OpenCL and CUDA! Please choose one (or turn both off)." )
+endif (ENABLE_OPENCL AND ENABLE_CUDA)
 
 if (FPPOW GREATER 6)
     target_link_libraries(weed PUBLIC quadmath)

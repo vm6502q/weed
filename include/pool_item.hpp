@@ -17,8 +17,8 @@
 #include <algorithm>
 #include <vector>
 
+#define CMPLX_ARG_LEN 1
 #define VCI_ARG_LEN 3
-#define REAL_ARG_LEN 1
 
 namespace Weed {
 struct bad_alloc : public std::bad_alloc {
@@ -34,18 +34,13 @@ struct bad_alloc : public std::bad_alloc {
 };
 
 struct PoolItem {
-    BufferPtr realBuffer;
-    BufferPtr ulongBuffer;
-
-    std::shared_ptr<real1> probArray;
-    std::shared_ptr<real1> angleArray;
+    BufferPtr complexBuffer;
+    BufferPtr vciBuffer;
 
     PoolItem(cl::Context& context)
-        : probArray{ nullptr }
-        , angleArray{ nullptr }
     {
-        realBuffer = MakeBuffer(context, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = MakeBuffer(context, sizeof(vecCapIntGpu) * VCI_ARG_LEN);
+        complexBuffer = MakeBuffer(context, sizeof(complex) * CMPLX_ARG_LEN);
+        vciBuffer = MakeBuffer(context, sizeof(vecCapIntGpu) * VCI_ARG_LEN);
     }
 
     ~PoolItem() {}

@@ -66,9 +66,6 @@ void GpuStorage::PopQueue(bool isDispatch) {
     std::lock_guard<std::mutex> lock(queue_mutex);
 
     if (poolItems.size()) {
-      poolItems.front()->probArray = nullptr;
-      poolItems.front()->angleArray = nullptr;
-
       if (poolItems.size() > 1) {
         rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
       }

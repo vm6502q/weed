@@ -15,6 +15,10 @@
 #include "queue_item.hpp"
 #include "storage.hpp"
 
+#if !ENABLE_OPENCL && !ENABLE_CUDA
+#error GPU files were included without either OpenCL and CUDA enabled.
+#endif
+
 #include <list>
 
 namespace Weed {

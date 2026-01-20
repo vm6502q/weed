@@ -111,6 +111,7 @@ if (ENABLE_OPENCL)
     target_sources (weed PRIVATE
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
+        src/gpu_storage.cpp
         )
 
     if (APPLE OR CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc")
