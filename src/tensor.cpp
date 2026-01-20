@@ -11,6 +11,7 @@
 
 #include "tensor.hpp"
 #include "add.hpp"
+#include "mul.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
 #include "node.hpp"
@@ -87,6 +88,32 @@ Tensor Tensor::add(const Tensor &a, const Tensor &b) {
   out.grad_node = std::make_shared<Node>(parents, [=]() {
     for (const Tensor *in : parents) {
       add_inplace(in->grad, out.grad);
+    }
+  });
+
+  return out;
+}
+
+Tensor Tensor::mul(const Tensor &a, const Tensor &b) {
+  Tensor out = allocate_like(a);
+
+  Weed::mul(a, b, out);
+
+  if (!a.requires_grad && !b.requires_grad) {
+    return out;
+  }
+
+  std::vector<const Tensor *> parents;
+  if (a.requires_grad) {
+    parents.push_back(&a);
+  }
+  if (b.requires_grad) {
+    parents.push_back(&b);
+  }
+
+  out.grad_node = std::make_shared<Node>(parents, [=]() {
+    for (const Tensor *in : parents) {
+      mul_inplace(in->grad, out.grad);
     }
   });
 

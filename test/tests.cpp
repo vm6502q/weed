@@ -113,3 +113,15 @@ TEST_CASE("test_complex") {
          (imag(cmplx3) < (real1)(-2.0 + EPSILON));
   REQUIRE(test);
 }
+
+#if 0
+TEST_CASE("test_scalar_grad") {
+  Tensor x = scalar(2.0, requires_grad=true);
+  Tensor y = scalar(3.0, requires_grad=true);
+  Tensor z = x * y;
+  backward(z);
+
+  REQUIRE(x.grad == 3.0);
+  REQUIRE(y.grad == 2.0);
+}
+#endif
