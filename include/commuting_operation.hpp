@@ -11,19 +11,10 @@
 
 #pragma once
 
-#include "commuting.hpp"
-
 namespace Weed {
-struct MulKernel: CommutingKernel {
-  MulKernel()
-  {
-    op = CommutingOperation::MUL;
-  }
+enum CommutingOperation {
+  ADD = 1,
+  MUL = 2,
+  DEFAULT_COMMUTING_OPERATION = ADD
 };
-
-MulKernel mul_kernel;
-
-void mul(const Tensor &a, const Tensor &b, Tensor &out) {
-  mul_kernel.commuting(a, b, out);
-}
 } // namespace Weed
