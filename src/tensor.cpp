@@ -68,6 +68,17 @@ Tensor Tensor::allocate_like(const Tensor &orig) {
   return out;
 }
 
+std::vector<const Tensor *> filterParents(std::vector<const Tensor *> parents) {
+  std::vector<const Tensor *> filtered;
+  for (const Tensor *p : parents) {
+    if (p->requires_grad) {
+      filtered.push_back(p);
+    }
+  }
+
+  return filtered;
+}
+
 Tensor Tensor::add(const Tensor &a, const Tensor &b) {
   Tensor out = allocate_like(a);
 
@@ -77,14 +88,7 @@ Tensor Tensor::add(const Tensor &a, const Tensor &b) {
     return out;
   }
 
-  std::vector<const Tensor *> parents;
-  if (a.requires_grad) {
-    parents.push_back(&a);
-  }
-  if (b.requires_grad) {
-    parents.push_back(&b);
-  }
-
+  const std::vector<const Tensor *> parents = filterParents({ &a, &b });
   out.grad_node = std::make_shared<Node>(parents, [=]() {
     for (const Tensor *in : parents) {
       add_inplace(in->grad, out.grad);
@@ -103,14 +107,7 @@ Tensor Tensor::mul(const Tensor &a, const Tensor &b) {
     return out;
   }
 
-  std::vector<const Tensor *> parents;
-  if (a.requires_grad) {
-    parents.push_back(&a);
-  }
-  if (b.requires_grad) {
-    parents.push_back(&b);
-  }
-
+  const std::vector<const Tensor *> parents = filterParents({ &a, &b });
   out.grad_node = std::make_shared<Node>(parents, [=]() {
     for (const Tensor *in : parents) {
       mul_inplace(in->grad, out.grad);
