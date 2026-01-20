@@ -14,11 +14,8 @@
 #include "commuting.hpp"
 
 namespace Weed {
-struct AddKernel: CommutingKernel {
-  AddKernel()
-  {
-    op = CommutingOperation::ADD;
-  }
+struct AddKernel : CommutingKernel {
+  AddKernel() { op = CommutingOperation::ADD; }
 };
 
 AddKernel add_kernel;

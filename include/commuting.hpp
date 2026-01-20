@@ -25,13 +25,14 @@ struct CommutingKernel {
   void (*gpu_complex)(const Tensor &, const Tensor &, Tensor &);
   void (*gpu_mixed)(const Tensor &, const Tensor &, Tensor &);
   void (*gpu_promote)(const Tensor &, const Tensor &, Tensor &);
-  
+
   void commuting(const Tensor &a, const Tensor &b, Tensor &out) {
     const bool isAComplex = a.storage->dtype == DType::COMPLEX;
     const bool isBComplex = b.storage->dtype == DType::COMPLEX;
     const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
     if (!isOutComplex && (isAComplex || isBComplex)) {
-        throw std::runtime_error("Cannot combine complex tensors into real1 tensor!");
+      throw std::runtime_error(
+          "Cannot combine complex tensors into real1 tensor!");
     }
     if (isAComplex && isBComplex) {
       switch (out.storage->device) {
@@ -60,7 +61,7 @@ struct CommutingKernel {
       default:
         cpu_mixed(b, a, out);
       }
-    } else if (isOutComplex){
+    } else if (isOutComplex) {
       switch (out.storage->device) {
       case DeviceTag::GPU:
         gpu_promote(a, b, out);
@@ -79,7 +80,7 @@ struct CommutingKernel {
         cpu_real(a, b, out);
       }
     }
-}
+  }
 };
 
 extern CommutingKernel commuting_kernel;

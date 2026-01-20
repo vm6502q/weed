@@ -14,7 +14,24 @@
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
 
-#define CAST_STORAGE(out, in, type, ptr) type *out = static_cast<ptr*>(in.storage.get())->data.get() + in.offset
+#define CAST_STORAGE(out, in, type, ptr)                                       \
+  type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
+#define KERNEL_SWITCH()                                                        \
+  ParallelFunc fn;                                                             \
+  switch (op) {                                                                \
+  case CommutingOperation::MUL:                                                \
+    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
+      po[i] = pa[i] * pb[i];                                                   \
+    };                                                                         \
+    break;                                                                     \
+  case CommutingOperation::ADD:                                                \
+  default:                                                                     \
+    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
+      po[i] = pa[i] + pb[i];                                                   \
+    };                                                                         \
+  }                                                                            \
+  size_t n = out.storage->size;                                                \
+  pfControl.par_for(0, n, fn)
 
 namespace Weed {
 ParallelFor pfControl = ParallelFor();
@@ -25,92 +42,28 @@ struct commuting_kernel : CommutingKernel {
     CAST_STORAGE(pb, b, real1, CpuRealStorage);
     CAST_STORAGE(po, out, real1, CpuRealStorage);
 
-    size_t n = out.storage->size;
- 
-    ParallelFunc fn;
-    switch (op) {
-      case CommutingOperation::MUL:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] * pb[i];
-        };
-        break;
-      case CommutingOperation::ADD:
-      default:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] + pb[i];
-        };
-    }
-
-    pfControl.par_for(0, n, fn);
+    KERNEL_SWITCH();
   }
   void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
     CAST_STORAGE(pa, a, complex, CpuComplexStorage);
     CAST_STORAGE(pb, b, complex, CpuComplexStorage);
     CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
-    size_t n = out.storage->size;
-
-    ParallelFunc fn;
-    switch (op) {
-      case CommutingOperation::MUL:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] * pb[i];
-        };
-        break;
-      case CommutingOperation::ADD:
-      default:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] + pb[i];
-        };
-    }
-
-    pfControl.par_for(0, n, fn);
+    KERNEL_SWITCH();
   }
   void cpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
     CAST_STORAGE(pa, a, complex, CpuComplexStorage);
     CAST_STORAGE(pb, b, real1, CpuRealStorage);
     CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
-    size_t n = out.storage->size;
-
-    ParallelFunc fn;
-    switch (op) {
-      case CommutingOperation::MUL:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] * pb[i];
-        };
-        break;
-      case CommutingOperation::ADD:
-      default:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] + pb[i];
-        };
-    }
-
-    pfControl.par_for(0, n, fn);
+    KERNEL_SWITCH();
   }
   void cpu_promote(const Tensor &a, const Tensor &b, Tensor &out) {
     CAST_STORAGE(pa, a, real1, CpuRealStorage);
     CAST_STORAGE(pb, b, real1, CpuRealStorage);
     CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
-    size_t n = out.storage->size;
-
-    ParallelFunc fn;
-    switch (op) {
-      case CommutingOperation::MUL:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] * pb[i];
-        };
-        break;
-      case CommutingOperation::ADD:
-      default:
-        fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {
-          po[i] = pa[i] + pb[i];
-        };
-    }
-
-    pfControl.par_for(0, n, fn);
+    KERNEL_SWITCH();
   }
   void gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {}
   void gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {}

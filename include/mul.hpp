@@ -14,11 +14,8 @@
 #include "commuting.hpp"
 
 namespace Weed {
-struct MulKernel: CommutingKernel {
-  MulKernel()
-  {
-    op = CommutingOperation::MUL;
-  }
+struct MulKernel : CommutingKernel {
+  MulKernel() { op = CommutingOperation::MUL; }
 };
 
 MulKernel mul_kernel;

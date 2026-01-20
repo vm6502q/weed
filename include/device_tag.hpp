@@ -12,10 +12,5 @@
 #pragma once
 
 namespace Weed {
-enum DeviceTag {
-  CPU = 1,
-  GPU = 2,
-  Qrack = 3,
-  DEFAULT_DEVICE = CPU
-};
+enum DeviceTag { CPU = 1, GPU = 2, Qrack = 3, DEFAULT_DEVICE = CPU };
 } // namespace Weed

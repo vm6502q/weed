@@ -12,9 +12,5 @@
 #pragma once
 
 namespace Weed {
-enum CommutingOperation {
-  ADD = 1,
-  MUL = 2,
-  DEFAULT_COMMUTING_OPERATION = ADD
-};
+enum CommutingOperation { ADD = 1, MUL = 2, DEFAULT_COMMUTING_OPERATION = ADD };
 } // namespace Weed
