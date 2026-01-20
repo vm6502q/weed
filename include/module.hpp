@@ -16,6 +16,6 @@
 namespace Weed {
 struct Module {
   virtual Tensor forward(const Tensor &) = 0;
-  virtual std::vector<Parameter *> parameters() = 0;
+  virtual std::vector<ParameterPtr> parameters() = 0;
 };
 } // namespace Weed

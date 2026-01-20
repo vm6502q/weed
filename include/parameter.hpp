@@ -14,7 +14,7 @@
 namespace Weed {
 struct Parameter {
   Tensor value;
-
   Parameter() { value.requires_grad = true; }
 };
+typedef std::shared_ptr<Parameter> ParameterPtr;
 } // namespace Weed
