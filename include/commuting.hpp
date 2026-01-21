@@ -57,11 +57,11 @@ struct CommutingKernel {
     const bool isBComplex = b.storage->dtype == DType::COMPLEX;
     const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
     if (!isOutComplex && (isAComplex || isBComplex)) {
-      throw std::runtime_error(
+      throw std::invalid_argument(
           "Cannot combine complex tensors into real1 tensor!");
     }
     if (isOutComplex && (!isAComplex && !isBComplex)) {
-      throw std::runtime_error("Output tensor dtype mismatch!");
+      throw std::invalid_argument("Output tensor dtype mismatch!");
     }
     if (isAComplex && isBComplex) {
       _DEVICE_SWITCH(cpu_complex, gpu_complex, a, b, out);

@@ -95,3 +95,9 @@ void kernel mul_mixed_inplace(global cmplx* a, global real1* b, global cmplx* ou
 {
     a[ID + OFFSET_A] = b[ID + OFFSET_B] * a[ID + OFFSET_A];
 }
+
+void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const real1 tmp = a[ID + OFFSET_A];
+    out[ID + OFFSET_B] = (tmp > 0) ? tmp : ZERO_R1;
+}

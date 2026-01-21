@@ -24,6 +24,7 @@ add_library (weed STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
     src/commuting.cpp
+    src/relu.cpp
     src/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -309,6 +310,7 @@ install (FILES
     include/parameter.hpp
     include/queue_item.hpp
     include/real_storage.hpp
+    include/relu.hpp
     include/storage.hpp
     include/tensor.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/weed
