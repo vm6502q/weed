@@ -19,7 +19,6 @@
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
-
 #define KERNEL_SWITCH()                                                        \
   ParallelFunc fn;                                                             \
   switch (op) {                                                                \
