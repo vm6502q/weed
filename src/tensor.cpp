@@ -21,10 +21,9 @@
 #include "gpu_real_storage.hpp"
 
 namespace Weed {
-Tensor Tensor::allocate_like(const Tensor &orig) {
+Tensor Tensor::allocate_like(const Tensor &orig, const DType& dt) {
   const StoragePtr storage_ptr = orig.storage;
   const DeviceTag dtag = storage->device;
-  const DType dt = storage_ptr->dtype;
   int64_t did = -1;
   if (dtag == DeviceTag::GPU) {
     switch (dt) {
@@ -89,7 +88,7 @@ std::vector<TensorPtr> filterParents(std::vector<TensorPtr> parents) {
 }
 
 Tensor Tensor::add(Tensor &a, Tensor &b) {
-  Tensor out = allocate_like(a);
+  Tensor out = allocate_like(a, (b.storage->dtype == DType::COMPLEX) ? DType::COMPLEX : a.storage->dtype);
 
   Weed::add(a, b, out);
 
@@ -111,7 +110,7 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
 }
 
 Tensor Tensor::mul(Tensor &a, Tensor &b) {
-  Tensor out = allocate_like(a);
+  Tensor out = allocate_like(a, (b.storage->dtype == DType::COMPLEX) ? DType::COMPLEX : a.storage->dtype);
 
   Weed::mul(a, b, out);
 

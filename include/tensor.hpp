@@ -38,7 +38,7 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
          DeviceTag dtag = DeviceTag::CPU, int64_t did = -1);
 
   TensorPtr get_ptr() { return shared_from_this(); }
-  Tensor allocate_like(const Tensor &orig);
+  Tensor allocate_like(const Tensor &orig, const DType &dt);
 
   Tensor add(Tensor &a, Tensor &b);
   Tensor mul(Tensor &a, Tensor &b);
