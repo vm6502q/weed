@@ -21,6 +21,13 @@
 #include "gpu_real_storage.hpp"
 
 namespace Weed {
+inline DType get_dtype_by_presidence(const Tensor& left, const Tensor& right) {
+    if (right.storage->dtype == DType::COMPLEX) {
+        return DType::COMPLEX;
+    }
+    return left.storage->dtype;
+}
+
 Tensor Tensor::allocate_like(const Tensor &orig, const DType& dt) {
   const StoragePtr storage_ptr = orig.storage;
   const DeviceTag dtag = storage->device;
@@ -88,7 +95,7 @@ std::vector<TensorPtr> filterParents(std::vector<TensorPtr> parents) {
 }
 
 Tensor Tensor::add(Tensor &a, Tensor &b) {
-  Tensor out = allocate_like(a, (b.storage->dtype == DType::COMPLEX) ? DType::COMPLEX : a.storage->dtype);
+  Tensor out = allocate_like(a, get_dtype_by_presidence(a, b));
 
   Weed::add(a, b, out);
 
@@ -110,7 +117,7 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
 }
 
 Tensor Tensor::mul(Tensor &a, Tensor &b) {
-  Tensor out = allocate_like(a, (b.storage->dtype == DType::COMPLEX) ? DType::COMPLEX : a.storage->dtype);
+  Tensor out = allocate_like(a, get_dtype_by_presidence(a, b));
 
   Weed::mul(a, b, out);
 
