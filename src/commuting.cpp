@@ -19,8 +19,6 @@
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
-#define CAST_PTR_STORAGE(out, in, type, ptr)                                   \
-  type *out = static_cast<ptr *>(in->storage.get())->data.get() + in->offset
 
 #define KERNEL_SWITCH()                                                        \
   ParallelFunc fn;                                                             \
@@ -36,7 +34,7 @@
       po[i] = pa[i] + pb[i];                                                   \
     };                                                                         \
   }                                                                            \
-  size_t n = out.get_size();                                                   \
+  const size_t n = out.get_size();                                             \
   pfControl.par_for(0, n, fn)
 
 #define KERNEL_SWITCH_INPLACE()                                                \
@@ -49,7 +47,7 @@
   default:                                                                     \
     fn = [&](const vecCapIntGpu &i, const unsigned &cpu) { pa[i] += pb[i]; };  \
   }                                                                            \
-  size_t n = b->get_size();                                                    \
+  const size_t n = b.get_size();                                               \
   pfControl.par_for(0, n, fn)
 
 #define DISPATCH_GPU_KERNEL(type, type2, api_add, api_mul)                     \
@@ -83,12 +81,12 @@
   default:                                                                     \
     api_call = OCLAPI::api_add;                                                \
   }                                                                            \
-  const vecCapIntGpu args[3U]{a->offset, b->offset, 0};                        \
+  const vecCapIntGpu args[3U]{a.offset, b.offset, 0};                          \
   std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a->storage);                             \
+      std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(b->storage);                            \
-  a_storage->gpu->RequestKernel(api_call, args, a->get_size(),                 \
+      std::dynamic_pointer_cast<type2>(b.storage);                             \
+  a_storage->gpu->RequestKernel(api_call, args, a.get_size(),                  \
                                 {a_storage->buffer, b_storage->buffer})
 
 namespace Weed {
@@ -129,29 +127,29 @@ struct commuting_kernel : CommutingKernel {
                         OCL_API_MUL_MIXED);
   }
 
-  void cpu_real_inplace(TensorPtr a, const TensorPtr b) {
-    CAST_PTR_STORAGE(pa, a, real1, CpuRealStorage);
-    CAST_PTR_STORAGE(pb, b, real1, CpuRealStorage);
+  void cpu_real_inplace(Tensor &a, const Tensor &b) {
+    CAST_STORAGE(pa, a, real1, CpuRealStorage);
+    CAST_STORAGE(pb, b, real1, CpuRealStorage);
 
     KERNEL_SWITCH_INPLACE();
   }
-  void cpu_complex_inplace(TensorPtr a, const TensorPtr b) {
-    CAST_PTR_STORAGE(pa, a, complex, CpuComplexStorage);
-    CAST_PTR_STORAGE(pb, b, complex, CpuComplexStorage);
+  void cpu_complex_inplace(Tensor &a, const Tensor &b) {
+    CAST_STORAGE(pa, a, complex, CpuComplexStorage);
+    CAST_STORAGE(pb, b, complex, CpuComplexStorage);
 
     KERNEL_SWITCH_INPLACE();
   }
-  void gpu_real_inplace(TensorPtr a, const TensorPtr b) {
+  void gpu_real_inplace(Tensor &a, const Tensor &b) {
     DISPATCH_INPLACE_GPU_KERNEL(GpuRealStorage, GpuRealStorage,
                                 OCL_API_ADD_REAL_INPLACE,
                                 OCL_API_MUL_REAL_INPLACE);
   }
-  void gpu_complex_inplace(TensorPtr a, const TensorPtr b) {
+  void gpu_complex_inplace(Tensor &a, const Tensor &b) {
     DISPATCH_INPLACE_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage,
                                 OCL_API_ADD_COMPLEX_INPLACE,
                                 OCL_API_MUL_COMPLEX_INPLACE);
   }
-  void gpu_mixed_inplace(TensorPtr a, const TensorPtr b) {
+  void gpu_mixed_inplace(Tensor &a, const Tensor &b) {
     DISPATCH_INPLACE_GPU_KERNEL(GpuComplexStorage, GpuRealStorage,
                                 OCL_API_ADD_MIXED_INPLACE,
                                 OCL_API_MUL_MIXED_INPLACE);

@@ -18,15 +18,15 @@ struct ReluKernel {
   void (*cpu_real)(const Tensor &, Tensor &);
   void (*gpu_real)(const Tensor &, Tensor &);
   void (*relu)(const Tensor &, Tensor &);
-  void (*cpu_real_grad)(TensorPtr, const Tensor &, const TensorPtr);
-  void (*gpu_real_grad)(TensorPtr, const Tensor &, const TensorPtr);
-  void (*relu_grad)(TensorPtr, const Tensor &, const TensorPtr);
+  void (*cpu_real_grad)(Tensor &, const Tensor &, const Tensor &);
+  void (*gpu_real_grad)(Tensor &, const Tensor &, const Tensor &);
+  void (*relu_grad)(Tensor &, const Tensor &, const Tensor &);
 };
 
 ReluKernel relu_kernel;
 
 void relu(const Tensor &a, Tensor &out) { relu_kernel.relu(a, out); }
-void relu_grad(TensorPtr din, const Tensor &in, const TensorPtr dout) {
+void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   relu_kernel.relu_grad(din, in, dout);
 }
 } // namespace Weed

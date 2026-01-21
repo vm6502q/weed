@@ -53,11 +53,11 @@ struct relu_kernel : ReluKernel {
     }
   }
 
-  void cpu_real_grad(StoragePtr din, const Tensor &in, const StoragePtr dout) {}
-  void gpu_real_grad(StoragePtr din, const Tensor &in, const StoragePtr dout) {}
+  void cpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {}
+  void gpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {}
 
-  void relu_grad(StoragePtr din, const Tensor &in, const StoragePtr dout) {
-    switch (din->device) {
+  void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+    switch (din.storage->device) {
     case DeviceTag::GPU:
       gpu_real_grad(din, in, dout);
       break;

@@ -104,7 +104,7 @@ Tensor Tensor::relu(Tensor &a) {
       std::make_shared<Node>(std::vector<TensorPtr>{a.get_ptr()},
                              [out](std::vector<TensorPtr> parents) {
                                for (TensorPtr in : parents) {
-                                 relu_grad(in->grad, *(in.get()), out.grad);
+                                 relu_grad(*(in->grad.get()), *(in.get()), *(out.grad.get()));
                                }
                              });
 
@@ -126,7 +126,7 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
       std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
                              [out](std::vector<TensorPtr> parents) {
                                for (TensorPtr in : parents) {
-                                 add_inplace(in->grad, out.grad);
+                                 add_inplace(*(in->grad.get()), *(out.grad.get()));
                                }
                              });
 
@@ -148,7 +148,7 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
       std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
                              [out](std::vector<TensorPtr> parents) {
                                for (TensorPtr in : parents) {
-                                 mul_inplace(in->grad, out.grad);
+                                 mul_inplace(*(in->grad.get()), *(out.grad.get()));
                                }
                              });
 
