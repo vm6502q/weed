@@ -101,3 +101,7 @@ void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecC
     const real1 tmp = a[ID + OFFSET_A];
     out[ID + OFFSET_B] = (tmp > 0) ? tmp : ZERO_R1;
 }
+void kernel relu_grad(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    din[ID + OFFSET_A] = (in[ID + OFFSET_B] > 0) ? dout[ID + OFFSET_OUT] : ZERO_R1;
+}

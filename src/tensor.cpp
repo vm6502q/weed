@@ -100,13 +100,13 @@ Tensor Tensor::relu(Tensor &a) {
 
   out.requires_grad = true;
 
-  out.grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{a.get_ptr()},
-                             [out](std::vector<TensorPtr> parents) {
-                               for (TensorPtr in : parents) {
-                                 relu_grad(*(in->grad.get()), *(in.get()), *(out.grad.get()));
-                               }
-                             });
+  out.grad_node = std::make_shared<Node>(
+      std::vector<TensorPtr>{a.get_ptr()},
+      [out](std::vector<TensorPtr> parents) {
+        for (TensorPtr in : parents) {
+          relu_grad(*(in->grad.get()), *(in.get()), *(out.grad.get()));
+        }
+      });
 
   return out;
 }
@@ -122,13 +122,13 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
 
   out.requires_grad = true;
 
-  out.grad_node =
-      std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
-                             [out](std::vector<TensorPtr> parents) {
-                               for (TensorPtr in : parents) {
-                                 add_inplace(*(in->grad.get()), *(out.grad.get()));
-                               }
-                             });
+  out.grad_node = std::make_shared<Node>(
+      filterParents({a.get_ptr(), b.get_ptr()}),
+      [out](std::vector<TensorPtr> parents) {
+        for (TensorPtr in : parents) {
+          add_inplace(*(in->grad.get()), *(out.grad.get()));
+        }
+      });
 
   return out;
 }
@@ -144,13 +144,13 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
 
   out.requires_grad = true;
 
-  out.grad_node =
-      std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
-                             [out](std::vector<TensorPtr> parents) {
-                               for (TensorPtr in : parents) {
-                                 mul_inplace(*(in->grad.get()), *(out.grad.get()));
-                               }
-                             });
+  out.grad_node = std::make_shared<Node>(
+      filterParents({a.get_ptr(), b.get_ptr()}),
+      [out](std::vector<TensorPtr> parents) {
+        for (TensorPtr in : parents) {
+          mul_inplace(*(in->grad.get()), *(out.grad.get()));
+        }
+      });
 
   return out;
 }

@@ -53,8 +53,27 @@ struct relu_kernel : ReluKernel {
     }
   }
 
-  void cpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {}
-  void gpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {}
+  void cpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+    CAST_STORAGE(pdi, din, real1, CpuRealStorage);
+    CAST_STORAGE(pi, in, real1, CpuRealStorage);
+    CAST_STORAGE(po, dout, real1, CpuRealStorage);
+    size_t n = dout.storage->size;
+    pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+      pdi[i] = (pi[i] > 0) ? po[i] : ZERO_R1;
+    });
+  }
+  void gpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+    const vecCapIntGpu args[3U]{din.offset, in.offset, dout.offset};
+    GpuRealStoragePtr a_storage =
+        std::dynamic_pointer_cast<GpuRealStorage>(din.storage);
+    GpuRealStoragePtr b_storage =
+        std::dynamic_pointer_cast<GpuRealStorage>(in.storage);
+    GpuRealStoragePtr c_storage =
+        std::dynamic_pointer_cast<GpuRealStorage>(dout.storage);
+    a_storage->gpu->RequestKernel(
+        OCLAPI::OCL_API_RELU_GRAD, args, din.get_size(),
+        {a_storage->buffer, b_storage->buffer, c_storage->buffer});
+  }
 
   void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
     switch (din.storage->device) {

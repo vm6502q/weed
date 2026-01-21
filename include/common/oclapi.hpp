@@ -30,6 +30,7 @@ enum OCLAPI {
   OCL_API_MUL_COMPLEX_INPLACE = 11,
   OCL_API_MUL_MIXED_INPLACE = 12,
   OCL_API_RELU = 13,
+  OCL_API_RELU_GRAD = 14
 };
 
 } // namespace Weed
