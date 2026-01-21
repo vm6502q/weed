@@ -20,15 +20,26 @@
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
 
+#define SWITCH_DEVICE_FOR_STORAGE(GpuType, CpuType)                            \
+  switch (dtag) {                                                              \
+  case DeviceTag::GPU:                                                         \
+    storage = std::make_shared<GpuType>(size, did);                            \
+    break;                                                                     \
+  case DeviceTag::CPU:                                                         \
+  default:                                                                     \
+    storage = std::make_shared<CpuType>(size);                                 \
+  }                                                                            \
+  break
+
 namespace Weed {
-inline DType get_dtype_by_presidence(const Tensor& left, const Tensor& right) {
-    if (right.storage->dtype == DType::COMPLEX) {
-        return DType::COMPLEX;
-    }
-    return left.storage->dtype;
+inline DType get_dtype_by_presidence(const Tensor &left, const Tensor &right) {
+  if (right.storage->dtype == DType::COMPLEX) {
+    return DType::COMPLEX;
+  }
+  return left.storage->dtype;
 }
 
-Tensor Tensor::allocate_like(const Tensor &orig, const DType& dt) {
+Tensor Tensor::allocate_like(const Tensor &orig, const DType &dt) {
   const StoragePtr storage_ptr = orig.storage;
   const DeviceTag dtag = storage->device;
   int64_t did = -1;
@@ -63,23 +74,10 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
 
   switch (dtype) {
   case DType::COMPLEX:
-    switch (dtag) {
-    case DeviceTag::GPU:
-      storage = std::make_shared<GpuComplexStorage>(size, did);
-      break;
-    case DeviceTag::CPU:
-    default:
-      storage = std::make_shared<CpuComplexStorage>(size);
-    }
+    SWITCH_DEVICE_FOR_STORAGE(GpuComplexStorage, CpuComplexStorage);
   case DType::REAL:
-    switch (dtag) {
-    case DeviceTag::GPU:
-      storage = std::make_shared<GpuRealStorage>(size, did);
-      break;
-    case DeviceTag::CPU:
-    default:
-      storage = std::make_shared<CpuRealStorage>(size);
-    }
+  default:
+    SWITCH_DEVICE_FOR_STORAGE(GpuRealStorage, CpuRealStorage);
   }
 }
 
