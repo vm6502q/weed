@@ -11,16 +11,20 @@
 
 #pragma once
 
-#include "commuting.hpp"
+#include "tensor.hpp"
 
 namespace Weed {
 struct ReluKernel {
   void (*cpu_real)(const Tensor &, Tensor &);
   void (*gpu_real)(const Tensor &, Tensor &);
   void (*relu)(const Tensor &, Tensor &);
+  void (*cpu_real_grad)(StoragePtr, const Tensor &, const StoragePtr);
+  void (*gpu_real_grad)(StoragePtr, const Tensor &, const StoragePtr);
+  void (*relu_grad)(StoragePtr, const Tensor &, const StoragePtr);
 };
 
 extern ReluKernel relu_kernel;
 
 void relu(const Tensor &a, Tensor &out) { relu_kernel.relu(a, out); }
+void relu_grad(StoragePtr din, const Tensor& in, const StoragePtr dout) { relu_kernel.relu_grad(din, in, dout); }
 } // namespace Weed

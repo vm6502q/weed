@@ -48,9 +48,10 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
     return size;
   }
 
-  Tensor allocate_like(const Tensor &orig, const DType &dt);
+  static Tensor allocate_like(const Tensor &orig, const DType &dt);
 
-  Tensor add(Tensor &a, Tensor &b);
-  Tensor mul(Tensor &a, Tensor &b);
+  static Tensor relu(Tensor &a);
+  static Tensor add(Tensor &a, Tensor &b);
+  static Tensor mul(Tensor &a, Tensor &b);
 };
 } // namespace Weed

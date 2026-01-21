@@ -38,7 +38,6 @@ struct relu_kernel : ReluKernel {
     a_storage->gpu->RequestKernel(OCLAPI::OCL_API_RELU, args, a.get_size(),
                                   {a_storage->buffer, o_storage->buffer});
   }
-
   void relu(const Tensor &a, Tensor &out) {
     if ((a.storage->dtype == DType::COMPLEX) or
         (out.storage->dtype == DType::COMPLEX)) {
@@ -51,6 +50,20 @@ struct relu_kernel : ReluKernel {
     case DeviceTag::CPU:
     default:
       cpu_real(a, out);
+    }
+  }
+
+  void cpu_real_grad(StoragePtr din, const Tensor &in, const StoragePtr dout) {}
+  void gpu_real_grad(StoragePtr din, const Tensor &in, const StoragePtr dout) {}
+
+  void relu_grad(StoragePtr din, const Tensor &in, const StoragePtr dout) {
+    switch (din->device) {
+    case DeviceTag::GPU:
+      gpu_real_grad(din, in, dout);
+      break;
+    case DeviceTag::CPU:
+    default:
+      cpu_real_grad(din, in, dout);
     }
   }
 };

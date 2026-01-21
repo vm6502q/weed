@@ -12,6 +12,7 @@
 #include "tensor.hpp"
 #include "node.hpp"
 
+#include "relu.hpp"
 #include "add.hpp"
 #include "mul.hpp"
 
@@ -41,7 +42,7 @@ inline DType get_dtype_by_presidence(const Tensor &left, const Tensor &right) {
 
 Tensor Tensor::allocate_like(const Tensor &orig, const DType &dt) {
   const StoragePtr storage_ptr = orig.storage;
-  const DeviceTag dtag = storage->device;
+  const DeviceTag dtag = storage_ptr->device;
   int64_t did = -1;
   if (dtag == DeviceTag::GPU) {
     switch (dt) {
@@ -85,6 +86,27 @@ std::vector<TensorPtr> filterParents(std::vector<TensorPtr> parents) {
   }
 
   return filtered;
+}
+
+Tensor Tensor::relu(Tensor &a) {
+  Tensor out = allocate_like(a, a.storage->dtype);
+
+  Weed::relu(a, out);
+
+  if (!a.requires_grad) {
+    return out;
+  }
+
+  out.requires_grad = true;
+
+  out.grad_node =
+    std::make_shared<Node>(std::vector<TensorPtr>{a.get_ptr()}, [a, out](std::vector<TensorPtr> parents) {
+      for (TensorPtr in : parents) {
+        relu_grad(in->grad, a, out.grad);
+      }
+    });
+
+  return out;
 }
 
 Tensor Tensor::add(Tensor &a, Tensor &b) {
