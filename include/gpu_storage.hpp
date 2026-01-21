@@ -28,9 +28,9 @@ struct GpuRealStorage : RealStorage {
   RealPtr array;
 
   GpuRealStorage(vecCapIntGpu n, int64_t did)
-      : RealStorage(DeviceTag::GPU, n)
-      , gpu(OCLEngine::Instance().GetWeedDevice(did))
-      , array(nullptr, [](real1 *) {}) {
+      : RealStorage(DeviceTag::GPU, n),
+        gpu(OCLEngine::Instance().GetWeedDevice(did)),
+        array(nullptr, [](real1 *) {}) {
     buffer = MakeBuffer(n);
   }
 

@@ -226,24 +226,27 @@ EventVecPtr GpuDevice::ResetWaitEvents(bool waitQueue) {
   return wait_refs.empty() ? std::make_shared<EventVec>() : wait_refs.back();
 }
 
-PoolItemPtr GpuDevice::GetFreePoolItem()
-{
+PoolItemPtr GpuDevice::GetFreePoolItem() {
   std::lock_guard<std::mutex> lock(queue_mutex);
 
   CheckCallbackError();
 
   while (wait_queue_items.size() >= poolItems.size()) {
-      poolItems.push_back(std::make_shared<PoolItem>(context));
+    poolItems.push_back(std::make_shared<PoolItem>(context));
   }
 
   return poolItems[wait_queue_items.size()];
 }
 
-void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu* bciArgs, const size_t nwi, std::vector<BufferPtr> buffers) {
+void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
+                              const size_t nwi,
+                              std::vector<BufferPtr> buffers) {
   EventVecPtr waitVec = ResetWaitEvents();
   PoolItemPtr poolItem = GetFreePoolItem();
   cl::Event writeArgsEvent;
-  DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer), sizeof(vecCapIntGpu) * VCI_ARG_LEN, bciArgs, writeArgsEvent);
+  DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer),
+                      sizeof(vecCapIntGpu) * VCI_ARG_LEN, bciArgs,
+                      writeArgsEvent);
   size_t ngs = (nwi > 32U) ? 32U : nwi;
   while (((nwi / ngs) * ngs) != nwi) {
     --ngs;

@@ -18,8 +18,10 @@
 
 #define CAST_TENOSR_STORAGE(out, in, type, ptr)                                \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
+
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.get())->data.get()
+
 #define KERNEL_SWITCH()                                                        \
   ParallelFunc fn;                                                             \
   switch (op) {                                                                \
@@ -36,6 +38,7 @@
   }                                                                            \
   size_t n = out.storage->size;                                                \
   pfControl.par_for(0, n, fn)
+
 #define KERNEL_SWITCH_INPLACE()                                                \
   ParallelFunc fn;                                                             \
   switch (op) {                                                                \
@@ -48,6 +51,18 @@
   }                                                                            \
   size_t n = b->size;                                                          \
   pfControl.par_for(0, n, fn)
+
+#define DISPATCH_GPU_KERNEL(type, api_call)                                    \
+  const vecCapIntGpu args[2U]{a.offset, b.offset};                             \
+  std::shared_ptr<type> a_storage =                                            \
+      std::dynamic_pointer_cast<type>(a.storage);                              \
+  std::shared_ptr<type> b_storage =                                            \
+      std::dynamic_pointer_cast<type>(b.storage);                              \
+  std::shared_ptr<type> o_storage =                                            \
+      std::dynamic_pointer_cast<type>(out.storage);                            \
+  a_storage->gpu->RequestKernel(                                               \
+      api_call, args, a.get_size(),                                            \
+      {a_storage->buffer, b_storage->buffer, o_storage->buffer})
 
 namespace Weed {
 ParallelFor pfControl = ParallelFor();
@@ -75,13 +90,11 @@ struct commuting_kernel : CommutingKernel {
     KERNEL_SWITCH();
   }
   void gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-    const vecCapIntGpu args[2U] { a.offset, b.offset };
-    GpuRealStoragePtr a_storage = std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-    GpuRealStoragePtr b_storage = std::dynamic_pointer_cast<GpuRealStorage>(b.storage);
-    GpuRealStoragePtr o_storage = std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-    a_storage->gpu->RequestKernel(OCLAPI::OCL_API_ADD_REAL, args, a.get_size(), { a_storage->buffer, b_storage->buffer, o_storage->buffer });
+    DISPATCH_GPU_KERNEL(GpuRealStorage, OCLAPI::OCL_API_ADD_REAL);
   }
-  void gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {}
+  void gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
+    DISPATCH_GPU_KERNEL(GpuComplexStorage, OCLAPI::OCL_API_ADD_COMPLEX);
+  }
   void gpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {}
 
   void cpu_real_inplace(StoragePtr a, const StoragePtr b) {

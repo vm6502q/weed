@@ -20,9 +20,11 @@
 
 #include <list>
 
-#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
-    tryOcl("Failed to write buffer",                                                                                   \
-        [&] { return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array, waitVec.get(), &clEvent); });
+#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)               \
+  tryOcl("Failed to write buffer", [&] {                                       \
+    return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array,           \
+                                    waitVec.get(), &clEvent);                  \
+  });
 
 namespace Weed {
 struct GpuDevice {
@@ -94,33 +96,35 @@ struct GpuDevice {
     totalOclAllocSize -= size;
   }
 
-  void AddQueueItem(const QueueItem& item)
-  {
-      bool isBase;
-      // For lock_guard:
-      if (true) {
-          std::lock_guard<std::mutex> lock(queue_mutex);
-          CheckCallbackError();
-          isBase = wait_queue_items.empty();
-          wait_queue_items.push_back(item);
-      }
+  void AddQueueItem(const QueueItem &item) {
+    bool isBase;
+    // For lock_guard:
+    if (true) {
+      std::lock_guard<std::mutex> lock(queue_mutex);
+      CheckCallbackError();
+      isBase = wait_queue_items.empty();
+      wait_queue_items.push_back(item);
+    }
 
-      if (isBase) {
-          DispatchQueue();
-      }
+    if (isBase) {
+      DispatchQueue();
+    }
   }
 
-  void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0U, size_t deallocSize = 0U)
-    {
-        if (localBuffSize > device_context->GetLocalSize()) {
-            throw bad_alloc("Local memory limits exceeded in QEngineOCL::QueueCall()");
-        }
-        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
+  void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize,
+                 std::vector<BufferPtr> args, size_t localBuffSize = 0U,
+                 size_t deallocSize = 0U) {
+    if (localBuffSize > device_context->GetLocalSize()) {
+      throw bad_alloc(
+          "Local memory limits exceeded in QEngineOCL::QueueCall()");
     }
+    AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize,
+                           args, localBuffSize));
+  }
 
   PoolItemPtr GetFreePoolItem();
 
-  void RequestKernel(OCLAPI api_call, const vecCapIntGpu* bciArgs, const size_t nwi, std::vector<BufferPtr> buffers);
+  void RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
+                     const size_t nwi, std::vector<BufferPtr> buffers);
 };
 } // namespace Weed
