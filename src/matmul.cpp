@@ -37,13 +37,17 @@
   CAST_STORAGE(pb, b, rtype, rstorage);                                        \
   CAST_STORAGE(po, out, otype, ostorage);                                      \
                                                                                \
+  const vecCapIntGpu I_a = a.stride[0U];                                       \
+  const vecCapIntGpu I_b = b.stride[0U];                                       \
+  const vecCapIntGpu I_o = out.stride[0U];                                     \
+                                                                               \
   pfControl.par_for(0, M, [&](const vecCapIntGpu &i, const unsigned &cpu) {    \
     for (vecCapIntGpu j = 0; j < N; ++j) {                                     \
       stype sum = ZERO_R1;                                                     \
       for (vecCapIntGpu k = 0; k < K; ++k) {                                   \
-        sum += pa[i * K + k] * pb[k * N + j];                                  \
+        sum += pa[(i * K + k) * I_a] * pb[(k * N + j) * I_b];                  \
       }                                                                        \
-      po[i * N + j] = sum;                                                     \
+      po[(i * N + j) * I_o] = sum;                                             \
     }                                                                          \
   })
 

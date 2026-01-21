@@ -58,7 +58,9 @@ Tensor Tensor::allocate_like(const Tensor &orig, const DType &dt) {
   return Tensor(orig.shape, orig.stride, false, dt, dtag, did);
 }
 
-Tensor Tensor::allocate_like(const std::vector<vecCapIntGpu> &shape, const std::vector<vecCapIntGpu> &stride, const Tensor &orig, const DType &dt) {
+Tensor Tensor::allocate_like(const std::vector<vecCapIntGpu> &shape,
+                             const std::vector<vecCapIntGpu> &stride,
+                             const Tensor &orig, const DType &dt) {
   const StoragePtr storage_ptr = orig.storage;
   const DeviceTag dtag = storage_ptr->device;
   int64_t did = -1;
@@ -175,11 +177,12 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
 
 Tensor Tensor::matmul(Tensor &a, Tensor &b) {
   if ((a.shape.size() != 2U) || (b.shape.size() != 2U)) {
-    throw std::invalid_argument("Tensor::matmul is only for matrices with 2 indices!");
+    throw std::invalid_argument(
+        "Tensor::matmul is only for matrices with 2 indices!");
   }
 
-  const std::vector<vecCapIntGpu> shp = { a.shape[0U], b.shape[1U] };
-  const std::vector<vecCapIntGpu> str = { 1U, a.shape[0U] };
+  const std::vector<vecCapIntGpu> shp = {a.shape[0U], b.shape[1U]};
+  const std::vector<vecCapIntGpu> str = {1U, a.shape[0U]};
   Tensor out = allocate_like(shp, str, a, get_dtype_by_presidence(a, b));
 
   Weed::matmul(a, b, out);
@@ -190,13 +193,13 @@ Tensor Tensor::matmul(Tensor &a, Tensor &b) {
 
   out.requires_grad = true;
 
-  out.grad_node = std::make_shared<Node>(
-      filterParents({a.get_ptr(), b.get_ptr()}),
-      [out](std::vector<TensorPtr> parents) {
-        for (TensorPtr in : parents) {
-          // TODO
-        }
-      });
+  out.grad_node =
+      std::make_shared<Node>(filterParents({a.get_ptr(), b.get_ptr()}),
+                             [out](std::vector<TensorPtr> parents) {
+                               for (TensorPtr in : parents) {
+                                 // TODO
+                               }
+                             });
 
   return out;
 }

@@ -18,7 +18,7 @@
 #include <vector>
 
 #define CMPLX_ARG_LEN 1
-#define VCI_ARG_LEN 3
+#define VCI_ARG_LEN 6
 
 namespace Weed {
 struct bad_alloc : public std::bad_alloc {

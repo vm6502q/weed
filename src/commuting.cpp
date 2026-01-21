@@ -20,31 +20,40 @@
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
 #define KERNEL_SWITCH()                                                        \
+  const vecCapIntGpu I_a = a.stride[0U];                                       \
+  const vecCapIntGpu I_b = b.stride[0U];                                       \
+  const vecCapIntGpu I_o = out.stride[0U];                                     \
   ParallelFunc fn;                                                             \
   switch (op) {                                                                \
   case CommutingOperation::MUL:                                                \
     fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
-      po[i] = pa[i] * pb[i];                                                   \
+      po[i * I_o] = pa[i * I_a] * pb[i * I_b];                                 \
     };                                                                         \
     break;                                                                     \
   case CommutingOperation::ADD:                                                \
   default:                                                                     \
     fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
-      po[i] = pa[i] + pb[i];                                                   \
+      po[i * I_o] = pa[i * I_a] + pb[i * I_b];                                 \
     };                                                                         \
   }                                                                            \
   const size_t n = out.get_size();                                             \
   pfControl.par_for(0, n, fn)
 
 #define KERNEL_SWITCH_INPLACE()                                                \
+  const vecCapIntGpu I_a = a.stride[0U];                                       \
+  const vecCapIntGpu I_b = b.stride[0U];                                       \
   ParallelFunc fn;                                                             \
   switch (op) {                                                                \
   case CommutingOperation::MUL:                                                \
-    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) { pa[i] *= pb[i]; };  \
+    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
+      pa[i * I_a] *= pb[i * I_b];                                              \
+    };                                                                         \
     break;                                                                     \
   case CommutingOperation::ADD:                                                \
   default:                                                                     \
-    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) { pa[i] += pb[i]; };  \
+    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
+      pa[i * I_a] += pb[i * I_b];                                              \
+    };                                                                         \
   }                                                                            \
   const size_t n = b.get_size();                                               \
   pfControl.par_for(0, n, fn)
@@ -59,7 +68,8 @@
   default:                                                                     \
     api_call = api_add;                                                        \
   }                                                                            \
-  const vecCapIntGpu args[3U]{a.offset, b.offset, out.offset};                 \
+  const vecCapIntGpu args[6U]{a.offset,     a.stride[0U], b.offset,            \
+                              b.stride[0U], out.offset,   out.stride[0U]};     \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \
@@ -80,7 +90,8 @@
   default:                                                                     \
     api_call = OCLAPI::api_add;                                                \
   }                                                                            \
-  const vecCapIntGpu args[3U]{a.offset, b.offset, 0};                          \
+  const vecCapIntGpu args[6U]{                                                 \
+      a.offset, a.stride[0U], b.offset, b.stride[0U], 0, 0};                   \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \
