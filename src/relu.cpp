@@ -14,7 +14,7 @@
 #include "cpu_real_storage.hpp"
 #include "gpu_real_storage.hpp"
 
-#define CAST_TENOSR_STORAGE(out, in, type, ptr)                                \
+#define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
 namespace Weed {
@@ -22,8 +22,8 @@ ParallelFor pfControl = ParallelFor();
 
 struct relu_kernel : ReluKernel {
   void cpu_real(const Tensor &a, Tensor &out) {
-    CAST_TENOSR_STORAGE(pa, a, real1, CpuRealStorage);
-    CAST_TENOSR_STORAGE(po, out, real1, CpuRealStorage);
+    CAST_STORAGE(pa, a, real1, CpuRealStorage);
+    CAST_STORAGE(po, out, real1, CpuRealStorage);
     size_t n = out.storage->size;
     pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
       po[i] = std::max(pa[i], ZERO_R1);
