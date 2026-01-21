@@ -46,13 +46,11 @@ Tensor Tensor::allocate_like(const Tensor &orig, const DType &dt) {
   if (dtag == DeviceTag::GPU) {
     switch (dt) {
     case DType::COMPLEX:
-      did = std::dynamic_pointer_cast<GpuComplexStorage>(storage_ptr)
-                ->gpu->deviceID;
+      did = static_cast<GpuComplexStorage *>(storage_ptr.get())->gpu->deviceID;
       break;
     case DType::REAL:
     default:
-      did =
-          std::dynamic_pointer_cast<GpuRealStorage>(storage_ptr)->gpu->deviceID;
+      did = static_cast<GpuRealStorage *>(storage_ptr.get())->gpu->deviceID;
     }
   }
   return Tensor(orig.shape, orig.stride, false, dt, dtag, did);
