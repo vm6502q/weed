@@ -39,25 +39,6 @@
   const size_t n = out.get_size();                                             \
   pfControl.par_for(0, n, fn)
 
-#define KERNEL_SWITCH_INPLACE()                                                \
-  const vecCapIntGpu I_a = a.stride[0U];                                       \
-  const vecCapIntGpu I_b = b.stride[0U];                                       \
-  ParallelFunc fn;                                                             \
-  switch (op) {                                                                \
-  case CommutingOperation::MUL:                                                \
-    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
-      pa[i * I_a] *= pb[i * I_b];                                              \
-    };                                                                         \
-    break;                                                                     \
-  case CommutingOperation::ADD:                                                \
-  default:                                                                     \
-    fn = [&](const vecCapIntGpu &i, const unsigned &cpu) {                     \
-      pa[i * I_a] += pb[i * I_b];                                              \
-    };                                                                         \
-  }                                                                            \
-  const size_t n = b.get_size();                                               \
-  pfControl.par_for(0, n, fn)
-
 #define DISPATCH_GPU_KERNEL(type, type2, api_add, api_mul)                     \
   OCLAPI api_call;                                                             \
   switch (op) {                                                                \
@@ -80,25 +61,6 @@
   a_storage->gpu->RequestKernel(                                               \
       api_call, args, a.get_size(),                                            \
       {a_storage->buffer, b_storage->buffer, o_storage->buffer})
-
-#define DISPATCH_INPLACE_GPU_KERNEL(type, type2, api_add, api_mul)             \
-  OCLAPI api_call;                                                             \
-  switch (op) {                                                                \
-  case CommutingOperation::MUL:                                                \
-    api_call = OCLAPI::api_mul;                                                \
-    break;                                                                     \
-  case CommutingOperation::ADD:                                                \
-  default:                                                                     \
-    api_call = OCLAPI::api_add;                                                \
-  }                                                                            \
-  const vecCapIntGpu args[7U]{                                                 \
-      a.offset, a.stride[0U], b.offset, b.stride[0U], 0, 0, 0};                \
-  std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(b.storage);                             \
-  a_storage->gpu->RequestKernel(api_call, args, a.get_size(),                  \
-                                {a_storage->buffer, b_storage->buffer})
 
 namespace Weed {
 ParallelFor pfControl = ParallelFor();
@@ -136,34 +98,6 @@ struct commuting_kernel : CommutingKernel {
   void gpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
     DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_ADD_MIXED,
                         OCL_API_MUL_MIXED);
-  }
-
-  void cpu_real_inplace(Tensor &a, const Tensor &b) {
-    CAST_STORAGE(pa, a, real1, CpuRealStorage);
-    CAST_STORAGE(pb, b, real1, CpuRealStorage);
-
-    KERNEL_SWITCH_INPLACE();
-  }
-  void cpu_complex_inplace(Tensor &a, const Tensor &b) {
-    CAST_STORAGE(pa, a, complex, CpuComplexStorage);
-    CAST_STORAGE(pb, b, complex, CpuComplexStorage);
-
-    KERNEL_SWITCH_INPLACE();
-  }
-  void gpu_real_inplace(Tensor &a, const Tensor &b) {
-    DISPATCH_INPLACE_GPU_KERNEL(GpuRealStorage, GpuRealStorage,
-                                OCL_API_ADD_REAL_INPLACE,
-                                OCL_API_MUL_REAL_INPLACE);
-  }
-  void gpu_complex_inplace(Tensor &a, const Tensor &b) {
-    DISPATCH_INPLACE_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage,
-                                OCL_API_ADD_COMPLEX_INPLACE,
-                                OCL_API_MUL_COMPLEX_INPLACE);
-  }
-  void gpu_mixed_inplace(Tensor &a, const Tensor &b) {
-    DISPATCH_INPLACE_GPU_KERNEL(GpuComplexStorage, GpuRealStorage,
-                                OCL_API_ADD_MIXED_INPLACE,
-                                OCL_API_MUL_MIXED_INPLACE);
   }
 };
 } // namespace Weed

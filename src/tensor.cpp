@@ -207,8 +207,10 @@ void Tensor::make_add_node(Tensor &a, Tensor &b, Tensor &out) {
                                const DType &dt = out_grad.storage->dtype;
                                for (TensorPtr in : parents) {
                                  Tensor &in_grad = *(in->grad.get());
-                                 in_grad.upcast(dt);
-                                 Weed::add_inplace(in_grad, out_grad);
+                                 Tensor n_out =
+                                     Tensor::allocate_like(in_grad, dt, false);
+                                 Weed::add(in_grad, out_grad, n_out);
+                                 in->grad = n_out.get_ptr();
                                }
                              });
 }
@@ -240,14 +242,18 @@ void Tensor::make_mul_node(Tensor &a, Tensor &b, Tensor &out) {
           Tensor &a_grad = *(a.grad.get());
           a_grad.upcast(dt);
           Weed::mul(out_grad, b, tmp);
-          Weed::add_inplace(a_grad, tmp);
+          Tensor n_out = Tensor::allocate_like(tmp, dt, false);
+          Weed::add(a_grad, tmp, n_out);
+          a.grad = n_out.get_ptr();
         }
         if (b.requires_grad()) {
           Tensor tmp = Tensor::allocate_like(a, dt, false);
           Tensor &b_grad = *(b.grad.get());
           b_grad.upcast(dt);
           Weed::mul(out_grad, a, tmp);
-          Weed::add_inplace(b_grad, tmp);
+          Tensor n_out = Tensor::allocate_like(tmp, dt, false);
+          Weed::add(b_grad, tmp, n_out);
+          b.grad = n_out.get_ptr();
         }
       });
 }
@@ -287,7 +293,9 @@ void Tensor::make_matmul_node(Tensor &a, Tensor &b, Tensor &out) {
           Tensor &a_grad = *(a.grad.get());
           a_grad.upcast(dt);
           Weed::matmul(*(out.grad.get()), bt, tmp);
-          Weed::add_inplace(a_grad, tmp);
+          Tensor n_out = Tensor::allocate_like(tmp, dt, false);
+          Weed::add(a_grad, tmp, n_out);
+          a.grad = n_out.get_ptr();
         }
         if (b.requires_grad()) {
           Tensor at = transpose(a);
@@ -295,7 +303,9 @@ void Tensor::make_matmul_node(Tensor &a, Tensor &b, Tensor &out) {
           Tensor &b_grad = *(b.grad.get());
           b_grad.upcast(dt);
           Weed::matmul(at, *(out.grad.get()), tmp);
-          Weed::add_inplace(b_grad, tmp);
+          Tensor n_out = Tensor::allocate_like(tmp, dt, false);
+          Weed::add(b_grad, tmp, n_out);
+          b.grad = n_out.get_ptr();
         }
       });
 }

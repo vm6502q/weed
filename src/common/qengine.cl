@@ -70,6 +70,21 @@ void kernel real_to_complex_buffer(global real1* a, global cmplx* b)
     b[i_X] = (cmplx)(a[i_X], ZERO_R1);
 }
 
+void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const real1 tmp = a[i_X * I_A + O_A];
+    out[i_X * I_B + O_B] = (tmp > 0) ? tmp : ZERO_R1;
+}
+void kernel relu_grad_real(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : ZERO_R1;
+}
+
+void kernel relu_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : cmplx(ZERO_R1, ZERO_R1);
+}
+
 void kernel add_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] + b[i_X * I_B + O_B];
@@ -83,19 +98,6 @@ void kernel add_mixed(global cmplx* a, global real1* b, global cmplx* out, const
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] + (cmplx)(b[i_X * I_B + O_B], 0);
 }
 
-void kernel add_real_inplace(global real1* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs)
-{
-    a[i_X * I_A + O_A] +=  b[i_X * I_B + O_B];
-}
-void kernel add_complex_inplace(global cmplx* a, global cmplx* b, constant vecCapIntGpu* vecCapIntArgs)
-{
-    a[i_X * I_A + O_A] += b[i_X * I_B + O_B];
-}
-void kernel add_mixed_inplace(global cmplx* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs)
-{
-    a[i_X * I_A + O_A] += (cmplx)(b[i_X * I_B + O_B], 0);
-}
-
 void kernel mul_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] * b[i_X * I_B + O_B];
@@ -107,29 +109,6 @@ void kernel mul_complex(global cmplx* a, global cmplx* b, global cmplx* out, con
 void kernel mul_mixed(global cmplx* a, global real1* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = b[i_X * I_B + O_B] * a[i_X * I_A + O_A];
-}
-
-void kernel mul_real_inplace(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
-{
-    a[i_X * I_A + O_A] *= b[i_X * I_B + O_B];
-}
-void kernel mul_complex_inplace(global cmplx* a, global cmplx* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
-{
-    a[i_X * I_A + O_A] = zmul(a[i_X * I_A + O_A], b[i_X * I_B + O_B]);
-}
-void kernel mul_mixed_inplace(global cmplx* a, global real1* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
-{
-    a[i_X * I_A + O_A] = b[i_X * I_B + O_B] * a[i_X * I_A + O_A];
-}
-
-void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
-{
-    const real1 tmp = a[i_X * I_A + O_A];
-    out[i_X * I_B + O_B] = (tmp > 0) ? tmp : ZERO_R1;
-}
-void kernel relu_grad(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
-{
-    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : ZERO_R1;
 }
 
 void kernel matmul_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)

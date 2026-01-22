@@ -66,22 +66,23 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t &dev) {
 
 // clang-format off
 const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
+    OCLKernelHandle(OCL_API_CLEAR_BUFFER_REAL, "clear_buffer_real"),
+    OCLKernelHandle(OCL_API_FILL_ONES_REAL, "fill_ones_real"),
+    OCLKernelHandle(OCL_API_FILL_ONES_COMPLEX, "fill_ones_complex"),
+    OCLKernelHandle(OCL_API_REAL_TO_COMPLEX_BUFFER, "real_to_complex_buffer"),
+    OCLKernelHandle(OCL_API_RELU, "relu"),
+    OCLKernelHandle(OCL_API_RELU_GRAD_REAL, "relu_grad_real"),
+    OCLKernelHandle(OCL_API_RELU_GRAD_COMPLEX, "relu_grad_complex"),
     OCLKernelHandle(OCL_API_ADD_REAL, "add_real"),
     OCLKernelHandle(OCL_API_ADD_COMPLEX, "add_complex"),
     OCLKernelHandle(OCL_API_ADD_MIXED, "add_mixed"),
     OCLKernelHandle(OCL_API_MUL_REAL, "mul_real"),
     OCLKernelHandle(OCL_API_MUL_COMPLEX, "mul_complex"),
     OCLKernelHandle(OCL_API_MUL_MIXED, "mul_mixed"),
-    OCLKernelHandle(OCL_API_RELU, "relu"),
-    OCLKernelHandle(OCL_API_RELU_GRAD, "relu_grad"),
     OCLKernelHandle(OCL_API_MATMUL_REAL, "matmul_real"),
     OCLKernelHandle(OCL_API_MATMUL_COMPLEX, "matmul_complex"),
     OCLKernelHandle(OCL_API_MATMUL_MIXED_C_LEFT, "matmul_mixed_c_left"),
-    OCLKernelHandle(OCL_API_MATMUL_MIXED_C_RIGHT, "matmul_mixed_c_right"),
-    OCLKernelHandle(OCL_API_CLEAR_BUFFER_REAL, "clear_buffer_real"),
-    OCLKernelHandle(OCL_API_FILL_ONES_REAL, "fill_ones_real"),
-    OCLKernelHandle(OCL_API_FILL_ONES_COMPLEX, "fill_ones_complex"),
-    OCLKernelHandle(OCL_API_REAL_TO_COMPLEX_BUFFER, "real_to_complex_buffer")
+    OCLKernelHandle(OCL_API_MATMUL_MIXED_C_RIGHT, "matmul_mixed_c_right")
 };
 // clang-format on
 

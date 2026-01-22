@@ -50,4 +50,5 @@ struct GpuComplexStorage : ComplexStorage {
     return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
   }
 };
+typedef std::shared_ptr<GpuComplexStorage> GpuComplexStoragePtr;
 } // namespace Weed
