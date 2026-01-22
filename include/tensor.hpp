@@ -69,10 +69,12 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
     return cp;
   }
 
-  static Tensor allocate_like(const Tensor &orig, const DType &dt);
+  static Tensor allocate_like(const Tensor &orig, const DType &dt,
+                              const bool &rg);
   static Tensor allocate_like(const std::vector<vecCapIntGpu> &shape,
                               const std::vector<vecCapIntGpu> &stride,
-                              const Tensor &orig, const DType &dt);
+                              const Tensor &orig, const DType &dt,
+                              const bool &rg);
 
   static Tensor transpose(Tensor &a);
 
