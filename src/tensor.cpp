@@ -164,11 +164,15 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
 
   out.requires_grad = true;
 
-  out.grad_node = std::make_shared<Node>(
-      filterParents({a.get_ptr(), b.get_ptr()}),
+  out.grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a.get_ptr(), b.get_ptr()},
       [out](std::vector<TensorPtr> parents) {
-        for (TensorPtr in : parents) {
-          mul_inplace(*(in->grad.get()), *(out.grad.get()));
+        Tensor &a = *(parents[0U].get());
+        Tensor &b = *(parents[1U].get());
+        if (a.requires_grad) {
+          add_inplace(*(a.grad.get()), Tensor::mul(*(out.grad.get()), b));
+        }
+        if (b.requires_grad) {
+          add_inplace(*(b.grad.get()), Tensor::mul(*(out.grad.get()), a));
         }
       });
 
