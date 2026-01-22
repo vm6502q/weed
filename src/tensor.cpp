@@ -144,7 +144,7 @@ Tensor Tensor::relu(Tensor &a) {
       std::vector<TensorPtr>{a.get_ptr()},
       [out](std::vector<TensorPtr> parents) {
         for (TensorPtr in : parents) {
-          relu_grad(*(in->grad.get()), *(in.get()), *(out.grad.get()));
+          Weed::relu_grad(*(in->grad.get()), *(in.get()), *(out.grad.get()));
         }
       });
 
@@ -166,7 +166,7 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
       filterParents({a.get_ptr(), b.get_ptr()}),
       [out](std::vector<TensorPtr> parents) {
         for (TensorPtr in : parents) {
-          add_inplace(*(in->grad.get()), *(out.grad.get()));
+          Weed::add_inplace(*(in->grad.get()), *(out.grad.get()));
         }
       });
 
@@ -174,7 +174,8 @@ Tensor Tensor::add(Tensor &a, Tensor &b) {
 }
 
 Tensor Tensor::mul(Tensor &a, Tensor &b) {
-  Tensor out = allocate_like(a, get_dtype_by_presidence(a, b));
+  DType dt = get_dtype_by_presidence(a, b);
+  Tensor out = allocate_like(a, dt);
 
   Weed::mul(a, b, out);
 
@@ -184,18 +185,22 @@ Tensor Tensor::mul(Tensor &a, Tensor &b) {
 
   out.requires_grad = true;
 
-  out.grad_node = std::make_shared<Node>(
-      std::vector<TensorPtr>{a.get_ptr(), b.get_ptr()},
-      [out](std::vector<TensorPtr> parents) {
-        Tensor &a = *(parents[0U].get());
-        Tensor &b = *(parents[1U].get());
-        if (a.requires_grad) {
-          add_inplace(*(a.grad.get()), Tensor::mul(*(out.grad.get()), b));
-        }
-        if (b.requires_grad) {
-          add_inplace(*(b.grad.get()), Tensor::mul(*(out.grad.get()), a));
-        }
-      });
+  out.grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a.get_ptr(), b.get_ptr()},
+                             [dt, out](std::vector<TensorPtr> parents) {
+                               Tensor &a = *(parents[0U].get());
+                               Tensor &b = *(parents[1U].get());
+                               if (a.requires_grad) {
+                                 Tensor tmp = Tensor::allocate_like(b, dt);
+                                 Weed::mul(*(out.grad.get()), b, tmp);
+                                 Weed::add_inplace(*(a.grad.get()), tmp);
+                               }
+                               if (b.requires_grad) {
+                                 Tensor tmp = Tensor::allocate_like(a, dt);
+                                 Weed::mul(*(out.grad.get()), a, tmp);
+                                 Weed::add_inplace(*(b.grad.get()), tmp);
+                               }
+                             });
 
   return out;
 }
@@ -208,7 +213,8 @@ Tensor Tensor::matmul(Tensor &a, Tensor &b) {
 
   const std::vector<vecCapIntGpu> shp = {a.shape[0U], b.shape[1U]};
   const std::vector<vecCapIntGpu> str = {1U, a.shape[0U]};
-  Tensor out = allocate_like(shp, str, a, get_dtype_by_presidence(a, b));
+  DType dt = get_dtype_by_presidence(a, b);
+  Tensor out = allocate_like(shp, str, a, dt);
 
   Weed::matmul(a, b, out);
 
@@ -220,16 +226,20 @@ Tensor Tensor::matmul(Tensor &a, Tensor &b) {
 
   out.grad_node = std::make_shared<Node>(
       std::vector<TensorPtr>{a.get_ptr(), b.get_ptr()},
-      [out](std::vector<TensorPtr> parents) {
+      [shp, str, dt, out](std::vector<TensorPtr> parents) {
         Tensor &a = *(parents[0U].get());
         Tensor &b = *(parents[1U].get());
         if (a.requires_grad) {
           Tensor bt = transpose(b);
-          add_inplace(*(a.grad.get()), matmul(*(out.grad.get()), bt));
+          Tensor tmp = Tensor::allocate_like(shp, str, b, dt);
+          Weed::matmul(*(out.grad.get()), bt, tmp);
+          Weed::add_inplace(*(a.grad.get()), tmp);
         }
         if (b.requires_grad) {
           Tensor at = transpose(a);
-          add_inplace(*(b.grad.get()), matmul(at, *(out.grad.get())));
+          Tensor tmp = Tensor::allocate_like(shp, str, a, dt);
+          Weed::matmul(at, *(out.grad.get()), tmp);
+          Weed::add_inplace(*(b.grad.get()), tmp);
         }
       });
 
