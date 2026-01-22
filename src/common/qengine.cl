@@ -82,7 +82,46 @@ void kernel relu_grad_real(global real1* din, global real1* in, global real1* do
 
 void kernel relu_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
-    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : cmplx(ZERO_R1, ZERO_R1);
+    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : (cmplx)(ZERO_R1, ZERO_R1);
+}
+
+void kernel abs_real(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const real1 tmp = a[i_X * I_A + O_A];
+    out[i_X * I_B + O_B] = (tmp < 0) ? -tmp : tmp;
+}
+void kernel abs_complex(global cmplx* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const cmplx tmp = a[i_X * I_A + O_A];
+    out[i_X * I_B + O_B] = sqrt(dot(tmp, tmp));
+}
+void kernel abs_real_grad_real(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const real1 tmp = in[i_X * I_B + O_B];
+    const real1 tmp_o = dout[i_X * I_C + O_C];
+    din[i_X * I_A + O_A] = (tmp == ZERO_R1) ? ZERO_R1 : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
+}
+void kernel abs_real_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const real1 tmp = in[i_X * I_B + O_B];
+    const cmplx tmp_o = dout[i_X * I_C + O_C];
+    din[i_X * I_A + O_A] = (tmp == ZERO_R1) ? (cmplx)(ZERO_R1, ZERO_R1) : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
+}
+void kernel abs_complex_grad_real(global cmplx* din, global cmplx* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const cmplx ZERO_CMPLX = (cmplx)(ZERO_R1, ZERO_R1);
+    const cmplx tmp = in[i_X * I_B + O_B];
+    const real1 tmp_o = dout[i_X * I_C + O_C];
+    const real1 out = sqrt(dot(tmp, tmp));
+    din[i_X * I_A + O_A] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : ((tmp_o / out) * tmp);
+}
+void kernel abs_complex_grad_complex(global cmplx* din, global cmplx* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
+{
+    const cmplx ZERO_CMPLX = (cmplx)(ZERO_R1, ZERO_R1);
+    const cmplx tmp = in[i_X * I_B + O_B];
+    const cmplx tmp_o = dout[i_X * I_C + O_C];
+    const real1 out = sqrt(dot(tmp, tmp));
+    din[i_X * I_A + O_A] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : zmul(tmp_o, tmp / out);
 }
 
 void kernel add_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)

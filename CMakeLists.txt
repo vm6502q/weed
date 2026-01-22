@@ -23,6 +23,7 @@ endif (PACK_DEBIAN)
 add_library (weed STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
+    src/abs.cpp
     src/commuting.cpp
     src/matmul.cpp
     src/relu.cpp
@@ -296,6 +297,7 @@ install (FILES
 
 # Install weed library headers
 install (FILES
+    include/abs.hpp
     include/add.hpp
     include/complex_storage.hpp
     include/cpu_complex_storage.hpp
