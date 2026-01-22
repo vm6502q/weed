@@ -11,6 +11,7 @@
 
 #include "scalar.hpp"
 
+#include "abs.hpp"
 #include "add.hpp"
 #include "matmul.hpp"
 #include "mul.hpp"
@@ -28,6 +29,21 @@
   break
 
 namespace Weed {
+Scalar Scalar::abs(Scalar &a) {
+  a.reset_indices();
+
+  const bool rg = a.requires_grad();
+  Scalar out = Scalar::allocate_like(a, a.storage->dtype, rg);
+
+  Weed::abs(a, out);
+
+  if (rg) {
+    make_abs_node(a, out);
+  }
+
+  return out;
+}
+
 Scalar Scalar::relu(Scalar &a) {
   a.reset_indices();
 

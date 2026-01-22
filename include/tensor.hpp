@@ -91,6 +91,9 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
   static Tensor transpose(Tensor &a);
 
+  static Tensor abs(Tensor &a);
+  static void make_abs_node(Tensor &a, Tensor &out);
+
   static Tensor relu(Tensor &a);
   static void make_relu_node(Tensor &a, Tensor &out);
 

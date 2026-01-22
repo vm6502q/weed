@@ -12,6 +12,7 @@
 #include "tensor.hpp"
 #include "node.hpp"
 
+#include "abs.hpp"
 #include "add.hpp"
 #include "matmul.hpp"
 #include "mul.hpp"
@@ -156,6 +157,33 @@ Tensor Tensor::transpose(Tensor &a) {
   std::swap(out.stride[0U], out.stride[1U]);
 
   return out;
+}
+
+Tensor Tensor::abs(Tensor &a) {
+  const bool rg = a.requires_grad();
+  Tensor out = allocate_like(a, a.storage->dtype, rg);
+
+  Weed::abs(a, out);
+
+  if (rg) {
+    make_abs_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_abs_node(Tensor &a, Tensor &out) {
+  out.grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a.get_ptr()},
+                             [out](std::vector<TensorPtr> parents) {
+                               Tensor &out_grad = *(out.grad.get());
+                               const DType &dt = out_grad.storage->dtype;
+                               for (TensorPtr in : parents) {
+                                 Tensor &in_grad = *(in->grad.get());
+                                 in_grad.upcast(dt);
+                                 Weed::abs_grad(in_grad, *(in.get()), out_grad);
+                               }
+                             });
 }
 
 Tensor Tensor::relu(Tensor &a) {
