@@ -43,12 +43,15 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
   TensorPtr get_ptr() { return shared_from_this(); }
 
   vecCapIntGpu get_size() const {
-    vecCapIntGpu size = 0U;
-    for (size_t i = 0U; i < shape.size(); ++i) {
-      size += (shape[i] - 1U) * stride[i];
+    if (shape.empty()) {
+      return 0U;
+    }
+    vecCapIntGpu max_index = offset;
+    for (size_t i = 0; i < shape.size(); ++i) {
+      max_index += (shape[i] - 1U) * stride[i];
     }
 
-    return size;
+    return max_index + 1U;
   }
 
   // Shallow copy:
