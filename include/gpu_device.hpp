@@ -128,6 +128,8 @@ struct GpuDevice {
                      const size_t nwi, std::vector<BufferPtr> buffers);
 
   void ClearRealBuffer(BufferPtr buffer, const size_t nwi);
+  void FillOnesReal(BufferPtr buffer, const size_t nwi);
+  void FillOnesComplex(BufferPtr buffer, const size_t nwi);
   void UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
                         const size_t nwi);
 };

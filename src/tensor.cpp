@@ -22,6 +22,8 @@
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
 
+#include <unordered_set>
+
 #define PICK_DEVICE_STORAGE(GpuType, CpuType)                                  \
   switch (dtag) {                                                              \
   case DeviceTag::GPU:                                                         \
@@ -101,7 +103,7 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
 
   if (requires_grad) {
     grad = std::make_shared<Tensor>(shape, stride, false, dtype, dtag, did);
-    grad->storage->FillZero();
+    grad->storage->FillZeros();
   }
 }
 
@@ -114,6 +116,38 @@ std::vector<TensorPtr> filterParents(std::vector<TensorPtr> parents) {
   }
 
   return filtered;
+}
+
+void Tensor::backward(Tensor &loss) {
+  if (!loss.requires_grad) {
+    return;
+  }
+
+  // Seed gradient of loss (scalar assumed)
+  // loss.grad already allocated by our invariant
+  loss.grad->storage->FillOnes();
+
+  std::vector<NodePtr> topo;
+  std::unordered_set<Node *> seen;
+
+  std::function<void(const NodePtr &)> dfs = [&](const NodePtr &n) {
+    if (!n || seen.count(n.get())) {
+      return;
+    }
+    seen.insert(n.get());
+    for (auto &p : n->parents) {
+      if (p && p->grad_node) {
+        p->grad_node->backward(p->grad_node->parents);
+      }
+    }
+    topo.push_back(n);
+  };
+
+  loss.grad_node->backward(loss.grad_node->parents);
+
+  for (auto it = topo.rbegin(); it != topo.rend(); ++it) {
+    (*it)->backward((*it)->parents);
+  }
 }
 
 Tensor Tensor::transpose(Tensor &a) {

@@ -79,6 +79,8 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
                               const Tensor &orig, const DType &dt,
                               const bool &rg);
 
+  static void backward(Tensor &loss);
+
   static Tensor transpose(Tensor &a);
 
   static Tensor relu(Tensor &a);
@@ -87,6 +89,10 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
   static Tensor matmul(Tensor &a, Tensor &b);
 };
 
-inline Tensor operator+(Tensor &left, Tensor &right) { return Tensor::add(left, right); }
-inline Tensor operator*(Tensor &left, Tensor &right) { return Tensor::mul(left, right); }
+inline Tensor operator+(Tensor &left, Tensor &right) {
+  return Tensor::add(left, right);
+}
+inline Tensor operator*(Tensor &left, Tensor &right) {
+  return Tensor::mul(left, right);
+}
 } // namespace Weed

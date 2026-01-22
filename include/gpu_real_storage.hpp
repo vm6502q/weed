@@ -36,7 +36,8 @@ struct GpuRealStorage : RealStorage {
 
   ~GpuRealStorage() {}
 
-  void FillZero() { gpu->ClearRealBuffer(buffer, size); }
+  void FillZeros() { gpu->ClearRealBuffer(buffer, size); }
+  void FillOnes() { gpu->FillOnesReal(buffer, size); }
 
   StoragePtr Upcast(DType dt) {
     if (dt == DType::REAL) {

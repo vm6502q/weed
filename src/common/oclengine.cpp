@@ -79,6 +79,8 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_MATMUL_MIXED_C_LEFT, "matmul_mixed_c_left"),
     OCLKernelHandle(OCL_API_MATMUL_MIXED_C_RIGHT, "matmul_mixed_c_right"),
     OCLKernelHandle(OCL_API_CLEAR_BUFFER_REAL, "clear_buffer_real"),
+    OCLKernelHandle(OCL_API_FILL_ONES_REAL, "fill_ones_real"),
+    OCLKernelHandle(OCL_API_FILL_ONES_COMPLEX, "fill_ones_complex"),
     OCLKernelHandle(OCL_API_REAL_TO_COMPLEX_BUFFER, "real_to_complex_buffer")
 };
 // clang-format on

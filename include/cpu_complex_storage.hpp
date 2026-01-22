@@ -27,7 +27,8 @@ struct CpuComplexStorage : ComplexStorage {
 
   ~CpuComplexStorage() {}
 
-  void FillZero() { std::fill(data.get(), data.get() + size, ZERO_CMPLX); }
+  void FillZeros() { std::fill(data.get(), data.get() + size, ZERO_CMPLX); }
+  void FillOnes() { std::fill(data.get(), data.get() + size, ONE_CMPLX); }
 
   StoragePtr Upcast(DType dt) { return get_ptr(); };
 };

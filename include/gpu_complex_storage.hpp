@@ -35,7 +35,8 @@ struct GpuComplexStorage : ComplexStorage {
 
   ~GpuComplexStorage() {}
 
-  void FillZero() { gpu->ClearRealBuffer(buffer, size << 1U); }
+  void FillZeros() { gpu->ClearRealBuffer(buffer, size << 1U); }
+  void FillOnes() { gpu->FillOnesComplex(buffer, size); }
 
   StoragePtr Upcast(DType dt) { return get_ptr(); };
 

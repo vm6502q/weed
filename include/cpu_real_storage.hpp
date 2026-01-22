@@ -30,7 +30,8 @@ struct CpuRealStorage : RealStorage {
 
   ~CpuRealStorage() {}
 
-  void FillZero() { std::fill(data.get(), data.get() + size, ZERO_R1); }
+  void FillZeros() { std::fill(data.get(), data.get() + size, ZERO_R1); }
+  void FillOnes() { std::fill(data.get(), data.get() + size, ONE_R1); }
 
   StoragePtr Upcast(DType dt) {
     if (dt == DType::REAL) {

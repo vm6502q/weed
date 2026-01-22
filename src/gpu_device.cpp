@@ -238,6 +238,15 @@ PoolItemPtr GpuDevice::GetFreePoolItem() {
   return poolItems[wait_queue_items.size()];
 }
 
+inline size_t pick_group_size(const size_t &nwi) {
+  size_t ngs = (nwi > 32U) ? 32U : nwi;
+  while (((nwi / ngs) * ngs) != nwi) {
+    --ngs;
+  }
+
+  return ngs;
+}
+
 void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
                               const size_t nwi,
                               std::vector<BufferPtr> buffers) {
@@ -247,28 +256,29 @@ void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
   DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer),
                       sizeof(vecCapIntGpu) * VCI_ARG_LEN, bciArgs,
                       writeArgsEvent);
-  size_t ngs = (nwi > 32U) ? 32U : nwi;
-  while (((nwi / ngs) * ngs) != nwi) {
-    --ngs;
-  }
+  const size_t ngs = pick_group_size(nwi);
   buffers.push_back(poolItem->vciBuffer);
   QueueCall(api_call, nwi, ngs, buffers);
 }
 
 void GpuDevice::ClearRealBuffer(BufferPtr buffer, const size_t nwi) {
-  size_t ngs = (nwi > 32U) ? 32U : nwi;
-  while (((nwi / ngs) * ngs) != nwi) {
-    --ngs;
-  }
+  const size_t ngs = pick_group_size(nwi);
   QueueCall(OCLAPI::OCL_API_CLEAR_BUFFER_REAL, nwi, ngs,
+            std::vector<BufferPtr>{buffer});
+}
+void GpuDevice::FillOnesReal(BufferPtr buffer, const size_t nwi) {
+  const size_t ngs = pick_group_size(nwi);
+  QueueCall(OCLAPI::OCL_API_FILL_ONES_REAL, nwi, ngs,
+            std::vector<BufferPtr>{buffer});
+}
+void GpuDevice::FillOnesComplex(BufferPtr buffer, const size_t nwi) {
+  const size_t ngs = pick_group_size(nwi);
+  QueueCall(OCLAPI::OCL_API_FILL_ONES_COMPLEX, nwi, ngs,
             std::vector<BufferPtr>{buffer});
 }
 void GpuDevice::UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
                                  const size_t nwi) {
-  size_t ngs = (nwi > 32U) ? 32U : nwi;
-  while (((nwi / ngs) * ngs) != nwi) {
-    --ngs;
-  }
+  const size_t ngs = pick_group_size(nwi);
   QueueCall(OCLAPI::OCL_API_REAL_TO_COMPLEX_BUFFER, nwi, ngs,
             std::vector<BufferPtr>{buffer_in, buffer_out});
 }
