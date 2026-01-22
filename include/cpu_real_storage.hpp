@@ -18,9 +18,7 @@ struct CpuRealStorage : RealStorage {
   RealPtr data;
 
   CpuRealStorage(vecCapIntGpu n)
-      : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {
-    std::fill(data.get(), data.get() + n, ZERO_R1);
-  }
+      : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
 
   CpuRealStorage(std::vector<real1> i)
       : RealStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
@@ -28,5 +26,7 @@ struct CpuRealStorage : RealStorage {
   }
 
   ~CpuRealStorage() {}
+
+  void FillZero() { std::fill(data.get(), data.get() + size, ZERO_R1); }
 };
 } // namespace Weed

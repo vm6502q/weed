@@ -35,6 +35,8 @@ struct GpuComplexStorage : ComplexStorage {
 
   ~GpuComplexStorage() {}
 
+  void FillZero() { gpu->ClearRealBuffer(buffer, size << 1U); }
+
   BufferPtr MakeBuffer(vecCapIntGpu n) {
     if (gpu->device_context->use_host_mem) {
       array = Alloc(n);

@@ -18,9 +18,7 @@ struct CpuComplexStorage : ComplexStorage {
   ComplexPtr data;
 
   CpuComplexStorage(vecCapIntGpu n)
-      : ComplexStorage(DeviceTag::CPU, n), data(Alloc(n)) {
-    std::fill(data.get(), data.get() + n, ZERO_CMPLX);
-  }
+      : ComplexStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
 
   CpuComplexStorage(std::vector<complex> i)
       : ComplexStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
@@ -28,5 +26,7 @@ struct CpuComplexStorage : ComplexStorage {
   }
 
   ~CpuComplexStorage() {}
+
+  void FillZero() { std::fill(data.get(), data.get() + size, ZERO_CMPLX); }
 };
 } // namespace Weed

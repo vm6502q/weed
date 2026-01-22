@@ -35,6 +35,8 @@ struct GpuRealStorage : RealStorage {
 
   ~GpuRealStorage() {}
 
+  void FillZero() { gpu->ClearRealBuffer(buffer, size); }
+
   BufferPtr MakeBuffer(vecCapIntGpu n) {
     if (gpu->device_context->use_host_mem) {
       array = Alloc(n);

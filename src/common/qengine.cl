@@ -53,6 +53,11 @@ inline cmplx polar_unit(const real1 theta) {
 #define I_C vecCapIntArgs[5]
 #define S_K vecCapIntArgs[6]
 
+void kernel clear_buffer_real(global real1* a)
+{
+    a[i_X] = ZERO_R1;
+}
+
 void kernel add_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] + b[i_X * I_B + O_B];

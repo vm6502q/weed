@@ -254,4 +254,13 @@ void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
   buffers.push_back(poolItem->vciBuffer);
   QueueCall(api_call, nwi, ngs, buffers);
 }
+
+void GpuDevice::ClearRealBuffer(BufferPtr buffer, const size_t nwi) {
+  size_t ngs = (nwi > 32U) ? 32U : nwi;
+  while (((nwi / ngs) * ngs) != nwi) {
+    --ngs;
+  }
+  QueueCall(OCLAPI::OCL_API_CLEAR_BUFFER_REAL, nwi, ngs,
+            std::vector<BufferPtr>{buffer});
+}
 } // namespace Weed

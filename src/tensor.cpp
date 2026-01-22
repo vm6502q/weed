@@ -96,6 +96,11 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
   default:
     PICK_DEVICE_STORAGE(GpuRealStorage, CpuRealStorage);
   }
+
+  if (requires_grad) {
+    grad = std::make_shared<Tensor>(shape, stride, false, dtype, dtag, did);
+    grad->storage->FillZero();
+  }
 }
 
 std::vector<TensorPtr> filterParents(std::vector<TensorPtr> parents) {

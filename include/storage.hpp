@@ -28,6 +28,8 @@ struct Storage {
     }
   }
 
+  virtual void FillZero() = 0;
+
   virtual ~Storage() {}
 };
 } // namespace Weed

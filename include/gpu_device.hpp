@@ -126,5 +126,7 @@ struct GpuDevice {
 
   void RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
                      const size_t nwi, std::vector<BufferPtr> buffers);
+
+  void ClearRealBuffer(BufferPtr buffer, const size_t nwi);
 };
 } // namespace Weed
