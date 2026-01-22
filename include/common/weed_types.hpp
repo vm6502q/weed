@@ -136,12 +136,8 @@ const vecCapInt ONE_BCI = 1U;
 const vecCapInt ZERO_BCI = 0U;
 constexpr vecLenInt bitsInCap = ((vecLenInt)1U) << ((vecLenInt)VCAPPOW);
 
-struct Storage;
 struct Node;
-
-typedef std::shared_ptr<Storage> StoragePtr;
 typedef std::shared_ptr<Node> NodePtr;
-
 typedef std::unique_ptr<real1[], void (*)(real1 *)> RealPtr;
 typedef std::unique_ptr<complex[], void (*)(complex *)> ComplexPtr;
 

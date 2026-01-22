@@ -57,6 +57,10 @@ void kernel clear_buffer_real(global real1* a)
 {
     a[i_X] = ZERO_R1;
 }
+void kernel real_to_complex_buffer(global real1* a, global cmplx* b)
+{
+    b[i_X] = (cmplx)(a[i_X], ZERO_R1);
+}
 
 void kernel add_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
 {

@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "gpu_complex_storage.hpp"
 #include "gpu_device.hpp"
 #include "real_storage.hpp"
 
@@ -36,6 +37,17 @@ struct GpuRealStorage : RealStorage {
   ~GpuRealStorage() {}
 
   void FillZero() { gpu->ClearRealBuffer(buffer, size); }
+
+  StoragePtr Upcast(DType dt) {
+    if (dt == DType::REAL) {
+      return get_ptr();
+    }
+
+    GpuComplexStorage n(size, gpu->deviceID);
+    gpu->UpcastRealBuffer(buffer, n.buffer, size);
+
+    return n.get_ptr();
+  };
 
   BufferPtr MakeBuffer(vecCapIntGpu n) {
     if (gpu->device_context->use_host_mem) {

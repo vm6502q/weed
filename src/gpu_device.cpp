@@ -263,4 +263,13 @@ void GpuDevice::ClearRealBuffer(BufferPtr buffer, const size_t nwi) {
   QueueCall(OCLAPI::OCL_API_CLEAR_BUFFER_REAL, nwi, ngs,
             std::vector<BufferPtr>{buffer});
 }
+void GpuDevice::UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
+                                 const size_t nwi) {
+  size_t ngs = (nwi > 32U) ? 32U : nwi;
+  while (((nwi / ngs) * ngs) != nwi) {
+    --ngs;
+  }
+  QueueCall(OCLAPI::OCL_API_REAL_TO_COMPLEX_BUFFER, nwi, ngs,
+            std::vector<BufferPtr>{buffer_in, buffer_out});
+}
 } // namespace Weed

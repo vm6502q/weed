@@ -11,7 +11,10 @@
 
 #pragma once
 
+#include "cpu_complex_storage.hpp"
 #include "real_storage.hpp"
+
+#include <algorithm>
 
 namespace Weed {
 struct CpuRealStorage : RealStorage {
@@ -28,5 +31,17 @@ struct CpuRealStorage : RealStorage {
   ~CpuRealStorage() {}
 
   void FillZero() { std::fill(data.get(), data.get() + size, ZERO_R1); }
+
+  StoragePtr Upcast(DType dt) {
+    if (dt == DType::REAL) {
+      return get_ptr();
+    }
+
+    CpuComplexStorage n(size);
+    std::transform(data.get(), data.get() + size, n.data.get(),
+                   [](real1 v) { return complex(v, ZERO_R1); });
+
+    return n.get_ptr();
+  };
 };
 } // namespace Weed

@@ -16,7 +16,11 @@
 #include "dtype.hpp"
 
 namespace Weed {
-struct Storage {
+struct Storage;
+
+typedef std::shared_ptr<Storage> StoragePtr;
+
+struct Storage : public std::enable_shared_from_this<Storage> {
   DeviceTag device;
   DType dtype;
   vecCapIntGpu size;
@@ -28,8 +32,12 @@ struct Storage {
     }
   }
 
+  virtual ~Storage() {}
+
+  virtual StoragePtr get_ptr() { return shared_from_this(); }
+
   virtual void FillZero() = 0;
 
-  virtual ~Storage() {}
+  virtual StoragePtr Upcast(DType dt) = 0;
 };
 } // namespace Weed

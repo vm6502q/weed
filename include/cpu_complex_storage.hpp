@@ -28,5 +28,7 @@ struct CpuComplexStorage : ComplexStorage {
   ~CpuComplexStorage() {}
 
   void FillZero() { std::fill(data.get(), data.get() + size, ZERO_CMPLX); }
+
+  StoragePtr Upcast(DType dt) { return get_ptr(); };
 };
 } // namespace Weed

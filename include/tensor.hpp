@@ -14,6 +14,7 @@
 #include "common/weed_types.hpp"
 #include "device_tag.hpp"
 #include "dtype.hpp"
+#include "storage.hpp"
 
 #include <vector>
 
@@ -68,6 +69,8 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
     return cp;
   }
+
+  void upcast(DType dt) { storage = storage->Upcast(dt); }
 
   static Tensor allocate_like(const Tensor &orig, const DType &dt,
                               const bool &rg);
