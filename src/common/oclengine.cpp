@@ -73,7 +73,11 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_MUL_COMPLEX, "mul_complex"),
     OCLKernelHandle(OCL_API_MUL_MIXED, "mul_mixed"),
     OCLKernelHandle(OCL_API_RELU, "relu"),
-    OCLKernelHandle(OCL_API_RELU_GRAD, "relu_grad")
+    OCLKernelHandle(OCL_API_RELU_GRAD, "relu_grad"),
+    OCLKernelHandle(OCL_API_MATMUL_REAL, "matmul_real"),
+    OCLKernelHandle(OCL_API_MATMUL_COMPLEX, "matmul_complex"),
+    OCLKernelHandle(OCL_API_MATMUL_MIXED_C_LEFT, "matmul_mixed_c_left"),
+    OCLKernelHandle(OCL_API_MATMUL_MIXED_C_RIGHT, "matmul_mixed_c_right")
 };
 // clang-format on
 

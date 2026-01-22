@@ -22,15 +22,18 @@ ParallelFor pfControl = ParallelFor();
 
 struct relu_kernel : ReluKernel {
   void cpu_real(const Tensor &a, Tensor &out) {
+    const vecCapIntGpu I_a = a.stride[0U];
+    const vecCapIntGpu I_o = out.stride[0U];
     CAST_STORAGE(pa, a, real1, CpuRealStorage);
     CAST_STORAGE(po, out, real1, CpuRealStorage);
     size_t n = out.storage->size;
     pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
-      po[i] = std::max(pa[i], ZERO_R1);
+      po[i * I_o] = std::max(pa[i * I_a], ZERO_R1);
     });
   }
   void gpu_real(const Tensor &a, Tensor &out) {
-    const vecCapIntGpu args[3U]{a.offset, out.offset, 0U};
+    const vecCapIntGpu args[7U]{
+        a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U};
     GpuRealStoragePtr a_storage =
         std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
     GpuRealStoragePtr o_storage =
@@ -54,16 +57,21 @@ struct relu_kernel : ReluKernel {
   }
 
   void cpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+    const vecCapIntGpu I_d = din.stride[0U];
+    const vecCapIntGpu I_i = in.stride[0U];
+    const vecCapIntGpu I_o = dout.stride[0U];
     CAST_STORAGE(pdi, din, real1, CpuRealStorage);
     CAST_STORAGE(pi, in, real1, CpuRealStorage);
     CAST_STORAGE(po, dout, real1, CpuRealStorage);
     size_t n = dout.storage->size;
     pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
-      pdi[i] = (pi[i] > 0) ? po[i] : ZERO_R1;
+      pdi[i * I_d] = (pi[i * I_i] > 0) ? po[i * I_o] : ZERO_R1;
     });
   }
   void gpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
-    const vecCapIntGpu args[3U]{din.offset, in.offset, dout.offset};
+    const vecCapIntGpu args[7U]{
+        din.offset,  din.stride[0U],  in.offset, in.stride[0U],
+        dout.offset, dout.stride[0U], 0U};
     GpuRealStoragePtr a_storage =
         std::dynamic_pointer_cast<GpuRealStorage>(din.storage);
     GpuRealStoragePtr b_storage =

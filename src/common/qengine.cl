@@ -42,12 +42,16 @@ inline cmplx polar_unit(const real1 theta) {
 #define i_X get_global_id(0)
 #define i_Y get_global_id(1)
 #define i_Z get_global_id(2)
+#define S_X get_global_size(0)
+#define S_Y get_global_size(1)
+#define S_Z get_global_size(2)
 #define O_A vecCapIntArgs[0]
 #define I_A vecCapIntArgs[1]
 #define O_B vecCapIntArgs[2]
 #define I_B vecCapIntArgs[3]
 #define O_C vecCapIntArgs[4]
 #define I_C vecCapIntArgs[5]
+#define S_K vecCapIntArgs[6]
 
 void kernel add_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
 {
@@ -109,4 +113,37 @@ void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecC
 void kernel relu_grad(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : ZERO_R1;
+}
+
+void kernel matmul_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    real1 sum = ZERO_R1;
+    for (vecCapIntGpu k = 0; k < S_K; ++k) {
+        sum += a[(i_X * S_K + k) * I_A + O_A] * b[(k * S_Y + i_Y) * I_B + O_B];
+    }
+    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+}
+void kernel matmul_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    cmplx sum = ZERO_R1;
+    for (vecCapIntGpu k = 0; k < S_K; ++k) {
+        sum += zmul(a[(i_X * S_K + k) * I_A + I_A], b[(k * S_Y + i_Y) * I_B + O_B]);
+    }
+    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+}
+void kernel matmul_mixed_c_left(global cmplx* a, global real1* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    cmplx sum = ZERO_R1;
+    for (vecCapIntGpu k = 0; k < S_K; ++k) {
+        sum += b[(k * S_Y + i_Y) * I_B + O_B] * a[(i_X * S_K + k) * I_A + O_A];
+    }
+    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+}
+void kernel matmul_mixed_c_right(global real1* a, global cmplx* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
+{
+    cmplx sum = ZERO_R1;
+    for (vecCapIntGpu k = 0; k < S_K; ++k) {
+        sum += a[(i_X * S_K + k) * I_A + I_A] * b[(k * S_Y + i_Y) * I_B + I_B];
+    }
+    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
 }
