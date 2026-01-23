@@ -23,7 +23,7 @@ struct Tensor;
 
 typedef std::shared_ptr<Tensor> TensorPtr;
 
-struct Tensor : public std::enable_shared_from_this<Tensor> {
+struct Tensor {
   StoragePtr storage;
 
   std::vector<vecCapInt> shape;
@@ -42,8 +42,6 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
   bool requires_grad() { return !!grad; }
 
-  TensorPtr get_ptr() { return shared_from_this(); }
-
   virtual vecCapInt get_size() const {
     if (shape.empty()) {
       return ZERO_VCI;
@@ -57,62 +55,62 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
   }
 
   // Shallow copy:
-  Tensor copy() {
-    Tensor cp;
+  TensorPtr copy() {
+    TensorPtr cp = std::make_shared<Tensor>();
     // A tensor is a view on storage:
-    cp.storage = storage;
-    cp.shape = shape;
-    cp.stride = stride;
-    cp.offset = offset;
-    cp.grad_node = grad_node;
-    cp.grad = grad;
+    cp->storage = storage;
+    cp->shape = shape;
+    cp->stride = stride;
+    cp->offset = offset;
+    cp->grad_node = grad_node;
+    cp->grad = grad;
 
     return cp;
   }
 
   void upcast(DType dt) { storage = storage->Upcast(dt); }
 
-  Tensor operator[](vecCapInt idx);
+  TensorPtr operator[](vecCapInt idx);
 
-  static DType get_dtype_by_presidence(const Tensor &left,
-                                       const Tensor &right) {
-    if (right.storage->dtype == DType::COMPLEX) {
+  static DType get_dtype_by_presidence(const TensorPtr left,
+                                       const TensorPtr right) {
+    if (right->storage->dtype == DType::COMPLEX) {
       return DType::COMPLEX;
     }
-    return left.storage->dtype;
+    return left->storage->dtype;
   }
 
-  static Tensor allocate_like(const Tensor &orig, const DType &dt,
-                              const bool &rg);
-  static Tensor allocate_like(const std::vector<vecCapInt> &shape,
-                              const std::vector<vecCapInt> &stride,
-                              const Tensor &orig, const DType &dt,
-                              const bool &rg);
+  static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
+                                 const bool &rg);
+  static TensorPtr allocate_like(const std::vector<vecCapInt> &shape,
+                                 const std::vector<vecCapInt> &stride,
+                                 const TensorPtr orig, const DType &dt,
+                                 const bool &rg);
 
-  static void backward(Tensor &loss);
+  static void backward(TensorPtr loss);
 
-  static Tensor transpose(Tensor &a);
+  static TensorPtr transpose(TensorPtr a);
 
-  static Tensor abs(Tensor &a);
-  static void make_abs_node(Tensor &a, Tensor &out);
+  static TensorPtr abs(TensorPtr a);
+  static void make_abs_node(TensorPtr a, TensorPtr out);
 
-  static Tensor relu(Tensor &a);
-  static void make_relu_node(Tensor &a, Tensor &out);
+  static TensorPtr relu(TensorPtr a);
+  static void make_relu_node(TensorPtr a, TensorPtr out);
 
-  static Tensor add(Tensor &a, Tensor &b);
-  static void make_add_node(Tensor &a, Tensor &b, Tensor &out);
+  static TensorPtr add(TensorPtr a, TensorPtr b);
+  static void make_add_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
-  static Tensor mul(Tensor &a, Tensor &b);
-  static void make_mul_node(Tensor &a, Tensor &b, Tensor &out);
+  static TensorPtr mul(TensorPtr a, TensorPtr b);
+  static void make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
-  static Tensor matmul(Tensor &a, Tensor &b);
-  static void make_matmul_node(Tensor &a, Tensor &b, Tensor &out);
+  static TensorPtr matmul(TensorPtr a, TensorPtr b);
+  static void make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out);
 };
 
-inline Tensor operator+(Tensor &left, Tensor &right) {
+inline TensorPtr operator+(TensorPtr left, TensorPtr right) {
   return Tensor::add(left, right);
 }
-inline Tensor operator*(Tensor &left, Tensor &right) {
+inline TensorPtr operator*(TensorPtr left, TensorPtr right) {
   return Tensor::mul(left, right);
 }
 } // namespace Weed

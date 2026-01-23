@@ -18,13 +18,13 @@
 #include "relu.hpp"
 
 namespace Weed {
-Scalar Scalar::abs(Scalar &a) {
-  a.reset_indices();
+ScalarPtr Scalar::abs(ScalarPtr a) {
+  a->reset_indices();
 
-  const bool rg = a.requires_grad();
-  Scalar out = Scalar::allocate_like(a, a.storage->dtype, rg);
+  const bool rg = a->requires_grad();
+  ScalarPtr out = Scalar::allocate_like(a, a->storage->dtype, rg);
 
-  Weed::abs(a, out);
+  Weed::abs(*(a.get()), *(out.get()));
 
   if (rg) {
     make_abs_node(a, out);
@@ -33,13 +33,13 @@ Scalar Scalar::abs(Scalar &a) {
   return out;
 }
 
-Scalar Scalar::relu(Scalar &a) {
-  a.reset_indices();
+ScalarPtr Scalar::relu(ScalarPtr a) {
+  a->reset_indices();
 
-  const bool rg = a.requires_grad();
-  Scalar out = Scalar::allocate_like(a, a.storage->dtype, rg);
+  const bool rg = a->requires_grad();
+  ScalarPtr out = Scalar::allocate_like(a, a->storage->dtype, rg);
 
-  Weed::relu(a, out);
+  Weed::relu(*(a.get()), *(out.get()));
 
   if (rg) {
     make_relu_node(a, out);
@@ -48,15 +48,15 @@ Scalar Scalar::relu(Scalar &a) {
   return out;
 }
 
-Scalar Scalar::add(Scalar &a, Scalar &b) {
-  a.reset_indices();
-  b.reset_indices();
+ScalarPtr Scalar::add(ScalarPtr a, ScalarPtr b) {
+  a->reset_indices();
+  b->reset_indices();
 
-  const bool rg = a.requires_grad() || b.requires_grad();
+  const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  Scalar out = Scalar::allocate_like(a, dt, rg);
+  ScalarPtr out = Scalar::allocate_like(a, dt, rg);
 
-  Weed::add(a, b, out);
+  Weed::add(*(a.get()), *(b.get()), *(out.get()));
 
   if (rg) {
     make_add_node(a, b, out);
@@ -65,15 +65,15 @@ Scalar Scalar::add(Scalar &a, Scalar &b) {
   return out;
 }
 
-Scalar Scalar::mul(Scalar &a, Scalar &b) {
-  a.reset_indices();
-  b.reset_indices();
+ScalarPtr Scalar::mul(ScalarPtr a, ScalarPtr b) {
+  a->reset_indices();
+  b->reset_indices();
 
-  const bool rg = a.requires_grad() || b.requires_grad();
+  const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  Scalar out = Scalar::allocate_like(a, dt, rg);
+  ScalarPtr out = Scalar::allocate_like(a, dt, rg);
 
-  Weed::mul(a, b, out);
+  Weed::mul(*(a.get()), *(b.get()), *(out.get()));
 
   if (rg) {
     make_mul_node(a, b, out);
@@ -82,14 +82,14 @@ Scalar Scalar::mul(Scalar &a, Scalar &b) {
   return out;
 }
 
-Tensor Scalar::add(Scalar &a, Tensor &b) {
-  a.match_shape(b);
+TensorPtr Scalar::add(ScalarPtr a, TensorPtr b) {
+  a->match_shape(b);
 
-  const bool rg = a.requires_grad() || b.requires_grad();
+  const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  Tensor out = Scalar::allocate_like(a, dt, rg);
+  TensorPtr out = Scalar::allocate_like(a, dt, rg);
 
-  Weed::add(a, b, out);
+  Weed::add(*(a.get()), *(b.get()), *(out.get()));
 
   if (rg) {
     make_add_node(a, b, out);
@@ -98,14 +98,14 @@ Tensor Scalar::add(Scalar &a, Tensor &b) {
   return out;
 }
 
-Tensor Scalar::mul(Scalar &a, Tensor &b) {
-  a.match_shape(b);
+TensorPtr Scalar::mul(ScalarPtr a, TensorPtr b) {
+  a->match_shape(b);
 
-  const bool rg = a.requires_grad() || b.requires_grad();
+  const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  Tensor out = Scalar::allocate_like(a, dt, rg);
+  TensorPtr out = Scalar::allocate_like(a, dt, rg);
 
-  Weed::mul(a, b, out);
+  Weed::mul(*(a.get()), *(b.get()), *(out.get()));
 
   if (rg) {
     make_mul_node(a, b, out);

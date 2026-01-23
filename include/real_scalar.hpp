@@ -19,8 +19,8 @@ struct RealScalar : public Scalar {
   RealScalar(real1 v, bool rg = false, DeviceTag dtag = DeviceTag::CPU,
              int64_t did = -1)
       : Scalar(v, rg, dtag, did) {}
-  RealScalar(Tensor orig) : Scalar(orig) {
-    if (orig.storage->dtype != DType::REAL) {
+  RealScalar(TensorPtr orig) : Scalar(orig) {
+    if (orig->storage->dtype != DType::REAL) {
       throw std::invalid_argument(
           "Cannot construct RealScalar from non-real Tensor!");
     }
