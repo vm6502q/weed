@@ -93,7 +93,7 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
 }
 
 Tensor Tensor::operator[](size_t idx) {
-  if (idx >= get_size()) {
+  if (idx >= shape[0U]) {
      throw std::invalid_argument("Tensor index out-of-range!");
   }
 
