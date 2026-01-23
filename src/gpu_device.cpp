@@ -253,7 +253,7 @@ PoolItemPtr GpuDevice::GetFreePoolItem() {
 
 inline size_t pick_group_size(const size_t &nwi) {
   if (nwi <= 32U) {
-     return nwi;
+    return nwi;
   }
 
   size_t ngs = 32U;

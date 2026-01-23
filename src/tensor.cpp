@@ -212,16 +212,16 @@ void Tensor::backward(TensorPtr loss) {
     seen.insert(n.get());
     for (auto &p : n->parents) {
       if (p && p->grad_node) {
-        p->grad_node->backward(p->grad_node->parents);
+        p->grad_node->backward();
       }
     }
     topo.push_back(n);
   };
 
-  loss->grad_node->backward(loss->grad_node->parents);
+  loss->grad_node->backward();
 
   for (auto it = topo.rbegin(); it != topo.rend(); ++it) {
-    (*it)->backward((*it)->parents);
+    (*it)->backward();
   }
 }
 
@@ -254,15 +254,13 @@ TensorPtr Tensor::abs(TensorPtr a) {
 }
 
 void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
-  out->grad_node = std::make_shared<Node>(
-      std::vector<TensorPtr>{a}, [out](std::vector<TensorPtr> parents) {
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         Tensor &out_grad = *(out->grad.get());
         const DType &dt = out_grad.storage->dtype;
-        for (TensorPtr in : parents) {
-          Tensor &in_grad = *(in->grad.get());
-          in_grad.upcast(dt);
-          Weed::abs_grad(in_grad, *(in.get()), out_grad);
-        }
+        Tensor &a_grad = *(a->grad.get());
+        a_grad.upcast(dt);
+        Weed::abs_grad(a_grad, *(a.get()), out_grad);
       });
 }
 
@@ -280,15 +278,13 @@ TensorPtr Tensor::relu(TensorPtr a) {
 }
 
 void Tensor::make_relu_node(TensorPtr a, TensorPtr out) {
-  out->grad_node = std::make_shared<Node>(
-      std::vector<TensorPtr>{a}, [out](std::vector<TensorPtr> parents) {
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         Tensor &out_grad = *(out->grad.get());
         const DType &dt = out_grad.storage->dtype;
-        for (TensorPtr in : parents) {
-          Tensor &in_grad = *(in->grad.get());
-          in_grad.upcast(dt);
-          Weed::relu_grad(in_grad, *(in.get()), out_grad);
-        }
+        Tensor &a_grad = *(a->grad.get());
+        a_grad.upcast(dt);
+        Weed::relu_grad(a_grad, *(a.get()), out_grad);
       });
 }
 
@@ -307,18 +303,24 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
 }
 
 void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
-  out->grad_node = std::make_shared<Node>(
-      filterParents({a, b}),
-      [out](std::vector<TensorPtr> parents) {
-        TensorPtr out_grad = out->grad;
-        const DType &dt = out_grad->storage->dtype;
-        for (TensorPtr in : parents) {
-          TensorPtr in_grad = in->grad;
-          TensorPtr n_out = Tensor::allocate_like(in_grad, dt, false);
-          Weed::add(*(in_grad.get()), *(out_grad.get()), *(n_out.get()));
-          in->grad = n_out;
-        }
-      });
+  out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
+    TensorPtr out_grad = out->grad;
+    const DType &dt = out_grad->storage->dtype;
+    if (a->requires_grad()) {
+      TensorPtr a_grad = a->grad;
+      a_grad->upcast(dt);
+      TensorPtr n_out = Tensor::allocate_like(b, dt, false);
+      Weed::add(*(a_grad.get()), *(out_grad.get()), *(n_out.get()));
+      a->grad = n_out;
+    }
+    if (b->requires_grad()) {
+      TensorPtr b_grad = b->grad;
+      b_grad->upcast(dt);
+      TensorPtr n_out = Tensor::allocate_like(a, dt, false);
+      Weed::add(*(b_grad.get()), *(out_grad.get()), *(n_out.get()));
+      b->grad = n_out;
+    }
+  });
 }
 
 TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
@@ -337,11 +339,9 @@ TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
 
 void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(
-      std::vector<TensorPtr>{a, b}, [out](std::vector<TensorPtr> parents) {
+      filterParents(std::vector<TensorPtr>{a, b}), [a, b, out]() {
         TensorPtr out_grad = out->grad;
         const DType &dt = out_grad->storage->dtype;
-        TensorPtr a = parents[0U];
-        TensorPtr b = parents[1U];
         if (a->requires_grad()) {
           TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           TensorPtr a_grad = a->grad;
@@ -386,11 +386,9 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
 
 void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(
-      std::vector<TensorPtr>{a, b}, [out](std::vector<TensorPtr> parents) {
+      filterParents(std::vector<TensorPtr>{a, b}), [a, b, out]() {
         TensorPtr out_grad = out->grad;
         const DType &dt = out_grad->storage->dtype;
-        TensorPtr a = parents[0U];
-        TensorPtr b = parents[1U];
         if (a->requires_grad()) {
           TensorPtr bt = transpose(b);
           TensorPtr tmp = Tensor::allocate_like(a, dt, false);
