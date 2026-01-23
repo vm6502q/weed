@@ -17,6 +17,7 @@
 #include "tests.hpp"
 
 #include "real_scalar.hpp"
+#include "complex_scalar.hpp"
 
 using namespace Weed;
 
@@ -119,7 +120,7 @@ TEST_CASE("test_complex") {
   REQUIRE(test);
 }
 
-TEST_CASE("test_scalar_abs") {
+TEST_CASE("test_real_scalar_abs") {
   TensorPtr x = std::make_shared<RealScalar>(2.0, true, TEST_DTAG);
   TensorPtr y = Tensor::abs(x);
   Tensor::backward(y);
@@ -133,6 +134,22 @@ TEST_CASE("test_scalar_abs") {
 
   REQUIRE(GET_REAL(y) == (ONE_R1 * 2));
   REQUIRE(GET_REAL(x->grad) == -ONE_R1);
+}
+
+TEST_CASE("test_complex_scalar_abs") {
+  TensorPtr x = std::make_shared<ComplexScalar>(complex(2.0), true, TEST_DTAG);
+  TensorPtr y = Tensor::abs(x);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == (ONE_R1 * 2));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), ONE_R1);
+
+  x = std::make_shared<ComplexScalar>(complex(-2.0), true, TEST_DTAG);
+  y = Tensor::abs(x);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == (ONE_R1 * 2));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), -ONE_R1);
 }
 
 TEST_CASE("test_scalar_add") {

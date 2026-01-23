@@ -241,7 +241,7 @@ TensorPtr Tensor::transpose(TensorPtr a) {
 
 TensorPtr Tensor::abs(TensorPtr a) {
   const bool rg = a->requires_grad();
-  TensorPtr out = allocate_like(a, a->storage->dtype, rg);
+  TensorPtr out = allocate_like(a, DType::REAL, rg);
 
   Weed::abs(*(a.get()), *(out.get()));
 
