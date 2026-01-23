@@ -325,15 +325,18 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
-  if (a->get_size() == ONE_VCI) {
-    a->match_shape(b);
-  } else if (b->get_size() == ONE_VCI) {
-    b->match_shape(a);
-  }
-
   const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  TensorPtr out = allocate_like(a, dt, rg);
+  TensorPtr out;
+  if (a->get_size() == ONE_VCI) {
+    a->match_shape(b);
+    out = allocate_like(b, dt, rg);
+  } else if (b->get_size() == ONE_VCI) {
+    b->match_shape(a);
+    out = allocate_like(a, dt, rg);
+  } else {
+    out = allocate_like(a, dt, rg);
+  }
 
   Weed::mul(*(a.get()), *(b.get()), *(out.get()));
 
