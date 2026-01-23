@@ -162,7 +162,7 @@ void kernel matmul_complex(global cmplx* a, global cmplx* b, global cmplx* out, 
 {
     cmplx sum = ZERO_R1;
     for (vecCapIntGpu k = 0; k < S_K; ++k) {
-        sum += zmul(a[(i_X * S_K + k) * I_A + I_A], b[(k * S_Y + i_Y) * I_B + O_B]);
+        sum += zmul(a[(i_X * S_K + k) * I_A + O_A], b[(k * S_Y + i_Y) * I_B + O_B]);
     }
     out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
 }
@@ -178,7 +178,7 @@ void kernel matmul_mixed_c_right(global real1* a, global cmplx* b, global cmplx*
 {
     cmplx sum = ZERO_R1;
     for (vecCapIntGpu k = 0; k < S_K; ++k) {
-        sum += a[(i_X * S_K + k) * I_A + I_A] * b[(k * S_Y + i_Y) * I_B + I_B];
+        sum += a[(i_X * S_K + k) * I_A + O_A] * b[(k * S_Y + i_Y) * I_B + O_B];
     }
     out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
 }

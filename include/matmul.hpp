@@ -14,7 +14,10 @@
 #include "tensor.hpp"
 
 namespace Weed {
+struct MatrixDim;
+
 struct MatMulKernel {
+  MatrixDim get_dim(const Tensor &a, const Tensor &b, Tensor &out);
   void cpu_real(const Tensor &, const Tensor &, Tensor &);
   void cpu_complex(const Tensor &, const Tensor &, Tensor &);
   void cpu_mixed_c_left(const Tensor &, const Tensor &, Tensor &);
