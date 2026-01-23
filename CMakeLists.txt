@@ -55,14 +55,6 @@ if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
         )
 
     target_link_libraries (unittest ${WEED_LIBS})
-
-    # Declare the benchmark executable
-    add_executable (benchmarks
-        test/benchmarks_main.cpp
-        test/benchmarks.cpp
-        )
-
-    target_link_libraries (benchmarks ${WEED_LIBS})
 endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 # Included after the library and other modules have been declared
@@ -238,7 +230,6 @@ include_directories(include/common)
 
 if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
     target_include_directories (unittest PUBLIC test)
-    target_include_directories (benchmarks PUBLIC test)
 endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 if (APPLE)
@@ -261,7 +252,6 @@ else (ENABLE_CUDA)
 endif (ENABLE_CUDA)
 if (NOT PACK_DEBIAN)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 endif (NOT PACK_DEBIAN)
 
 # Declare the OCL precompilation executable

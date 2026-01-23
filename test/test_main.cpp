@@ -24,10 +24,9 @@ bool use_host_dma = false;
 bool async_time = false;
 bool sparse = false;
 int device_id = -1;
-vecLenInt max_qubits = 24;
 int benchmarkSamples = 100;
 int benchmarkDepth = -1;
-std::vector<int64_t> devList;
+DeviceTag TEST_DTAG;
 
 #if ENABLE_OPENCL
 #define WEED_GPU_SINGLETON (OCLEngine::Instance())
@@ -48,11 +47,7 @@ int main(int argc, char *argv[]) {
 
   // Engines
   bool cpu = false;
-  bool opencl = false;
-  bool hybrid = false;
-  bool cuda = false;
-
-  std::string devListStr;
+  bool gpu = false;
 
   using namespace Catch::clara;
 
@@ -61,14 +56,11 @@ int main(int argc, char *argv[]) {
    */
   auto cli =
       session.cli() |
-      Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
-      Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
-      Opt(hybrid)["--proc-hybrid"](
-          "Enable CPU/OpenCL hybrid implementation tests") |
-      Opt(cuda)["--proc-cuda"]("Enable QEngineCUDA tests") |
+      Opt(cpu)["--device-cpu"]("Enable the CPU-based implementation tests") |
+      Opt(gpu)["--device-gpu"]("Single (parallel) processor GPU tests") |
       Opt(async_time)["--async-time"]("Time based on asynchronous return") |
       Opt(device_id, "device-id")["-d"]["--device-id"](
-          "Opencl device ID (\"-1\" for default device)") |
+          "GPU device ID (\"-1\" for default device)") |
       Opt(sparse)["--sparse"](
           "(For QEngineCPU, under QUnit:) Use a state vector optimized for "
           "sparse representation and iteration.") |
@@ -78,10 +70,7 @@ int main(int argc, char *argv[]) {
           "depth of randomly constructed circuits, when applicable, with 1 "
           "round of single qubit and 1 round of "
           "multi-qubit gates being 1 unit of depth (default: 0, for square "
-          "circuits)") |
-      Opt(devListStr,
-          "devices")["--devices"]("list of devices, for QPager (default is "
-                                  "solely default OpenCL device)");
+          "circuits)");
 
   session.cli(cli);
 
@@ -99,20 +88,9 @@ int main(int argc, char *argv[]) {
 
   session.config().stream() << "Random Seed: " << session.configData().rngSeed;
 
-  if (!cpu && !opencl && !hybrid && !cuda) {
+  if (!cpu && !gpu) {
     cpu = true;
-    opencl = true;
-    cuda = true;
-    hybrid = true;
-  }
-
-  if (devListStr.compare("") != 0) {
-    std::stringstream devListStr_stream(devListStr);
-    while (devListStr_stream.good()) {
-      std::string substr;
-      getline(devListStr_stream, substr, ',');
-      devList.push_back(stoi(substr));
-    }
+    gpu = true;
   }
 
   // #if ENABLE_OPENCL || ENABLE_CUDA
@@ -122,31 +100,15 @@ int main(int argc, char *argv[]) {
   int num_failed = 0;
 
   if (num_failed == 0 && cpu) {
-    session.config().stream()
-        << "############ QEngine -> CPU ############" << std::endl;
+    session.config().stream() << "############ CPU ############" << std::endl;
+    TEST_DTAG = DeviceTag::CPU;
     num_failed = session.run();
   }
-
-#if ENABLE_OPENCL
-  if (num_failed == 0 && opencl) {
-    session.config().stream()
-        << "############ QEngine -> OpenCL ############" << std::endl;
-    num_failed = session.run();
-  }
-#endif
-
-#if ENABLE_CUDA
-  if (num_failed == 0 && cuda) {
-    session.config().stream()
-        << "############ QEngine -> CUDA ############" << std::endl;
-    num_failed = session.run();
-  }
-#endif
 
 #if ENABLE_OPENCL || ENABLE_CUDA
-  if (num_failed == 0 && hybrid) {
-    session.config().stream()
-        << "############ QUnit -> QHybrid ############" << std::endl;
+  if (num_failed == 0 && gpu) {
+    session.config().stream() << "############ GPU ############" << std::endl;
+    TEST_DTAG = DeviceTag::GPU;
     num_failed = session.run();
   }
 #endif

@@ -123,6 +123,10 @@ Tensor::Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
   }
 
   INIT_DEVICE_STORAGE(val, GpuRealStorage, CpuRealStorage);
+
+  if (rg) {
+    grad->storage->FillZeros();
+  }
 }
 Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
                std::vector<vecCapInt> strd, bool rg, DeviceTag dtag,
@@ -144,6 +148,10 @@ Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
   }
 
   INIT_DEVICE_STORAGE(val, GpuComplexStorage, CpuComplexStorage);
+
+  if (rg) {
+    grad->storage->FillZeros();
+  }
 }
 
 TensorPtr Tensor::operator[](vecCapInt idx) {

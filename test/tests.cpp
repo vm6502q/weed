@@ -120,13 +120,10 @@ TEST_CASE("test_complex") {
 }
 
 TEST_CASE("test_scalar_grad") {
-  TensorPtr x = std::make_shared<RealScalar>(2.0, true);
-  TensorPtr y = std::make_shared<RealScalar>(3.0, true);
+  TensorPtr x = std::make_shared<RealScalar>(2.0, true, TEST_DTAG);
+  TensorPtr y = std::make_shared<RealScalar>(3.0, true, TEST_DTAG);
   TensorPtr z = x * y;
   Tensor::backward(z);
-
-  std::cout << GET_REAL(x) << std::endl;
-  std::cout << GET_REAL(y) << std::endl;
 
   REQUIRE(GET_REAL(x->grad) == (ONE_R1 * 3));
   REQUIRE(GET_REAL(y->grad) == (ONE_R1 * 2));

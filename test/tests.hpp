@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "device_tag.hpp"
 #include "tensor.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
@@ -25,15 +26,9 @@ extern bool use_host_dma;
 extern bool async_time;
 extern bool sparse;
 extern int device_id;
-extern vecLenInt max_qubits;
-extern vecLenInt min_qubits;
-extern bool single_qubit_run;
 extern int benchmarkSamples;
 extern int benchmarkDepth;
-extern int timeout;
-extern std::vector<int64_t> devList;
-extern bool optimal;
-extern bool optimal_single;
+extern Weed::DeviceTag TEST_DTAG;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Weed {
