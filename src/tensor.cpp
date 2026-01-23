@@ -70,7 +70,7 @@ Tensor Tensor::allocate_like(const std::vector<vecCapInt> &shape,
 Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
                DType dtype, DeviceTag dtag, int64_t did)
     : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
-      grad(rg ? std::make_shared<Tensor>(shape, stride, false, dtype, dtag, did)
+      grad(rg ? std::make_shared<Tensor>(shp, strd, false, dtype, dtag, did)
               : nullptr) {
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(

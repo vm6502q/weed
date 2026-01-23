@@ -35,7 +35,7 @@ using namespace Weed;
     REQUIRE(std::norm(__tmp_a - __tmp_b) < EPSILON);                           \
   } while (0);
 
-TEST_CASE_METHOD(TensorTestFixture, "test_complex") {
+TEST_CASE("test_complex") {
   bool test;
   complex cmplx1(ONE_R1, -ONE_R1);
   complex cmplx2((real1)(-0.5f), (real1)0.5f);

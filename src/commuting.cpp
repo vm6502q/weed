@@ -19,6 +19,16 @@
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
+#define DEVICE_SWITCH(cpu, gpu, a, b, out)                                     \
+  switch (out.storage->device) {                                               \
+  case DeviceTag::GPU:                                                         \
+    gpu(a, b, out);                                                            \
+    break;                                                                     \
+  case DeviceTag::CPU:                                                         \
+  default:                                                                     \
+    cpu(a, b, out);                                                            \
+  }
+
 #define KERNEL_SWITCH()                                                        \
   const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
   const vecCapIntGpu I_b = (vecCapIntGpu)b.stride[0U];                         \
@@ -69,39 +79,60 @@
 namespace Weed {
 ParallelFor pfControl = ParallelFor();
 
-struct commuting_kernel : CommutingKernel {
-  void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-    CAST_STORAGE(pa, a, real1, CpuRealStorage);
-    CAST_STORAGE(pb, b, real1, CpuRealStorage);
-    CAST_STORAGE(po, out, real1, CpuRealStorage);
+void CommutingKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
+  CAST_STORAGE(pa, a, real1, CpuRealStorage);
+  CAST_STORAGE(pb, b, real1, CpuRealStorage);
+  CAST_STORAGE(po, out, real1, CpuRealStorage);
 
-    KERNEL_SWITCH();
-  }
-  void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-    CAST_STORAGE(pa, a, complex, CpuComplexStorage);
-    CAST_STORAGE(pb, b, complex, CpuComplexStorage);
-    CAST_STORAGE(po, out, complex, CpuComplexStorage);
+  KERNEL_SWITCH();
+}
+void CommutingKernel::cpu_complex(const Tensor &a, const Tensor &b,
+                                  Tensor &out) {
+  CAST_STORAGE(pa, a, complex, CpuComplexStorage);
+  CAST_STORAGE(pb, b, complex, CpuComplexStorage);
+  CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
-    KERNEL_SWITCH();
-  }
-  void cpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
-    CAST_STORAGE(pa, a, complex, CpuComplexStorage);
-    CAST_STORAGE(pb, b, real1, CpuRealStorage);
-    CAST_STORAGE(po, out, complex, CpuComplexStorage);
+  KERNEL_SWITCH();
+}
+void CommutingKernel::cpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
+  CAST_STORAGE(pa, a, complex, CpuComplexStorage);
+  CAST_STORAGE(pb, b, real1, CpuRealStorage);
+  CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
-    KERNEL_SWITCH();
+  KERNEL_SWITCH();
+}
+void CommutingKernel::gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
+  DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_ADD_REAL,
+                      OCL_API_MUL_REAL);
+}
+void CommutingKernel::gpu_complex(const Tensor &a, const Tensor &b,
+                                  Tensor &out) {
+  DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage, OCL_API_ADD_COMPLEX,
+                      OCL_API_MUL_COMPLEX);
+}
+void CommutingKernel::gpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
+  DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_ADD_MIXED,
+                      OCL_API_MUL_MIXED);
+}
+void CommutingKernel::commuting(const Tensor &a, const Tensor &b, Tensor &out) {
+  const bool isAComplex = a.storage->dtype == DType::COMPLEX;
+  const bool isBComplex = b.storage->dtype == DType::COMPLEX;
+  const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
+  if (!isOutComplex && (isAComplex || isBComplex)) {
+    throw std::invalid_argument(
+        "Cannot combine complex tensors into real1 tensor!");
   }
-  void gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-    DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_ADD_REAL,
-                        OCL_API_MUL_REAL);
+  if (isOutComplex && (!isAComplex && !isBComplex)) {
+    throw std::invalid_argument("Output tensor dtype mismatch!");
   }
-  void gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-    DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage,
-                        OCL_API_ADD_COMPLEX, OCL_API_MUL_COMPLEX);
+  if (isAComplex && isBComplex) {
+    DEVICE_SWITCH(cpu_complex, gpu_complex, a, b, out);
+  } else if (isAComplex) {
+    DEVICE_SWITCH(cpu_mixed, gpu_mixed, a, b, out);
+  } else if (isBComplex) {
+    DEVICE_SWITCH(cpu_mixed, gpu_mixed, b, a, out);
+  } else {
+    DEVICE_SWITCH(cpu_real, gpu_real, a, b, out);
   }
-  void gpu_mixed(const Tensor &a, const Tensor &b, Tensor &out) {
-    DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_ADD_MIXED,
-                        OCL_API_MUL_MIXED);
-  }
-};
+}
 } // namespace Weed

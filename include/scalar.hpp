@@ -54,7 +54,9 @@ struct Scalar : public Tensor {
   }
 
   static Scalar allocate_like(const Scalar &orig, const DType &dt,
-                              const bool &rg);
+                              const bool &rg) {
+    return Scalar(Tensor::allocate_like(orig, dt, rg));
+  }
 
   static Scalar abs(Scalar &a);
   static Scalar relu(Scalar &a);
