@@ -48,13 +48,16 @@
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, api_call)                             \
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(a.offset),                        \
-                              (vecCapIntGpu)(a.stride[0U]),                    \
-                              (vecCapIntGpu)(b.offset),                        \
-                              (vecCapIntGpu)(b.stride[0U]),                    \
-                              (vecCapIntGpu)(out.offset),                      \
-                              (vecCapIntGpu)(out.stride[0U]),                  \
-                              0U};                                             \
+  const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),                       \
+                               (vecCapIntGpu)(a.stride[0U]),                   \
+                               (vecCapIntGpu)(b.offset),                       \
+                               (vecCapIntGpu)(b.stride[0U]),                   \
+                               (vecCapIntGpu)(out.offset),                     \
+                               (vecCapIntGpu)(out.stride[0U]),                 \
+                               0U,                                             \
+                               0U,                                             \
+                               0U,                                             \
+                               0U};                                            \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \

@@ -30,21 +30,19 @@
     for (vecCapIntGpu j = 0; j < d.N; ++j) {                                   \
       stype sum = ZERO_R1;                                                     \
       for (vecCapIntGpu k = 0; k < d.K; ++k) {                                 \
-        sum += pa[(i * d.K + k) * d.I_a] * pb[(k * d.N + j) * d.I_b];          \
+        auto a_idx = (d.A_o + i * d.A_s0 + k * d.A_s1);                        \
+        auto b_idx = (d.B_o + k * d.B_s0 + j * d.B_s1);                        \
+        sum += pa[a_idx] * pb[b_idx];                                          \
       }                                                                        \
-      po[(i * d.N + j) * d.I_o] = sum;                                         \
+      auto o_idx = (d.O_o + i * d.O_s0 + j * d.O_s1);                          \
+      po[o_idx] = sum;                                                         \
     }                                                                          \
   })
 
 #define GPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, call)   \
   MatrixDim d = get_dim(a, b, out);                                            \
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(a.offset),                        \
-                              d.I_a,                                           \
-                              (vecCapIntGpu)(b.offset),                        \
-                              d.I_b,                                           \
-                              (vecCapIntGpu)(out.offset),                      \
-                              d.I_o,                                           \
-                              d.K};                                            \
+  const vecCapIntGpu args[10U]{d.A_o,  d.A_s0, d.B_o,  d.B_s0, d.O_o,          \
+                               d.O_s0, d.A_s1, d.B_s1, d.O_s1, d.K};           \
   lstorage a_storage = std::dynamic_pointer_cast<ltype>(a.storage);            \
   rstorage b_storage = std::dynamic_pointer_cast<rtype>(b.storage);            \
   ostorage o_storage = std::dynamic_pointer_cast<otype>(out.storage);          \
@@ -64,12 +62,11 @@
 
 namespace Weed {
 struct MatrixDim {
-  vecCapIntGpu M;
-  vecCapIntGpu K;
-  vecCapIntGpu N;
-  vecCapIntGpu I_a;
-  vecCapIntGpu I_b;
-  vecCapIntGpu I_o;
+  vecCapIntGpu M, K, N;
+  vecCapIntGpu A_o, B_o, O_o;
+  vecCapIntGpu A_s0, A_s1;
+  vecCapIntGpu B_s0, B_s1;
+  vecCapIntGpu O_s0, O_s1;
 };
 
 MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
@@ -85,9 +82,15 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
   d.M = a.shape[0U];
   d.N = b.shape[1U];
 
-  d.I_a = a.stride[0U];
-  d.I_b = b.stride[0U];
-  d.I_o = out.stride[0U];
+  d.A_o = a.offset;
+  d.B_o = b.offset;
+  d.O_o = out.offset;
+  d.A_s0 = a.stride[0];
+  d.A_s1 = a.stride[1];
+  d.B_s0 = b.stride[0];
+  d.B_s1 = b.stride[1];
+  d.O_s0 = out.stride[0];
+  d.O_s1 = out.stride[1];
 
   return d;
 }

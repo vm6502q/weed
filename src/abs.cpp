@@ -39,6 +39,20 @@
     cpu(a, b, out);                                                            \
   }
 
+#define GPU_ARGS()                                                             \
+  const vecCapIntGpu args[10U] {                                               \
+    (vecCapIntGpu)(a.offset), (vecCapIntGpu)(a.stride[0U]),                    \
+        (vecCapIntGpu)(out.offset), (vecCapIntGpu)(out.stride[0U]), 0U, 0U,    \
+        0U, 0U, 0U, 0U                                                         \
+  }
+
+#define GPU_GRAD_ARGS()                                                        \
+  const vecCapIntGpu args[10U] {                                               \
+    (vecCapIntGpu)(din.offset), (vecCapIntGpu)(din.stride[0U]),                \
+        (vecCapIntGpu)(in.offset), (vecCapIntGpu)(in.stride[0U]),              \
+        (vecCapIntGpu)(dout.offset), (vecCapIntGpu)(dout.stride[0U]), 0U, 0U,  \
+        0U, 0U                                                                 \
+  }
 namespace Weed {
 void AbsKernel::AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
   const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];
@@ -51,13 +65,7 @@ void AbsKernel::AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
   });
 }
 void AbsKernel::gpu_real(const Tensor &a, Tensor &out) {
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(a.offset),
-                              (vecCapIntGpu)(a.stride[0U]),
-                              (vecCapIntGpu)(out.offset),
-                              (vecCapIntGpu)(out.stride[0U]),
-                              0U,
-                              0U,
-                              0U};
+  GPU_ARGS();
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -76,13 +84,7 @@ void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
   });
 }
 void AbsKernel::gpu_complex(const Tensor &a, Tensor &out) {
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(a.offset),
-                              (vecCapIntGpu)(a.stride[0U]),
-                              (vecCapIntGpu)(out.offset),
-                              (vecCapIntGpu)(out.stride[0U]),
-                              0U,
-                              0U,
-                              0U};
+  GPU_ARGS();
   GpuComplexStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -119,13 +121,7 @@ void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
 }
 void AbsKernel::gpu_real_grad_real(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(din.offset),
-                              (vecCapIntGpu)(din.stride[0U]),
-                              (vecCapIntGpu)(in.offset),
-                              (vecCapIntGpu)(in.stride[0U]),
-                              (vecCapIntGpu)(dout.offset),
-                              (vecCapIntGpu)(dout.stride[0U]),
-                              0U};
+  GPU_GRAD_ARGS();
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(din.storage);
   GpuRealStoragePtr b_storage =
@@ -154,13 +150,7 @@ void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
 }
 void AbsKernel::gpu_real_grad_complex(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(din.offset),
-                              (vecCapIntGpu)(din.stride[0U]),
-                              (vecCapIntGpu)(in.offset),
-                              (vecCapIntGpu)(in.stride[0U]),
-                              (vecCapIntGpu)(dout.offset),
-                              (vecCapIntGpu)(dout.stride[0U]),
-                              0U};
+  GPU_GRAD_ARGS();
   GpuComplexStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(din.storage);
   GpuRealStoragePtr b_storage =
@@ -189,13 +179,7 @@ void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
 }
 void AbsKernel::gpu_complex_grad_real(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(din.offset),
-                              (vecCapIntGpu)(din.stride[0U]),
-                              (vecCapIntGpu)(in.offset),
-                              (vecCapIntGpu)(in.stride[0U]),
-                              (vecCapIntGpu)(dout.offset),
-                              (vecCapIntGpu)(dout.stride[0U]),
-                              0U};
+  GPU_GRAD_ARGS();
   GpuComplexStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(din.storage);
   GpuComplexStoragePtr b_storage =
@@ -224,13 +208,7 @@ void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
 }
 void AbsKernel::gpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
-  const vecCapIntGpu args[7U]{(vecCapIntGpu)(din.offset),
-                              (vecCapIntGpu)(din.stride[0U]),
-                              (vecCapIntGpu)(in.offset),
-                              (vecCapIntGpu)(in.stride[0U]),
-                              (vecCapIntGpu)(dout.offset),
-                              (vecCapIntGpu)(dout.stride[0U]),
-                              0U};
+  GPU_GRAD_ARGS();
   GpuComplexStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(din.storage);
   GpuComplexStoragePtr b_storage =

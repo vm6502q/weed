@@ -45,13 +45,16 @@ inline cmplx polar_unit(const real1 theta) {
 #define S_X get_global_size(0)
 #define S_Y get_global_size(1)
 #define S_Z get_global_size(2)
-#define O_A vecCapIntArgs[0]
-#define I_A vecCapIntArgs[1]
-#define O_B vecCapIntArgs[2]
-#define I_B vecCapIntArgs[3]
-#define O_C vecCapIntArgs[4]
-#define I_C vecCapIntArgs[5]
-#define S_K vecCapIntArgs[6]
+#define O_A vecCapIntArgs[0U]
+#define I_A vecCapIntArgs[1U]
+#define O_B vecCapIntArgs[2U]
+#define I_B vecCapIntArgs[3U]
+#define O_C vecCapIntArgs[4U]
+#define I_C vecCapIntArgs[5U]
+#define J_A vecCapIntArgs[6U]
+#define J_B vecCapIntArgs[7U]
+#define J_C vecCapIntArgs[8U]
+#define K   vecCapIntArgs[9U]
 
 void kernel clear_buffer_real(global real1* a)
 {
@@ -154,31 +157,43 @@ void kernel matmul_real(global real1* a, global real1* b, global real1* out, con
 {
     real1 sum = ZERO_R1;
     for (vecCapIntGpu k = 0; k < S_K; ++k) {
-        sum += a[(i_X * S_K + k) * I_A + O_A] * b[(k * S_Y + i_Y) * I_B + O_B];
+        vecCapIntGPu a_idx = (O_A + i_X * I_A + k * J_A);
+        vecCapIntGpu b_idx = (O_B + k * I_B + i_Y * J_B);
+        sum += a[a_idx] * b[b_idx];
     }
-    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+    vecCapIntGPu o_idx = (O_C + i_X * I_C + i_Y * J_C);
+    out[o_idx] = sum;
 }
 void kernel matmul_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     cmplx sum = ZERO_R1;
     for (vecCapIntGpu k = 0; k < S_K; ++k) {
-        sum += zmul(a[(i_X * S_K + k) * I_A + O_A], b[(k * S_Y + i_Y) * I_B + O_B]);
+        vecCapIntGPu a_idx = (O_A + i_X * I_A + k * J_A);
+        vecCapIntGpu b_idx = (O_B + k * I_B + i_Y * J_B);
+        sum += zmul(a[a_idx], b[b_idx]);
     }
-    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+    vecCapIntGPu o_idx = (O_C + i_X * I_C + i_Y * J_C);
+    out[o_idx] = sum;
 }
 void kernel matmul_mixed_c_left(global cmplx* a, global real1* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     cmplx sum = ZERO_R1;
     for (vecCapIntGpu k = 0; k < S_K; ++k) {
-        sum += b[(k * S_Y + i_Y) * I_B + O_B] * a[(i_X * S_K + k) * I_A + O_A];
+        vecCapIntGPu a_idx = (O_A + i_X * I_A + k * J_A);
+        vecCapIntGpu b_idx = (O_B + k * I_B + i_Y * J_B);
+        sum += b[b_idx] * a[a_idx];
     }
-    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+    vecCapIntGPu o_idx = (O_C + i_X * I_C + i_Y * J_C);
+    out[o_idx] = sum;
 }
 void kernel matmul_mixed_c_right(global real1* a, global cmplx* b, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs)
 {
     cmplx sum = ZERO_R1;
     for (vecCapIntGpu k = 0; k < S_K; ++k) {
-        sum += a[(i_X * S_K + k) * I_A + O_A] * b[(k * S_Y + i_Y) * I_B + O_B];
+        vecCapIntGPu a_idx = (O_A + i_X * I_A + k * J_A);
+        vecCapIntGpu b_idx = (O_B + k * I_B + i_Y * J_B);
+        sum += a[a_idx] * b[b_idx];
     }
-    out[(i_X * S_Y + i_Y) * I_C + O_C] = sum;
+    vecCapIntGPu o_idx = (O_C + i_X * I_C + i_Y * J_C);
+    out[o_idx] = sum;
 }
