@@ -76,6 +76,16 @@ struct Tensor {
 
   void upcast(DType dt) { storage = storage->Upcast(dt); }
 
+  void match_shape(const TensorPtr a) {
+    shape = a->shape;
+    const size_t sz = shape.size();
+    stride.resize(sz);
+    if (requires_grad()) {
+      grad->shape = a->shape;
+      grad->stride.resize(sz);
+    }
+  }
+
   TensorPtr operator[](vecCapInt idx);
 
   static DType get_dtype_by_presidence(const TensorPtr left,

@@ -27,7 +27,6 @@ add_library (weed STATIC
     src/commuting.cpp
     src/matmul.cpp
     src/relu.cpp
-    src/scalar.cpp
     src/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)

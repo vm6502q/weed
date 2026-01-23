@@ -102,14 +102,18 @@ int main(int argc, char *argv[]) {
   session.config().stream() << std::endl;
 
   if (num_failed == 0 && cpu) {
-    session.config().stream() << "##################################### CPU #####################################" << std::endl;
+    session.config().stream() << "##################################### CPU "
+                                 "#####################################"
+                              << std::endl;
     TEST_DTAG = DeviceTag::CPU;
     num_failed = session.run();
   }
 
 #if ENABLE_OPENCL || ENABLE_CUDA
   if (num_failed == 0 && gpu) {
-    session.config().stream() << "##################################### GPU #####################################" << std::endl;
+    session.config().stream() << "##################################### GPU "
+                                 "#####################################"
+                              << std::endl;
     TEST_DTAG = DeviceTag::GPU;
     num_failed = session.run();
   }

@@ -15,20 +15,18 @@
 
 namespace Weed {
 struct MatMulKernel {
-  void (*cpu_real)(const Tensor &, const Tensor &, Tensor &);
-  void (*cpu_complex)(const Tensor &, const Tensor &, Tensor &);
-  void (*cpu_mixed_c_left)(const Tensor &, const Tensor &, Tensor &);
-  void (*cpu_mixed_c_right)(const Tensor &, const Tensor &, Tensor &);
-  void (*gpu_real)(const Tensor &, const Tensor &, Tensor &);
-  void (*gpu_complex)(const Tensor &, const Tensor &, Tensor &);
-  void (*gpu_mixed_c_left)(const Tensor &, const Tensor &, Tensor &);
-  void (*gpu_mixed_c_right)(const Tensor &, const Tensor &, Tensor &);
-  void (*matmul)(const Tensor &, const Tensor &, Tensor &);
+  void cpu_real(const Tensor &, const Tensor &, Tensor &);
+  void cpu_complex(const Tensor &, const Tensor &, Tensor &);
+  void cpu_mixed_c_left(const Tensor &, const Tensor &, Tensor &);
+  void cpu_mixed_c_right(const Tensor &, const Tensor &, Tensor &);
+  void gpu_real(const Tensor &, const Tensor &, Tensor &);
+  void gpu_complex(const Tensor &, const Tensor &, Tensor &);
+  void gpu_mixed_c_left(const Tensor &, const Tensor &, Tensor &);
+  void gpu_mixed_c_right(const Tensor &, const Tensor &, Tensor &);
+  void matmul(const Tensor &, const Tensor &, Tensor &);
 };
 
-MatMulKernel matmul_kernel;
+extern MatMulKernel matmul_kernel;
 
-void matmul(const Tensor &a, const Tensor &b, Tensor &out) {
-  matmul_kernel.matmul(a, b, out);
-}
+void matmul(const Tensor &a, const Tensor &b, Tensor &out);
 } // namespace Weed

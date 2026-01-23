@@ -62,49 +62,57 @@
   }
 
 namespace Weed {
-struct matmul_kernel : MatMulKernel {
-  void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-    CPU_BY_TYPE(real1, CpuRealStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage, real1);
-  }
-  void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-    CPU_BY_TYPE(complex, CpuComplexStorage, complex, CpuComplexStorage, complex,
-                CpuComplexStorage, complex);
-  }
-  void cpu_mixed_c_left(const Tensor &a, const Tensor &b, Tensor &out) {
-    CPU_BY_TYPE(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
-                CpuComplexStorage, complex);
-  }
-  void cpu_mixed_c_right(const Tensor &a, const Tensor &b, Tensor &out) {
-    CPU_BY_TYPE(real1, CpuRealStorage, complex, CpuComplexStorage, complex,
-                CpuComplexStorage, complex);
-  }
+void MatMulKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
+  CPU_BY_TYPE(real1, CpuRealStorage, real1, CpuRealStorage, real1,
+              CpuRealStorage, real1);
+}
+void MatMulKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
+  CPU_BY_TYPE(complex, CpuComplexStorage, complex, CpuComplexStorage, complex,
+              CpuComplexStorage, complex);
+}
+void MatMulKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
+                                    Tensor &out) {
+  CPU_BY_TYPE(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
+              CpuComplexStorage, complex);
+}
+void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
+                                     Tensor &out) {
+  CPU_BY_TYPE(real1, CpuRealStorage, complex, CpuComplexStorage, complex,
+              CpuComplexStorage, complex);
+}
 
-  void gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {}
-  void gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {}
-  void gpu_mixed_c_left(const Tensor &a, const Tensor &b, Tensor &out) {}
-  void gpu_mixed_c_right(const Tensor &a, const Tensor &b, Tensor &out) {}
+void MatMulKernel::gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {}
+void MatMulKernel::gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {}
+void MatMulKernel::gpu_mixed_c_left(const Tensor &a, const Tensor &b,
+                                    Tensor &out) {}
+void MatMulKernel::gpu_mixed_c_right(const Tensor &a, const Tensor &b,
+                                     Tensor &out) {}
 
-  void matmul(const Tensor &a, const Tensor &b, Tensor &out) {
-    const bool isAComplex = a.storage->dtype == DType::COMPLEX;
-    const bool isBComplex = b.storage->dtype == DType::COMPLEX;
-    const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
-    if (!isOutComplex && (isAComplex || isBComplex)) {
-      throw std::invalid_argument(
-          "Cannot combine complex tensors into real1 tensor!");
-    }
-    if (isOutComplex && (!isAComplex && !isBComplex)) {
-      throw std::invalid_argument("Output tensor dtype mismatch!");
-    }
-    if (isAComplex && isBComplex) {
-      _DEVICE_SWITCH(cpu_complex, gpu_complex);
-    } else if (isAComplex) {
-      _DEVICE_SWITCH(cpu_mixed_c_left, gpu_mixed_c_left);
-    } else if (isBComplex) {
-      _DEVICE_SWITCH(cpu_mixed_c_right, gpu_mixed_c_right);
-    } else {
-      _DEVICE_SWITCH(cpu_real, gpu_real);
-    }
+void MatMulKernel::matmul(const Tensor &a, const Tensor &b, Tensor &out) {
+  const bool isAComplex = a.storage->dtype == DType::COMPLEX;
+  const bool isBComplex = b.storage->dtype == DType::COMPLEX;
+  const bool isOutComplex = out.storage->dtype == DType::COMPLEX;
+  if (!isOutComplex && (isAComplex || isBComplex)) {
+    throw std::invalid_argument(
+        "Cannot combine complex tensors into real1 tensor!");
   }
-};
+  if (isOutComplex && (!isAComplex && !isBComplex)) {
+    throw std::invalid_argument("Output tensor dtype mismatch!");
+  }
+  if (isAComplex && isBComplex) {
+    _DEVICE_SWITCH(cpu_complex, gpu_complex);
+  } else if (isAComplex) {
+    _DEVICE_SWITCH(cpu_mixed_c_left, gpu_mixed_c_left);
+  } else if (isBComplex) {
+    _DEVICE_SWITCH(cpu_mixed_c_right, gpu_mixed_c_right);
+  } else {
+    _DEVICE_SWITCH(cpu_real, gpu_real);
+  }
+}
+
+MatMulKernel matmul_kernel;
+
+void matmul(const Tensor &a, const Tensor &b, Tensor &out) {
+  matmul_kernel.matmul(a, b, out);
+}
 } // namespace Weed

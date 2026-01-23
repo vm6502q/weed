@@ -152,3 +152,17 @@ TEST_CASE("test_mixed_scalar_mul") {
   REQUIRE_CMPLX(GET_COMPLEX(x->grad), (ONE_R1 * 3));
   REQUIRE_CMPLX(GET_COMPLEX(y->grad), (ONE_R1 * 2));
 }
+
+TEST_CASE("test_real_broadcast_mul") {
+  TensorPtr x = std::make_shared<RealScalar>(2.0, true, TEST_DTAG);
+  TensorPtr y = std::make_shared<Tensor>(
+      std::vector<real1>{3.0, 4.0}, std::vector<vecCapInt>{2},
+      std::vector<vecCapInt>{1}, true, TEST_DTAG);
+  TensorPtr z = x * y;
+  Tensor::backward(z);
+
+  REQUIRE(GET_REAL((*(z.get()))[0]) == (ONE_R1 * 6));
+  REQUIRE(GET_REAL((*(z.get()))[1]) == (ONE_R1 * 8));
+  // REQUIRE(GET_REAL(x->grad) == ONE_R1);
+  // REQUIRE(GET_REAL(y->grad) == ONE_R1);
+}

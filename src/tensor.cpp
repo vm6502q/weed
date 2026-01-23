@@ -154,7 +154,7 @@ Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
 }
 
 TensorPtr Tensor::operator[](vecCapInt idx) {
-  if (idx >= shape.back()) {
+  if (idx > shape.back()) {
     throw std::invalid_argument("Tensor index out-of-range!");
   }
 
@@ -323,6 +323,12 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
+  if (a->get_size() == ONE_VCI) {
+    a->match_shape(b);
+  } else if (b->get_size() == ONE_VCI) {
+    b->match_shape(a);
+  }
+
   const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
   TensorPtr out = allocate_like(a, dt, rg);
