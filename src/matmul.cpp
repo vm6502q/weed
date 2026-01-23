@@ -81,12 +81,20 @@ void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
               CpuComplexStorage, complex);
 }
 
-void MatMulKernel::gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {}
-void MatMulKernel::gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {}
+void MatMulKernel::gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
+  // TODO
+}
+void MatMulKernel::gpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
+  // TODO
+}
 void MatMulKernel::gpu_mixed_c_left(const Tensor &a, const Tensor &b,
-                                    Tensor &out) {}
+                                    Tensor &out) {
+  // TODO
+}
 void MatMulKernel::gpu_mixed_c_right(const Tensor &a, const Tensor &b,
-                                     Tensor &out) {}
+                                     Tensor &out) {
+  // TODO
+}
 
 void MatMulKernel::matmul(const Tensor &a, const Tensor &b, Tensor &out) {
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;

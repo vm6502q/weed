@@ -157,7 +157,7 @@ TEST_CASE("test_real_broadcast_mul") {
   TensorPtr x = std::make_shared<RealScalar>(2.0, false, TEST_DTAG);
   TensorPtr y = std::make_shared<Tensor>(
       std::vector<real1>{3.0, 4.0}, std::vector<vecCapInt>{2},
-      std::vector<vecCapInt>{1}, true, TEST_DTAG);
+      std::vector<vecCapInt>{1}, false, TEST_DTAG);
   TensorPtr z = x * y;
 
   REQUIRE(GET_REAL((*(z.get()))[0]) == (ONE_R1 * 6));
@@ -168,7 +168,7 @@ TEST_CASE("test_complex_broadcast_mul") {
   TensorPtr x = std::make_shared<ComplexScalar>(complex(2.0), false, TEST_DTAG);
   TensorPtr y = std::make_shared<Tensor>(
       std::vector<complex>{3.0, 4.0}, std::vector<vecCapInt>{2},
-      std::vector<vecCapInt>{1}, true, TEST_DTAG);
+      std::vector<vecCapInt>{1}, false, TEST_DTAG);
   TensorPtr z = x * y;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), (ONE_R1 * 6));
@@ -179,9 +179,21 @@ TEST_CASE("test_mixed_broadcast_mul") {
   TensorPtr x = std::make_shared<ComplexScalar>(complex(2.0), false, TEST_DTAG);
   TensorPtr y = std::make_shared<Tensor>(
       std::vector<real1>{3.0, 4.0}, std::vector<vecCapInt>{2},
-      std::vector<vecCapInt>{1}, true, TEST_DTAG);
+      std::vector<vecCapInt>{1}, false, TEST_DTAG);
   TensorPtr z = x * y;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), (ONE_R1 * 6));
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[1]), (ONE_R1 * 8));
+}
+
+TEST_CASE("test_real_matmul") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{2.0, 3.0}, std::vector<vecCapInt>{2, 1},
+      std::vector<vecCapInt>{1, 2}, false, TEST_DTAG);
+  TensorPtr y = std::make_shared<Tensor>(
+      std::vector<real1>{4.0, 5.0}, std::vector<vecCapInt>{1, 2},
+      std::vector<vecCapInt>{2, 1}, false, TEST_DTAG);
+  TensorPtr z = x >> y;
+
+  REQUIRE(GET_REAL((*(z.get()))[0]) == (ONE_R1 * 8));
 }
