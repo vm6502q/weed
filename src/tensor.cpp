@@ -93,14 +93,14 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
 }
 
 Tensor Tensor::operator[](size_t idx) {
-  if (idx >= shape[0U]) {
+  if (idx >= shape.back()) {
      throw std::invalid_argument("Tensor index out-of-range!");
   }
 
   Tensor v = copy();
-  v.offset += idx * v.stride[0U];
-  v.shape.erase(v.shape.begin());
-  v.stride.erase(v.stride.begin());
+  v.offset += idx * v.stride.back();
+  v.shape.pop_back();
+  v.stride.pop_back();
 
   if (v.grad) {
     v.grad = (*(v.grad))[idx].get_ptr();
