@@ -36,6 +36,8 @@ struct GpuRealStorage : RealStorage {
 
   ~GpuRealStorage() {}
 
+  int64_t get_device_id() { return gpu->deviceID; }
+
   void FillZeros() { gpu->ClearRealBuffer(buffer, size); }
   void FillOnes() { gpu->FillOnesReal(buffer, size); }
 

@@ -72,6 +72,8 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
   void upcast(DType dt) { storage = storage->Upcast(dt); }
 
+  Tensor operator[](size_t idx);
+
   static DType get_dtype_by_presidence(const Tensor &left,
                                        const Tensor &right) {
     if (right.storage->dtype == DType::COMPLEX) {

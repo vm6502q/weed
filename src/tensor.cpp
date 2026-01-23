@@ -9,8 +9,8 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "tensor.hpp"
 #include "node.hpp"
+#include "scalar.hpp"
 
 #include "abs.hpp"
 #include "add.hpp"
@@ -41,17 +41,8 @@ Tensor Tensor::allocate_like(const Tensor &orig, const DType &dt,
                              const bool &rg) {
   const StoragePtr storage_ptr = orig.storage;
   const DeviceTag dtag = storage_ptr->device;
-  int64_t did = -1;
-  if (dtag == DeviceTag::GPU) {
-    switch (dt) {
-    case DType::COMPLEX:
-      did = static_cast<GpuComplexStorage *>(storage_ptr.get())->gpu->deviceID;
-      break;
-    case DType::REAL:
-    default:
-      did = static_cast<GpuRealStorage *>(storage_ptr.get())->gpu->deviceID;
-    }
-  }
+  const int64_t did = storage_ptr->get_device_id();
+
   return Tensor(orig.shape, orig.stride, rg, dt, dtag, did);
 }
 
@@ -99,6 +90,27 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
   if (rg) {
     grad->storage->FillZeros();
   }
+}
+
+Tensor Tensor::operator[](size_t idx) {
+  if (idx >= get_size()) {
+     throw std::invalid_argument("Tensor index out-of-range!");
+  }
+
+  Tensor v = copy();
+  v.offset += idx * v.stride[0U];
+  v.shape.erase(v.shape.begin());
+  v.stride.erase(v.stride.begin());
+
+  if (v.grad) {
+    v.grad = (*(v.grad))[idx].get_ptr();
+  }
+
+  if (v.shape.empty()) {
+    return Scalar(v);
+  }
+
+  return v;
 }
 
 std::vector<TensorPtr> filterParents(std::vector<TensorPtr> parents) {

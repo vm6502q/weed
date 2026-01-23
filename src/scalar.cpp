@@ -17,17 +17,6 @@
 #include "mul.hpp"
 #include "relu.hpp"
 
-#define PICK_DEVICE_STORAGE(GpuType, CpuType)                                  \
-  switch (dtag) {                                                              \
-  case DeviceTag::GPU:                                                         \
-    storage = std::make_shared<GpuType>(size, did);                            \
-    break;                                                                     \
-  case DeviceTag::CPU:                                                         \
-  default:                                                                     \
-    storage = std::make_shared<CpuType>(size);                                 \
-  }                                                                            \
-  break
-
 namespace Weed {
 Scalar Scalar::abs(Scalar &a) {
   a.reset_indices();

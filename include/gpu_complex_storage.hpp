@@ -35,6 +35,8 @@ struct GpuComplexStorage : ComplexStorage {
 
   ~GpuComplexStorage() {}
 
+  int64_t get_device_id() { return gpu->deviceID; }
+
   void FillZeros() { gpu->ClearRealBuffer(buffer, size << 1U); }
   void FillOnes() { gpu->FillOnesComplex(buffer, size); }
 

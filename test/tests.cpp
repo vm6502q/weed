@@ -116,8 +116,8 @@ TEST_CASE_METHOD(TensorTestFixture, "test_complex") {
 
 #if 0
 TEST_CASE("test_scalar_grad") {
-  Tensor x = scalar(2.0, requires_grad=true);
-  Tensor y = scalar(3.0, requires_grad=true);
+  Tensor x = Scalar(2.0, requires_grad=true);
+  Tensor y = Scalar(3.0, requires_grad=true);
   Tensor z = x * y;
   backward(z);
 

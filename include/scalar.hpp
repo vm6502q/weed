@@ -25,6 +25,14 @@ struct Scalar : public Tensor {
   Scalar(complex v, bool rg, DeviceTag dtag, int64_t did = -1)
       : Tensor(std::vector<vecCapIntGpu>{1U}, std::vector<vecCapIntGpu>{0U}, rg,
                DType::COMPLEX, dtag, did) {}
+  Scalar(Tensor orig) {
+    shape = std::vector<vecCapIntGpu>{1U};
+    stride = std::vector<vecCapIntGpu>{0U};
+    offset = orig.offset;
+    storage = orig.storage;
+    grad_node = orig.grad_node;
+    grad = orig.grad;
+  }
 
   void set_index_count(size_t ic) {
     shape.resize(ic);

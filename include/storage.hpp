@@ -36,6 +36,8 @@ struct Storage : public std::enable_shared_from_this<Storage> {
 
   virtual StoragePtr get_ptr() { return shared_from_this(); }
 
+  virtual int64_t get_device_id() { return -1; }
+
   virtual void FillZeros() = 0;
   virtual void FillOnes() = 0;
 
