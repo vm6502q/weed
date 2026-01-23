@@ -35,6 +35,9 @@ using namespace Weed;
     REQUIRE(std::norm(__tmp_a - __tmp_b) < EPSILON);                           \
   } while (0);
 
+#define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
+#define GET_COMPLEX(ptr) static_cast<ComplexScalar *>((ptr).get())->get_item()
+
 TEST_CASE("test_complex") {
   bool test;
   complex cmplx1(ONE_R1, -ONE_R1);
@@ -122,8 +125,9 @@ TEST_CASE("test_scalar_grad") {
   TensorPtr z = x * y;
   Tensor::backward(z);
 
-  REQUIRE(*(static_cast<RealScalar *>(x->grad.get())) ==
-          RealScalar(ONE_R1 * 3));
-  REQUIRE(*(static_cast<RealScalar *>(y->grad.get())) ==
-          RealScalar(ONE_R1 * 2));
+  std::cout << GET_REAL(x) << std::endl;
+  std::cout << GET_REAL(y) << std::endl;
+
+  REQUIRE(GET_REAL(x->grad) == (ONE_R1 * 3));
+  REQUIRE(GET_REAL(y->grad) == (ONE_R1 * 2));
 }

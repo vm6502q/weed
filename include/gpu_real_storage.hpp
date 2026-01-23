@@ -34,6 +34,15 @@ struct GpuRealStorage : RealStorage {
     buffer = MakeBuffer(n);
   }
 
+  GpuRealStorage(std::vector<real1> val, int64_t did)
+      : RealStorage(DeviceTag::GPU, val.size()),
+        gpu(OCLEngine::Instance().GetWeedDevice(did)),
+        array(Alloc(val.size())) {
+    std::copy(val.begin(), val.end(), array.get());
+    buffer = MakeBuffer(val.size());
+    array.reset();
+  }
+
   ~GpuRealStorage() {}
 
   int64_t get_device_id() { return gpu->deviceID; }
@@ -54,12 +63,20 @@ struct GpuRealStorage : RealStorage {
 
   BufferPtr MakeBuffer(vecCapIntGpu n) {
     if (gpu->device_context->use_host_mem) {
-      array = Alloc(n);
+      if (!array) {
+        array = Alloc(n);
+      }
+
       return gpu->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
                              sizeof(real1) * n, array.get());
     }
 
-    return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
+    if (!array) {
+      return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
+    }
+
+    return gpu->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
+                           sizeof(real1) * n, array.get());
   }
 
   real1 operator[](vecCapInt idx) {

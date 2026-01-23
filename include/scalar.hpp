@@ -20,12 +20,11 @@ typedef std::shared_ptr<Scalar> ScalarPtr;
 
 struct Scalar : public Tensor {
   Scalar(real1 v, bool rg, DeviceTag dtag, int64_t did = -1)
-      : Tensor(std::vector<vecCapInt>{ONE_VCI},
-               std::vector<vecCapInt>{ZERO_VCI}, rg, DType::REAL, dtag, did) {}
+      : Tensor(std::vector<real1>{v}, std::vector<vecCapInt>{ONE_VCI},
+               std::vector<vecCapInt>{ZERO_VCI}, rg, dtag, did) {}
   Scalar(complex v, bool rg, DeviceTag dtag, int64_t did = -1)
-      : Tensor(std::vector<vecCapInt>{ONE_VCI},
-               std::vector<vecCapInt>{ZERO_VCI}, rg, DType::COMPLEX, dtag,
-               did) {}
+      : Tensor(std::vector<complex>{v}, std::vector<vecCapInt>{ONE_VCI},
+               std::vector<vecCapInt>{ZERO_VCI}, rg, dtag, did) {}
   Scalar(TensorPtr orig) {
     if (orig->get_size() != ONE_VCI) {
       throw std::invalid_argument(

@@ -37,6 +37,16 @@
   }                                                                            \
   break
 
+#define INIT_DEVICE_STORAGE(val, GpuType, CpuType)                             \
+  switch (dtag) {                                                              \
+  case DeviceTag::GPU:                                                         \
+    storage = std::make_shared<GpuType>(val, did);                             \
+    break;                                                                     \
+  case DeviceTag::CPU:                                                         \
+  default:                                                                     \
+    storage = std::make_shared<CpuType>(val);                                  \
+  }
+
 namespace Weed {
 TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
                                 const bool &rg) {
@@ -91,6 +101,49 @@ Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
   if (rg) {
     grad->storage->FillZeros();
   }
+}
+
+Tensor::Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
+               std::vector<vecCapInt> strd, bool rg, DeviceTag dtag,
+               int64_t did)
+    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+      grad(rg ? std::make_shared<Tensor>(shp, strd, false, DType::REAL, dtag,
+                                         did)
+              : nullptr) {
+  if (shape.size() != stride.size()) {
+    throw std::invalid_argument(
+        "Tensor shape vector must have same length as stride vector!");
+  }
+
+  const vecCapInt size = get_size();
+
+  if (size != val.size()) {
+    throw std::invalid_argument("Tensor value initializer vector must have "
+                                "same size as implied by shape and stride!");
+  }
+
+  INIT_DEVICE_STORAGE(val, GpuRealStorage, CpuRealStorage);
+}
+Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
+               std::vector<vecCapInt> strd, bool rg, DeviceTag dtag,
+               int64_t did)
+    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+      grad(rg ? std::make_shared<Tensor>(shp, strd, false, DType::COMPLEX, dtag,
+                                         did)
+              : nullptr) {
+  if (shape.size() != stride.size()) {
+    throw std::invalid_argument(
+        "Tensor shape vector must have same length as stride vector!");
+  }
+
+  const vecCapInt size = get_size();
+
+  if (size != val.size()) {
+    throw std::invalid_argument("Tensor value initializer vector must have "
+                                "same size as implied by shape and stride!");
+  }
+
+  INIT_DEVICE_STORAGE(val, GpuComplexStorage, CpuComplexStorage);
 }
 
 TensorPtr Tensor::operator[](vecCapInt idx) {

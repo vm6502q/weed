@@ -33,6 +33,15 @@ struct GpuComplexStorage : ComplexStorage {
     buffer = MakeBuffer(n);
   }
 
+  GpuComplexStorage(std::vector<complex> val, int64_t did)
+      : ComplexStorage(DeviceTag::GPU, val.size()),
+        gpu(OCLEngine::Instance().GetWeedDevice(did)),
+        array(Alloc(val.size())) {
+    std::copy(val.begin(), val.end(), array.get());
+    buffer = MakeBuffer(val.size());
+    array.reset();
+  }
+
   ~GpuComplexStorage() {}
 
   int64_t get_device_id() { return gpu->deviceID; }
@@ -44,12 +53,20 @@ struct GpuComplexStorage : ComplexStorage {
 
   BufferPtr MakeBuffer(vecCapIntGpu n) {
     if (gpu->device_context->use_host_mem) {
-      array = Alloc(n);
+      if (!array) {
+        array = Alloc(n);
+      }
+
       return gpu->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
                              sizeof(complex) * n, array.get());
     }
 
-    return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
+    if (!array) {
+      return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
+    }
+
+    return gpu->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
+                           sizeof(complex) * n, array.get());
   }
 
   complex operator[](vecCapInt idx) {

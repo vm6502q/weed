@@ -20,8 +20,7 @@ struct ComplexScalar : public Scalar {
                 int64_t did = -1)
       : Scalar(v, rg, dtag, did) {}
   ComplexScalar(TensorPtr orig) : Scalar(orig) {
-    if ((orig->storage->dtype != DType::COMPLEX) &&
-        (orig->storage->dtype != DType::REAL)) {
+    if (orig->storage->dtype != DType::COMPLEX) {
       throw std::invalid_argument(
           "Cannot construct ComplexScalar from non-complex Tensor!");
     }
