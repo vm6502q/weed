@@ -26,17 +26,17 @@ typedef std::shared_ptr<Tensor> TensorPtr;
 struct Tensor : public std::enable_shared_from_this<Tensor> {
   StoragePtr storage;
 
-  std::vector<vecCapIntGpu> shape;
-  std::vector<vecCapIntGpu> stride;
-  vecCapIntGpu offset;
+  std::vector<vecCapInt> shape;
+  std::vector<vecCapInt> stride;
+  vecCapInt offset;
 
   NodePtr grad_node;
   TensorPtr grad;
 
   Tensor()
-      : storage(nullptr), shape(), stride(), offset(0U), grad_node(nullptr),
-        grad(nullptr) {}
-  Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
+      : storage(nullptr), shape(), stride(), offset(ZERO_VCI),
+        grad_node(nullptr), grad(nullptr) {}
+  Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd,
          bool rg = false, DType dtype = DType::REAL,
          DeviceTag dtag = DeviceTag::CPU, int64_t did = -1);
 
@@ -44,16 +44,16 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
   TensorPtr get_ptr() { return shared_from_this(); }
 
-  virtual vecCapIntGpu get_size() const {
+  virtual vecCapInt get_size() const {
     if (shape.empty()) {
-      return 0U;
+      return ZERO_VCI;
     }
-    vecCapIntGpu max_index = offset;
-    for (size_t i = 0; i < shape.size(); ++i) {
-      max_index += (shape[i] - 1U) * stride[i];
+    vecCapInt max_index = offset;
+    for (size_t i = 0U; i < shape.size(); ++i) {
+      max_index += (shape[i] - ONE_VCI) * stride[i];
     }
 
-    return max_index + 1U;
+    return max_index + ONE_VCI;
   }
 
   // Shallow copy:
@@ -72,7 +72,7 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
   void upcast(DType dt) { storage = storage->Upcast(dt); }
 
-  Tensor operator[](size_t idx);
+  Tensor operator[](vecCapInt idx);
 
   static DType get_dtype_by_presidence(const Tensor &left,
                                        const Tensor &right) {
@@ -84,8 +84,8 @@ struct Tensor : public std::enable_shared_from_this<Tensor> {
 
   static Tensor allocate_like(const Tensor &orig, const DType &dt,
                               const bool &rg);
-  static Tensor allocate_like(const std::vector<vecCapIntGpu> &shape,
-                              const std::vector<vecCapIntGpu> &stride,
+  static Tensor allocate_like(const std::vector<vecCapInt> &shape,
+                              const std::vector<vecCapInt> &stride,
                               const Tensor &orig, const DType &dt,
                               const bool &rg);
 

@@ -58,7 +58,7 @@ void cl_free(void *toFree) {
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
 vecCapInt intPow(const vecCapInt &base, const vecCapInt &power) {
   if (bi_compare_0(power) == 0U) {
-    return ONE_BCI;
+    return ONE_VCI;
   }
 
   if (bi_compare_1(power) == 0U) {
@@ -274,9 +274,9 @@ vecCapInt pushApartBits(const vecCapInt &perm,
   }
 
   vecCapInt iHigh = perm;
-  vecCapInt i = ZERO_BCI;
+  vecCapInt i = ZERO_VCI;
   for (size_t p = 0U; p < skipPowers.size(); ++p) {
-    vecCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
+    vecCapInt iLow = iHigh & (skipPowers[p] - ONE_VCI);
     bi_or_ip(&i, iLow);
     iHigh = (iHigh ^ iLow) << 1U;
   }
@@ -324,7 +324,7 @@ std::istream &operator>>(std::istream &is, vecCapInt &b) {
   is >> input;
 
   // Start the output address value at 0.
-  b = ZERO_BCI;
+  b = ZERO_VCI;
   for (size_t i = 0; i < input.size(); ++i) {
     // Left shift by 1 base-10 digit.
     b = b * 10U;

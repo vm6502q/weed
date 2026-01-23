@@ -20,9 +20,9 @@
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
 #define KERNEL_SWITCH()                                                        \
-  const vecCapIntGpu I_a = a.stride[0U];                                       \
-  const vecCapIntGpu I_b = b.stride[0U];                                       \
-  const vecCapIntGpu I_o = out.stride[0U];                                     \
+  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
+  const vecCapIntGpu I_b = (vecCapIntGpu)b.stride[0U];                         \
+  const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];                       \
   ParallelFunc fn;                                                             \
   switch (op) {                                                                \
   case CommutingOperation::MUL:                                                \
@@ -49,9 +49,13 @@
   default:                                                                     \
     api_call = api_add;                                                        \
   }                                                                            \
-  const vecCapIntGpu args[7U]{                                                 \
-      a.offset,   a.stride[0U],   b.offset, b.stride[0U],                      \
-      out.offset, out.stride[0U], 0U};                                         \
+  const vecCapIntGpu args[7U]{(vecCapIntGpu)(a.offset),                        \
+                              (vecCapIntGpu)(a.stride[0U]),                    \
+                              (vecCapIntGpu)(b.offset),                        \
+                              (vecCapIntGpu)(b.stride[0U]),                    \
+                              (vecCapIntGpu)(out.offset),                      \
+                              (vecCapIntGpu)(out.stride[0U]),                  \
+                              0U};                                             \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \

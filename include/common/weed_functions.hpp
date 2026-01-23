@@ -165,12 +165,12 @@ inline int bi_log2(const vecCapInt &n) { return log2Gpu((vecCapIntGpu)n); }
 #endif
 inline vecLenInt log2(vecCapInt n) { return (vecLenInt)bi_log2(n); }
 
-inline vecCapInt pow2(const vecLenInt &p) { return ONE_BCI << p; }
+inline vecCapInt pow2(const vecLenInt &p) { return ONE_VCI << p; }
 inline vecCapIntGpu pow2Gpu(const vecLenInt &p) {
   return (vecCapIntGpu)1U << p;
 }
 inline vecCapInt pow2Mask(const vecLenInt &p) {
-  vecCapInt toRet = ONE_BCI << p;
+  vecCapInt toRet = ONE_VCI << p;
   bi_decrement(&toRet, 1U);
   return toRet;
 }
@@ -178,14 +178,14 @@ inline vecCapIntGpu pow2MaskGpu(const vecLenInt &p) {
   return ((vecCapIntGpu)1U << p) - 1U;
 }
 inline vecCapInt bitSlice(const vecLenInt &bit, const vecCapInt &source) {
-  return (ONE_BCI << bit) & source;
+  return (ONE_VCI << bit) & source;
 }
 inline vecCapIntGpu bitSliceGpu(const vecLenInt &bit,
                                 const vecCapIntGpu &source) {
   return ((vecCapIntGpu)1U << bit) & source;
 }
 inline vecCapInt bitRegMask(const vecLenInt &start, const vecLenInt &length) {
-  vecCapInt toRet = ONE_BCI << length;
+  vecCapInt toRet = ONE_VCI << length;
   bi_decrement(&toRet, 1U);
   bi_lshift_ip(&toRet, start);
   return toRet;

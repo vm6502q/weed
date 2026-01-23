@@ -11,6 +11,19 @@
 
 #include "gpu_device.hpp"
 
+#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)               \
+  tryOcl("Failed to write buffer", [&] {                                       \
+    return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array,           \
+                                    waitVec.get(), &clEvent);                  \
+  });
+
+#define DISPATCH_BLOCK_READ(waitVec, buff, offset, length, array)              \
+  tryOcl("Failed to read buffer", [&] {                                        \
+    return queue.enqueueReadBuffer(buff, CL_TRUE, offset, length, array,       \
+                                   waitVec.get());                             \
+  });                                                                          \
+  wait_refs.clear();
+
 namespace Weed {
 void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void *user_data) {
   ((GpuDevice *)user_data)->PopQueue(true);
@@ -247,14 +260,14 @@ inline size_t pick_group_size(const size_t &nwi) {
   return ngs;
 }
 
-void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
+void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
                               const size_t nwi,
                               std::vector<BufferPtr> buffers) {
   EventVecPtr waitVec = ResetWaitEvents();
   PoolItemPtr poolItem = GetFreePoolItem();
   cl::Event writeArgsEvent;
   DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer),
-                      sizeof(vecCapIntGpu) * VCI_ARG_LEN, bciArgs,
+                      sizeof(vecCapIntGpu) * VCI_ARG_LEN, vciArgs,
                       writeArgsEvent);
   const size_t ngs = pick_group_size(nwi);
   buffers.push_back(poolItem->vciBuffer);
@@ -281,5 +294,13 @@ void GpuDevice::UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
   const size_t ngs = pick_group_size(nwi);
   QueueCall(OCLAPI::OCL_API_REAL_TO_COMPLEX_BUFFER, nwi, ngs,
             std::vector<BufferPtr>{buffer_in, buffer_out});
+}
+
+real1 GpuDevice::GetReal(BufferPtr buffer, vecCapIntGpu idx) {
+  real1 v;
+  EventVecPtr waitVec = ResetWaitEvents();
+  DISPATCH_BLOCK_READ(waitVec, *buffer, sizeof(real1) * idx, sizeof(real1), &v);
+
+  return v;
 }
 } // namespace Weed

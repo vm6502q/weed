@@ -27,6 +27,8 @@ struct CpuComplexStorage : ComplexStorage {
 
   ~CpuComplexStorage() {}
 
+  complex operator[](vecCapInt idx) { return data.get()[(size_t)idx]; }
+
   void FillZeros() { std::fill(data.get(), data.get() + size, ZERO_CMPLX); }
   void FillOnes() { std::fill(data.get(), data.get() + size, ONE_CMPLX); }
 

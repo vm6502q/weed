@@ -15,10 +15,12 @@
 
 namespace Weed {
 struct ComplexStorage : Storage {
-  ComplexStorage(DeviceTag dtg, vecCapIntGpu n)
+  ComplexStorage(DeviceTag dtg, vecCapInt n)
       : Storage(dtg, DType::COMPLEX, n) {}
 
   virtual ~ComplexStorage() {}
+
+  virtual complex operator[](vecCapInt idx) = 0;
 
 #if defined(__APPLE__)
   static complex *_aligned_state_vec_alloc(vecCapIntGpu allocSize) {

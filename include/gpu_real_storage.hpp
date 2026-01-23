@@ -61,6 +61,15 @@ struct GpuRealStorage : RealStorage {
 
     return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
   }
+
+  real1 operator[](vecCapInt idx) {
+    if (idx >= size) {
+      throw std::invalid_argument(
+          "GpuRealStorage::operator[] argument out-of-bounds!");
+    }
+
+    return gpu->GetReal(buffer, (vecCapIntGpu)idx);
+  }
 };
 typedef std::shared_ptr<GpuRealStorage> GpuRealStoragePtr;
 } // namespace Weed

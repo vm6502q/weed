@@ -46,8 +46,8 @@ Tensor Tensor::allocate_like(const Tensor &orig, const DType &dt,
   return Tensor(orig.shape, orig.stride, rg, dt, dtag, did);
 }
 
-Tensor Tensor::allocate_like(const std::vector<vecCapIntGpu> &shape,
-                             const std::vector<vecCapIntGpu> &stride,
+Tensor Tensor::allocate_like(const std::vector<vecCapInt> &shape,
+                             const std::vector<vecCapInt> &stride,
                              const Tensor &orig, const DType &dt,
                              const bool &rg) {
   const StoragePtr storage_ptr = orig.storage;
@@ -66,9 +66,9 @@ Tensor Tensor::allocate_like(const std::vector<vecCapIntGpu> &shape,
   return Tensor(shape, stride, rg, dt, dtag, did);
 }
 
-Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
-               bool rg, DType dtype, DeviceTag dtag, int64_t did)
-    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
+Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
+               DType dtype, DeviceTag dtag, int64_t did)
+    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
       grad(rg ? std::make_shared<Tensor>(shape, stride, false, dtype, dtag, did)
               : nullptr) {
   if (shape.size() != stride.size()) {
@@ -76,7 +76,7 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
         "Tensor shape vector must have same length as stride vector!");
   }
 
-  const vecCapIntGpu size = get_size();
+  const vecCapInt size = get_size();
 
   switch (dtype) {
   case DType::COMPLEX:
@@ -92,9 +92,9 @@ Tensor::Tensor(std::vector<vecCapIntGpu> shp, std::vector<vecCapIntGpu> strd,
   }
 }
 
-Tensor Tensor::operator[](size_t idx) {
+Tensor Tensor::operator[](vecCapInt idx) {
   if (idx >= shape.back()) {
-     throw std::invalid_argument("Tensor index out-of-range!");
+    throw std::invalid_argument("Tensor index out-of-range!");
   }
 
   Tensor v = copy();
@@ -304,8 +304,8 @@ Tensor Tensor::matmul(Tensor &a, Tensor &b) {
         "Tensor::matmul is only for matrices with 2 indices!");
   }
 
-  const std::vector<vecCapIntGpu> shp = {a.shape[0U], b.shape[1U]};
-  const std::vector<vecCapIntGpu> str = {1U, a.shape[0U]};
+  const std::vector<vecCapInt> shp = {a.shape[0U], b.shape[1U]};
+  const std::vector<vecCapInt> str = {ONE_VCI, a.shape[0U]};
   const bool rg = a.requires_grad() || b.requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
   Tensor out = allocate_like(shp, str, a, dt, rg);

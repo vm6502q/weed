@@ -20,14 +20,15 @@ typedef std::shared_ptr<Scalar> ScalarPtr;
 
 struct Scalar : public Tensor {
   Scalar(real1 v, bool rg, DeviceTag dtag, int64_t did = -1)
-      : Tensor(std::vector<vecCapIntGpu>{1U}, std::vector<vecCapIntGpu>{0U}, rg,
-               DType::REAL, dtag, did) {}
+      : Tensor(std::vector<vecCapInt>{ONE_VCI},
+               std::vector<vecCapInt>{ZERO_VCI}, rg, DType::REAL, dtag, did) {}
   Scalar(complex v, bool rg, DeviceTag dtag, int64_t did = -1)
-      : Tensor(std::vector<vecCapIntGpu>{1U}, std::vector<vecCapIntGpu>{0U}, rg,
-               DType::COMPLEX, dtag, did) {}
+      : Tensor(std::vector<vecCapInt>{ONE_VCI},
+               std::vector<vecCapInt>{ZERO_VCI}, rg, DType::COMPLEX, dtag,
+               did) {}
   Scalar(Tensor orig) {
-    shape = std::vector<vecCapIntGpu>{1U};
-    stride = std::vector<vecCapIntGpu>{0U};
+    shape = std::vector<vecCapInt>{ONE_VCI};
+    stride = std::vector<vecCapInt>{ZERO_VCI};
     offset = orig.offset;
     storage = orig.storage;
     grad_node = orig.grad_node;
@@ -40,7 +41,7 @@ struct Scalar : public Tensor {
   }
   void reset_indices() {
     set_index_count(1U);
-    shape[0U] = 1U;
+    shape[0U] = ONE_VCI;
   }
   void match_shape(const Tensor &a) {
     shape = a.shape;

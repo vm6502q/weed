@@ -15,9 +15,11 @@
 
 namespace Weed {
 struct RealStorage : Storage {
-  RealStorage(DeviceTag dtg, vecCapIntGpu n) : Storage(dtg, DType::REAL, n) {}
+  RealStorage(DeviceTag dtg, vecCapInt n) : Storage(dtg, DType::REAL, n) {}
 
   virtual ~RealStorage() {}
+
+  virtual real1 operator[](vecCapInt idx) = 0;
 
 #if defined(__APPLE__)
   static real1 *_aligned_state_vec_alloc(vecCapIntGpu allocSize) {

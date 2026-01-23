@@ -132,8 +132,8 @@ typedef double real1_s;
 #endif
 
 typedef std::complex<real1> complex;
-const vecCapInt ONE_BCI = 1U;
-const vecCapInt ZERO_BCI = 0U;
+const vecCapInt ONE_VCI = 1U;
+const vecCapInt ZERO_VCI = 0U;
 constexpr vecLenInt bitsInCap = ((vecLenInt)1U) << ((vecLenInt)VCAPPOW);
 
 struct Node;

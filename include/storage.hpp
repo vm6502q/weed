@@ -23,9 +23,9 @@ typedef std::shared_ptr<Storage> StoragePtr;
 struct Storage : public std::enable_shared_from_this<Storage> {
   DeviceTag device;
   DType dtype;
-  vecCapIntGpu size;
+  vecCapInt size;
 
-  Storage(DeviceTag dtg, DType dtp, vecCapIntGpu n)
+  Storage(DeviceTag dtg, DType dtp, vecCapInt n)
       : device(dtg), dtype(dtp), size(n) {
     if (!size) {
       throw std::invalid_argument("Storage must have size of at least 1!");

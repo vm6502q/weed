@@ -30,6 +30,8 @@ struct CpuRealStorage : RealStorage {
 
   ~CpuRealStorage() {}
 
+  real1 operator[](vecCapInt idx) { return data.get()[(size_t)idx]; }
+
   void FillZeros() { std::fill(data.get(), data.get() + size, ZERO_R1); }
   void FillOnes() { std::fill(data.get(), data.get() + size, ONE_R1); }
 
@@ -43,6 +45,6 @@ struct CpuRealStorage : RealStorage {
                    [](real1 v) { return complex(v, ZERO_R1); });
 
     return n.get_ptr();
-  };
+  }
 };
 } // namespace Weed

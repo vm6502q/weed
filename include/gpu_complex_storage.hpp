@@ -51,6 +51,17 @@ struct GpuComplexStorage : ComplexStorage {
 
     return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
   }
+
+  complex operator[](vecCapInt idx) {
+    if (idx >= size) {
+      throw std::invalid_argument(
+          "GpuComplexStorage::operator[] argument out-of-bounds!");
+    }
+
+    vecCapIntGpu i = ((vecCapIntGpu)idx) << 1U;
+
+    return complex(gpu->GetReal(buffer, i), gpu->GetReal(buffer, i + 1U));
+  }
 };
 typedef std::shared_ptr<GpuComplexStorage> GpuComplexStoragePtr;
 } // namespace Weed

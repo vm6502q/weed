@@ -20,12 +20,6 @@
 
 #include <list>
 
-#define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)               \
-  tryOcl("Failed to write buffer", [&] {                                       \
-    return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array,           \
-                                    waitVec.get(), &clEvent);                  \
-  });
-
 namespace Weed {
 struct GpuDevice {
   cl_int callbackError;
@@ -124,7 +118,7 @@ struct GpuDevice {
 
   PoolItemPtr GetFreePoolItem();
 
-  void RequestKernel(OCLAPI api_call, const vecCapIntGpu *bciArgs,
+  void RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
                      const size_t nwi, std::vector<BufferPtr> buffers);
 
   void ClearRealBuffer(BufferPtr buffer, const size_t nwi);
@@ -132,5 +126,7 @@ struct GpuDevice {
   void FillOnesComplex(BufferPtr buffer, const size_t nwi);
   void UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
                         const size_t nwi);
+
+  real1 GetReal(BufferPtr buffer, vecCapIntGpu idx);
 };
 } // namespace Weed
