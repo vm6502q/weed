@@ -9,12 +9,22 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
+#pragma once
+
 #include "tensors/tensor.hpp"
 
-#include <iostream> // For cout
+namespace Weed {
+struct MeanKernel {
+  void cpu_real(const Tensor &, Tensor &);
+  void cpu_complex(const Tensor &, Tensor &);
+#if ENABLE_GPU
+  void gpu_real(const Tensor &, Tensor &);
+  void gpu_complex(const Tensor &, Tensor &);
+#endif
+  void mean(const Tensor &, Tensor &);
+};
 
-using namespace Weed;
+extern MeanKernel mean_kernel;
 
-int main() {
-  // TODO
-}
+void mean(const Tensor &a, Tensor &out);
+} // namespace Weed

@@ -1,3 +1,5 @@
+#pragma once
+
 #cmakedefine ENABLE_ENV_VARS 1
 #cmakedefine ENABLE_FMA 1
 #cmakedefine ENABLE_INTRINSICS 1

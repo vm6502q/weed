@@ -56,7 +56,7 @@ if (ENABLE_CUDA)
     target_sources (weed PRIVATE
         src/common/cudaengine.cu
         src/common/qengine.cu
-        src/gpu_device.cpp
+        src/devices/gpu_device.cpp
         )
 
 endif(ENABLE_CUDA)

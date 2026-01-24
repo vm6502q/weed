@@ -9,12 +9,15 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "tensors/tensor.hpp"
+#pragma once
 
-#include <iostream> // For cout
+#include "common/weed_types.hpp"
+#include "storage/cpu_complex_storage.hpp"
+#include "storage/cpu_real_storage.hpp"
+#if ENABLE_GPU
+#include "storage/gpu_complex_storage.hpp"
+#include "storage/gpu_real_storage.hpp"
+#endif
 
-using namespace Weed;
-
-int main() {
-  // TODO
-}
+#define CAST_STORAGE(out, in, type, ptr)                                       \
+  type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset

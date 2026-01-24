@@ -9,12 +9,18 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
+#pragma once
+
 #include "tensors/tensor.hpp"
 
-#include <iostream> // For cout
+#include <functional>
 
-using namespace Weed;
+namespace Weed {
+struct Node {
+  std::vector<TensorPtr> parents;
+  std::function<void()> backward;
 
-int main() {
-  // TODO
-}
+  Node(std::vector<TensorPtr> p, std::function<void()> b)
+      : parents(p), backward(b) {}
+};
+} // namespace Weed

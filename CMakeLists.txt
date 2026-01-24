@@ -23,15 +23,15 @@ endif (PACK_DEBIAN)
 add_library (weed STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
-    src/abs.cpp
-    src/commuting.cpp
-    src/div.cpp
-    src/in_place.cpp
-    src/matmul.cpp
-    src/mean.cpp
-    src/relu.cpp
-    src/sub.cpp
-    src/tensor.cpp
+    src/ops/abs.cpp
+    src/ops/commuting.cpp
+    src/ops/div.cpp
+    src/ops/in_place.cpp
+    src/ops/matmul.cpp
+    src/ops/mean.cpp
+    src/ops/relu.cpp
+    src/ops/sub.cpp
+    src/tensors/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)
 if (ENABLE_PTHREAD AND ENABLE_ASYNC)
@@ -290,33 +290,34 @@ install (FILES
 
 # Install weed library headers
 install (FILES
-    include/abs.hpp
-    include/complex_scalar.hpp
-    include/complex_storage.hpp
-    include/cpu_complex_storage.hpp
-    include/cpu_real_storage.hpp
-    include/device_tag.hpp
-    include/div.hpp
-    include/dtype.hpp
-    include/gpu_device.hpp
-    include/gpu_complex_storage.hpp
-    include/gpu_real_storage.hpp
-    include/in_place.hpp
-    include/matmul.hpp
-    include/mean.hpp
+    include/autograd/node.hpp
+    include/autograd/sgd.hpp
+    include/autograd/zero_grad.hpp
+    include/devices/gpu_device.hpp
+    include/enums/device_tag.hpp
+    include/enums/dtype.hpp
+    include/ops/abs.hpp
+    include/ops/div.hpp
+    include/ops/in_place.hpp
+    include/ops/matmul.hpp
+    include/ops/mean.hpp
+    include/ops/relu.hpp
+    includes/ops/sub.hpp
+    include/storage/all_storage.hpp
+    include/storage/complex_storage.hpp
+    include/storage/cpu_complex_storage.hpp
+    include/storage/cpu_real_storage.hpp
+    include/storage/gpu_complex_storage.hpp
+    include/storage/gpu_real_storage.hpp
+    include/storage/real_storage.hpp
+    include/storage/storage.hpp
+    include/tensors/complex_scalar.hpp
+    include/tensors/parameter.hpp
+    include/tensors/real_scalar.hpp
+    include/tensors/scalar.hpp
+    include/tensors/tensor.hpp
     include/module.hpp
-    include/node.hpp
-    include/parameter.hpp
     include/queue_item.hpp
-    include/real_scalar.hpp
-    include/real_storage.hpp
-    include/relu.hpp
-    include/scalar.hpp
-    include/sgd.hpp
-    include/storage.hpp
-    includes/sub.hpp
-    include/tensor.hpp
-    include/zero_grad.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/weed
     )
 

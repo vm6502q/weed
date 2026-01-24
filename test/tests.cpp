@@ -16,10 +16,10 @@
 
 #include "tests.hpp"
 
-#include "complex_scalar.hpp"
-#include "real_scalar.hpp"
-#include "sgd.hpp"
-#include "zero_grad.hpp"
+#include "autograd/sgd.hpp"
+#include "autograd/zero_grad.hpp"
+#include "tensors/complex_scalar.hpp"
+#include "tensors/real_scalar.hpp"
 
 using namespace Weed;
 
