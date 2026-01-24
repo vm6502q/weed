@@ -2,6 +2,7 @@
 #cmakedefine ENABLE_FMA 1
 #cmakedefine ENABLE_INTRINSICS 1
 #cmakedefine ENABLE_OPENCL 1
+#cmakedefine ENABLE_CUDA 1
 #cmakedefine ENABLE_OOO_OCL 1
 #cmakedefine ENABLE_PTHREAD 1
 #cmakedefine ENABLE_ASYNC 1
@@ -19,4 +20,8 @@
 
 #if @SSE3_MACRO@
 #define ENABLE_SSE3 1
+#endif
+
+#if ENABLE_OPENCL || ENABLE_CUDA
+#define ENABLE_GPU 1
 #endif

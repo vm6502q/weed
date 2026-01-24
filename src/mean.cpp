@@ -13,8 +13,10 @@
 #include "common/parallel_for.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -67,13 +69,6 @@ void MeanKernel::cpu_real(const Tensor &a, Tensor &out) {
   CPU_SUM(real1);
   po[0U] = t;
 }
-void MeanKernel::gpu_real(const Tensor &a, Tensor &out) {
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  GPU_SUM(real1, SetReal);
-}
 void MeanKernel::cpu_complex(const Tensor &a, Tensor &out) {
   const vecCapIntGpu I_a = (vecCapIntGpu)(a.stride[0U]);
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
@@ -82,6 +77,14 @@ void MeanKernel::cpu_complex(const Tensor &a, Tensor &out) {
   CPU_SUM(complex);
   po[0U] = t;
 }
+#if ENABLE_GPU
+void MeanKernel::gpu_real(const Tensor &a, Tensor &out) {
+  GpuRealStoragePtr a_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
+  GpuRealStoragePtr o_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
+  GPU_SUM(real1, SetReal);
+}
 void MeanKernel::gpu_complex(const Tensor &a, Tensor &out) {
   GpuComplexStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(a.storage);
@@ -89,14 +92,23 @@ void MeanKernel::gpu_complex(const Tensor &a, Tensor &out) {
       std::dynamic_pointer_cast<GpuComplexStorage>(out.storage);
   GPU_SUM(complex, SetComplex);
 }
+#endif
 void MeanKernel::mean(const Tensor &a, Tensor &out) {
   switch (a.storage->dtype) {
   case DType::COMPLEX:
-    DEVICE_SWITCH(cpu_complex, gpu_complex, a, out)
+#if ENABLE_GPU
+    DEVICE_SWITCH(cpu_complex, gpu_complex, a, out);
+#else
+    cpu_complex(a, out);
+#endif
     break;
   case DType::REAL:
   default:
-    DEVICE_SWITCH(cpu_real, gpu_real, a, out)
+#if ENABLE_GPU
+    DEVICE_SWITCH(cpu_real, gpu_real, a, out);
+#else
+    cpu_real(a, out);
+#endif
   }
 }
 

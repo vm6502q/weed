@@ -13,8 +13,10 @@
 #include "common/parallel_for.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -90,6 +92,8 @@ void cpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
 
   ADD_KERNEL();
 }
+
+#if ENABLE_GPU
 void gpu_real_add(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_ADD_REAL);
 }
@@ -100,6 +104,7 @@ void gpu_complex_add(const Tensor &a, const Tensor &b, Tensor &out) {
 void gpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_ADD_MIXED);
 }
+#endif
 
 void cpu_real_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
@@ -122,6 +127,8 @@ void cpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
 
   MUL_KERNEL();
 }
+
+#if ENABLE_GPU
 void gpu_real_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_MUL_REAL);
 }
@@ -132,6 +139,7 @@ void gpu_complex_mul(const Tensor &a, const Tensor &b, Tensor &out) {
 void gpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_MUL_MIXED);
 }
+#endif
 
 void CommutingKernel::commuting(const Tensor &a, const Tensor &b, Tensor &out) {
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
@@ -145,21 +153,47 @@ void CommutingKernel::commuting(const Tensor &a, const Tensor &b, Tensor &out) {
     throw std::invalid_argument("Output tensor dtype mismatch!");
   }
   if (isAComplex && isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_complex, gpu_complex, a, b, out);
+#else
+    cpu_complex(a, b, out);
+#endif
   } else if (isAComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed, gpu_mixed, a, b, out);
+#else
+    cpu_mixed(a, b, out);
+#endif
   } else if (isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed, gpu_mixed, b, a, out);
+#else
+    cpu_mixed(b, a, out);
+#endif
   } else {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_real, gpu_real, a, b, out);
+#else
+    cpu_real(a, b, out);
+#endif
   }
 }
 
-CommutingKernel add_kernel = {cpu_real_add,    gpu_real_add,  cpu_complex_add,
-                              gpu_complex_add, cpu_mixed_add, gpu_mixed_add};
+CommutingKernel add_kernel = {cpu_real_add,  cpu_complex_add,
+                              cpu_mixed_add,
+#if ENABLE_GPU
+                              gpu_real_add,  gpu_complex_add,
+                              gpu_mixed_add
+#endif
+};
 
-CommutingKernel mul_kernel = {cpu_real_mul,    gpu_real_mul,  cpu_complex_mul,
-                              gpu_complex_mul, cpu_mixed_mul, gpu_mixed_mul};
+CommutingKernel mul_kernel = {cpu_real_mul,  cpu_complex_mul,
+                              cpu_mixed_mul,
+#if ENABLE_GPU
+                              gpu_real_mul,  gpu_complex_mul,
+                              gpu_mixed_mul
+#endif
+};
 
 void add(const Tensor &a, const Tensor &b, Tensor &out) {
   add_kernel.commuting(a, b, out);

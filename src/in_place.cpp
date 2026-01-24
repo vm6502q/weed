@@ -13,8 +13,10 @@
 #include "common/parallel_for.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -82,6 +84,7 @@ static void cpu_mixed_add(Tensor &a, const Tensor &b) {
 
   ADD_KERNEL();
 }
+#if ENABLE_GPU
 static void gpu_real_add(Tensor &a, const Tensor &b) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage,
                       OCL_API_ADD_IN_PLACE_REAL);
@@ -94,6 +97,7 @@ static void gpu_mixed_add(Tensor &a, const Tensor &b) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage,
                       OCL_API_ADD_IN_PLACE_MIXED);
 }
+#endif
 
 static void cpu_real_sub(Tensor &a, const Tensor &b) {
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
@@ -113,6 +117,8 @@ static void cpu_mixed_sub(Tensor &a, const Tensor &b) {
 
   SUB_KERNEL();
 }
+
+#if ENABLE_GPU
 static void gpu_real_sub(Tensor &a, const Tensor &b) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage,
                       OCL_API_SUB_IN_PLACE_REAL);
@@ -125,6 +131,7 @@ static void gpu_mixed_sub(Tensor &a, const Tensor &b) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage,
                       OCL_API_SUB_IN_PLACE_MIXED);
 }
+#endif
 
 void InPlaceKernel::in_place(Tensor &a, const Tensor &b) {
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
@@ -134,20 +141,40 @@ void InPlaceKernel::in_place(Tensor &a, const Tensor &b) {
         "Cannot combine complex tensors into real1 tensor!");
   }
   if (isAComplex && isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_complex, gpu_complex, a, b);
+#else
+    cpu_complex(a, b);
+#endif
   } else if (isAComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed, gpu_mixed, a, b);
+#else
+    cpu_mixed(a, b);
+#endif
   } else {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_real, gpu_real, a, b);
+#else
+    cpu_real(a, b);
+#endif
   }
 }
 
-InPlaceKernel add_in_place_kernel = {cpu_real_add,    gpu_real_add,
-                                     cpu_complex_add, gpu_complex_add,
-                                     cpu_mixed_add,   gpu_mixed_add};
-InPlaceKernel sub_in_place_kernel = {cpu_real_sub,    gpu_real_sub,
-                                     cpu_complex_sub, gpu_complex_sub,
-                                     cpu_mixed_sub,   gpu_mixed_sub};
+InPlaceKernel add_in_place_kernel = {cpu_real_add,  cpu_complex_add,
+                                     cpu_mixed_add,
+#if ENABLE_GPU
+                                     gpu_real_add,  gpu_complex_add,
+                                     gpu_mixed_add
+#endif
+};
+InPlaceKernel sub_in_place_kernel = {cpu_real_sub,  cpu_complex_sub,
+                                     cpu_mixed_sub,
+#if ENABLE_GPU
+                                     gpu_real_sub,  gpu_complex_sub,
+                                     gpu_mixed_sub
+#endif
+};
 
 void add_in_place(Tensor &a, const Tensor &b) {
   add_in_place_kernel.in_place(a, b);

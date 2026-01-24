@@ -24,23 +24,15 @@
 
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #include <unordered_set>
 
 #include <iostream>
-
-#define PICK_DEVICE_STORAGE(GpuType, CpuType)                                  \
-  switch (dtag) {                                                              \
-  case DeviceTag::GPU:                                                         \
-    storage = std::make_shared<GpuType>(size, did);                            \
-    break;                                                                     \
-  case DeviceTag::CPU:                                                         \
-  default:                                                                     \
-    storage = std::make_shared<CpuType>(size);                                 \
-  }                                                                            \
-  break
 
 #define INIT_DEVICE_STORAGE(val, GpuType, CpuType)                             \
   switch (dtag) {                                                              \
@@ -84,6 +76,7 @@ TensorPtr Tensor::allocate_like(const std::vector<vecCapInt> &shape,
   const StoragePtr storage_ptr = orig->storage;
   const DeviceTag dtag = storage_ptr->device;
   int64_t did = -1;
+#if ENABLE_GPU
   if (dtag == DeviceTag::GPU) {
     switch (dt) {
     case DType::COMPLEX:
@@ -94,6 +87,7 @@ TensorPtr Tensor::allocate_like(const std::vector<vecCapInt> &shape,
       did = static_cast<GpuRealStorage *>(storage_ptr.get())->gpu->deviceID;
     }
   }
+#endif
   return std::make_shared<Tensor>(shape, stride, rg, dt, dtag, did);
 }
 
@@ -111,11 +105,19 @@ Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
 
   switch (dtype) {
   case DType::COMPLEX:
-    PICK_DEVICE_STORAGE(GpuComplexStorage, CpuComplexStorage);
+#if ENABLE_GPU
+    INIT_DEVICE_STORAGE(size, GpuComplexStorage, CpuComplexStorage);
+#else
+    storage = std::make_shared<CpuComplexStorage>(size);
+#endif
     break;
   case DType::REAL:
   default:
-    PICK_DEVICE_STORAGE(GpuRealStorage, CpuRealStorage);
+#if ENABLE_GPU
+    INIT_DEVICE_STORAGE(size, GpuRealStorage, CpuRealStorage);
+#else
+    storage = std::make_shared<CpuRealStorage>(size);
+#endif
   }
 
   if (rg) {
@@ -142,7 +144,11 @@ Tensor::Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
                                 "same size as implied by shape and stride!");
   }
 
+#if ENABLE_GPU
   INIT_DEVICE_STORAGE(val, GpuRealStorage, CpuRealStorage);
+#else
+  storage = std::make_shared<CpuRealStorage>(val);
+#endif
 
   if (rg) {
     grad->storage->FillZeros();
@@ -167,7 +173,11 @@ Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
                                 "same size as implied by shape and stride!");
   }
 
+#if ENABLE_GPU
   INIT_DEVICE_STORAGE(val, GpuComplexStorage, CpuComplexStorage);
+#else
+  storage = std::make_shared<CpuComplexStorage>(val);
+#endif
 
   if (rg) {
     grad->storage->FillZeros();

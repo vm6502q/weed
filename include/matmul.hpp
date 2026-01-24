@@ -22,10 +22,12 @@ struct MatMulKernel {
   void cpu_complex(const Tensor &, const Tensor &, Tensor &);
   void cpu_mixed_c_left(const Tensor &, const Tensor &, Tensor &);
   void cpu_mixed_c_right(const Tensor &, const Tensor &, Tensor &);
+#if ENABLE_GPU
   void gpu_real(const Tensor &, const Tensor &, Tensor &);
   void gpu_complex(const Tensor &, const Tensor &, Tensor &);
   void gpu_mixed_c_left(const Tensor &, const Tensor &, Tensor &);
   void gpu_mixed_c_right(const Tensor &, const Tensor &, Tensor &);
+#endif
   void matmul(const Tensor &, const Tensor &, Tensor &);
 };
 

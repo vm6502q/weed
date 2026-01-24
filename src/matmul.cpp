@@ -13,8 +13,10 @@
 #include "common/parallel_for.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -115,6 +117,7 @@ void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
               CpuComplexStorage, complex);
 }
 
+#if ENABLE_GPU
 void MatMulKernel::gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   GPU_BY_TYPE(GpuRealStorage, GpuRealStoragePtr, GpuRealStorage,
               GpuRealStoragePtr, GpuRealStorage, GpuRealStoragePtr,
@@ -137,6 +140,7 @@ void MatMulKernel::gpu_mixed_c_right(const Tensor &a, const Tensor &b,
               GpuComplexStoragePtr, GpuComplexStorage, GpuComplexStoragePtr,
               OCL_API_MATMUL_MIXED_C_RIGHT);
 }
+#endif
 
 void MatMulKernel::matmul(const Tensor &a, const Tensor &b, Tensor &out) {
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
@@ -150,13 +154,29 @@ void MatMulKernel::matmul(const Tensor &a, const Tensor &b, Tensor &out) {
     throw std::invalid_argument("Output tensor dtype mismatch!");
   }
   if (isAComplex && isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_complex, gpu_complex);
+#else
+    cpu_complex(a, b, out);
+#endif
   } else if (isAComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed_c_left, gpu_mixed_c_left);
+#else
+    cpu_mixed_c_left(a, b, out);
+#endif
   } else if (isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed_c_right, gpu_mixed_c_right);
+#else
+    cpu_mixed_c_right(a, b, out);
+#endif
   } else {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_real, gpu_real);
+#else
+    cpu_real(a, b, out);
+#endif
   }
 }
 

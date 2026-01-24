@@ -13,8 +13,10 @@
 #include "common/parallel_for.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -48,6 +50,7 @@ void ReluKernel::cpu(const Tensor &a, Tensor &out) {
     po[i * I_o] = std::max(pa[i * I_a], ZERO_R1);
   });
 }
+#if ENABLE_GPU
 void ReluKernel::gpu(const Tensor &a, Tensor &out) {
   const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),
                                (vecCapIntGpu)(a.stride[0U]),
@@ -66,11 +69,13 @@ void ReluKernel::gpu(const Tensor &a, Tensor &out) {
   a_storage->gpu->RequestKernel(OCLAPI::OCL_API_RELU, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer});
 }
+#endif
 void ReluKernel::relu(const Tensor &a, Tensor &out) {
   if ((a.storage->dtype == DType::COMPLEX) or
       (out.storage->dtype == DType::COMPLEX)) {
     throw std::invalid_argument("Cannot apply ReLU on complex tensors!");
   }
+#if ENABLE_GPU
   switch (out.storage->device) {
   case DeviceTag::GPU:
     gpu(a, out);
@@ -79,6 +84,9 @@ void ReluKernel::relu(const Tensor &a, Tensor &out) {
   default:
     cpu(a, out);
   }
+#else
+  cpu(a, out);
+#endif
 }
 
 void ReluKernel::cpu_grad_real(Tensor &din, const Tensor &in,
@@ -94,19 +102,6 @@ void ReluKernel::cpu_grad_real(Tensor &din, const Tensor &in,
     pdi[i * I_d] = (pi[i * I_i] > 0) ? po[i * I_o] : ZERO_R1;
   });
 }
-void ReluKernel::gpu_grad_real(Tensor &din, const Tensor &in,
-                               const Tensor &dout) {
-  GPU_GRAD_ARGS();
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(din.storage);
-  GpuRealStoragePtr b_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(in.storage);
-  GpuRealStoragePtr c_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(dout.storage);
-  a_storage->gpu->RequestKernel(
-      OCLAPI::OCL_API_RELU_GRAD_REAL, args, din.get_size(),
-      {a_storage->buffer, b_storage->buffer, c_storage->buffer});
-}
 void ReluKernel::cpu_grad_complex(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
   const vecCapIntGpu I_d = (vecCapIntGpu)(din.stride[0U]);
@@ -119,6 +114,20 @@ void ReluKernel::cpu_grad_complex(Tensor &din, const Tensor &in,
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     pdi[i * I_d] = (pi[i * I_i] > 0) ? po[i * I_o] : ZERO_CMPLX;
   });
+}
+#if ENABLE_GPU
+void ReluKernel::gpu_grad_real(Tensor &din, const Tensor &in,
+                               const Tensor &dout) {
+  GPU_GRAD_ARGS();
+  GpuRealStoragePtr a_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(din.storage);
+  GpuRealStoragePtr b_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(in.storage);
+  GpuRealStoragePtr c_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(dout.storage);
+  a_storage->gpu->RequestKernel(
+      OCLAPI::OCL_API_RELU_GRAD_REAL, args, din.get_size(),
+      {a_storage->buffer, b_storage->buffer, c_storage->buffer});
 }
 void ReluKernel::gpu_grad_complex(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
@@ -133,14 +142,23 @@ void ReluKernel::gpu_grad_complex(Tensor &din, const Tensor &in,
       OCLAPI::OCL_API_RELU_GRAD_COMPLEX, args, din.get_size(),
       {a_storage->buffer, b_storage->buffer, c_storage->buffer});
 }
+#endif
 void ReluKernel::relu_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   switch (din.storage->dtype) {
   case DType::COMPLEX:
-    DEVICE_SWITCH(cpu_grad_complex, gpu_grad_complex, din, in, dout)
+#if ENABLE_GPU
+    DEVICE_SWITCH(cpu_grad_complex, gpu_grad_complex, din, in, dout);
+#else
+    cpu_grad_complex(din, in, dout);
+#endif
     break;
   case DType::REAL:
   default:
-    DEVICE_SWITCH(cpu_grad_real, gpu_grad_real, din, in, dout)
+#if ENABLE_GPU
+    DEVICE_SWITCH(cpu_grad_real, gpu_grad_real, din, in, dout);
+#else
+    cpu_grad_real(din, in, dout);
+#endif
   }
 }
 

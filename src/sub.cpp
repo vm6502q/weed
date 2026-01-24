@@ -13,8 +13,10 @@
 #include "common/parallel_for.hpp"
 #include "cpu_complex_storage.hpp"
 #include "cpu_real_storage.hpp"
+#if ENABLE_GPU
 #include "gpu_complex_storage.hpp"
 #include "gpu_real_storage.hpp"
+#endif
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -91,6 +93,7 @@ void SubKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
   SUB_KERNEL();
 }
 
+#if ENABLE_GPU
 void SubKernel::gpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, GpuRealStorage,
                       OCL_API_SUB_REAL);
@@ -109,6 +112,7 @@ void SubKernel::gpu_mixed_c_right(const Tensor &a, const Tensor &b,
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuComplexStorage, GpuComplexStorage,
                       OCL_API_SUB_MIXED_C_RIGHT);
 }
+#endif
 
 void SubKernel::sub(const Tensor &a, const Tensor &b, Tensor &out) {
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
@@ -122,13 +126,29 @@ void SubKernel::sub(const Tensor &a, const Tensor &b, Tensor &out) {
     throw std::invalid_argument("Output tensor dtype mismatch!");
   }
   if (isAComplex && isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_complex, gpu_complex);
+#else
+    cpu_complex(a, b, out);
+#endif
   } else if (isAComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed_c_left, gpu_mixed_c_left);
+#else
+    cpu_mixed_c_left(a, b, out);
+#endif
   } else if (isBComplex) {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_mixed_c_right, gpu_mixed_c_right);
+#else
+    cpu_mixed_c_right(a, b, out);
+#endif
   } else {
+#if ENABLE_GPU
     DEVICE_SWITCH(cpu_real, gpu_real);
+#else
+    cpu_real(a, b, out);
+#endif
   }
 }
 

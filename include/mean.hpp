@@ -16,9 +16,11 @@
 namespace Weed {
 struct MeanKernel {
   void cpu_real(const Tensor &, Tensor &);
-  void gpu_real(const Tensor &, Tensor &);
   void cpu_complex(const Tensor &, Tensor &);
+#if ENABLE_GPU
+  void gpu_real(const Tensor &, Tensor &);
   void gpu_complex(const Tensor &, Tensor &);
+#endif
   void mean(const Tensor &, Tensor &);
 };
 

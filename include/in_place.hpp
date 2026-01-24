@@ -16,11 +16,13 @@
 namespace Weed {
 struct InPlaceKernel {
   void (*cpu_real)(Tensor &, const Tensor &);
-  void (*gpu_real)(Tensor &, const Tensor &);
   void (*cpu_complex)(Tensor &, const Tensor &);
-  void (*gpu_complex)(Tensor &, const Tensor &);
   void (*cpu_mixed)(Tensor &, const Tensor &);
+#if ENABLE_GPU
+  void (*gpu_real)(Tensor &, const Tensor &);
+  void (*gpu_complex)(Tensor &, const Tensor &);
   void (*gpu_mixed)(Tensor &, const Tensor &);
+#endif
   void in_place(Tensor &a, const Tensor &b);
 };
 

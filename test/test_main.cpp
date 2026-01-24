@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
     num_failed = session.run();
   }
 
-#if ENABLE_OPENCL || ENABLE_CUDA
+#if ENABLE_GPU
   if (num_failed == 0 && gpu) {
     session.config().stream() << "##################################### GPU "
                                  "#####################################"
