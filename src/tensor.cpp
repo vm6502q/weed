@@ -314,7 +314,16 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
 
   const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  TensorPtr out = allocate_like(a, dt, rg);
+  TensorPtr out;
+  if (a->get_size() == ONE_VCI) {
+    a->match_shape(b);
+    out = allocate_like(b, dt, rg);
+  } else if (b->get_size() == ONE_VCI) {
+    b->match_shape(a);
+    out = allocate_like(a, dt, rg);
+  } else {
+    out = allocate_like(a, dt, rg);
+  }
 
   Weed::add(*(a.get()), *(b.get()), *(out.get()));
 
@@ -462,9 +471,15 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
 
   const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  TensorPtr out = allocate_like(a, dt, rg);
-  if (b->get_size() == ONE_VCI) {
+  TensorPtr out;
+  if (a->get_size() == ONE_VCI) {
+    a->match_shape(b);
+    out = allocate_like(b, dt, rg);
+  } else if (b->get_size() == ONE_VCI) {
     b->match_shape(a);
+    out = allocate_like(a, dt, rg);
+  } else {
+    out = allocate_like(a, dt, rg);
   }
 
   Weed::sub(*(a.get()), *(b.get()), *(out.get()));
@@ -505,9 +520,15 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
 
   const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence(a, b);
-  TensorPtr out = allocate_like(a, dt, rg);
-  if (b->get_size() == ONE_VCI) {
+  TensorPtr out;
+  if (a->get_size() == ONE_VCI) {
+    a->match_shape(b);
+    out = allocate_like(b, dt, rg);
+  } else if (b->get_size() == ONE_VCI) {
     b->match_shape(a);
+    out = allocate_like(a, dt, rg);
+  } else {
+    out = allocate_like(a, dt, rg);
   }
 
   Weed::div(*(a.get()), *(b.get()), *(out.get()));
