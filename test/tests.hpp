@@ -13,7 +13,7 @@
 #pragma once
 
 #include "device_tag.hpp"
-#include "tensor.hpp"
+#include "parameter.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.5

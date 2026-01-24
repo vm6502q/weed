@@ -14,8 +14,8 @@
 #include "tensor.hpp"
 
 namespace Weed {
-inline void zero_grad(const std::vector<TensorPtr>& params) {
-  for (auto& p : params) {
+inline void zero_grad(const std::vector<TensorPtr> &params) {
+  for (auto &p : params) {
     if (p->grad) {
       p->grad->storage->FillZeros();
     }

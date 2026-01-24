@@ -11,11 +11,11 @@
 
 #pragma once
 
-#include "real_scalar.hpp"
 #include "commuting.hpp"
+#include "real_scalar.hpp"
 
 namespace Weed {
-inline void sgd_step(const std::vector<TensorPtr>& params, real1 lr) {
+inline void sgd_step(const std::vector<TensorPtr> &params, real1 lr) {
   if (params.empty()) {
     return;
   }
@@ -23,7 +23,7 @@ inline void sgd_step(const std::vector<TensorPtr>& params, real1 lr) {
   const DeviceTag dtag = params[0]->storage->device;
   TensorPtr alpha = std::make_shared<RealScalar>(lr, false, dtag);
 
-  for (auto& p : params) {
+  for (auto &p : params) {
     if (!p->grad) {
       continue;
     }
