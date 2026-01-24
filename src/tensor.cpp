@@ -17,6 +17,7 @@
 #include "commuting.hpp"
 #include "div.hpp"
 #include "matmul.hpp"
+#include "mean.hpp"
 #include "relu.hpp"
 #include "sub.hpp"
 
@@ -256,6 +257,39 @@ TensorPtr Tensor::transpose(TensorPtr a) {
   std::swap(out->stride[0U], out->stride[1U]);
 
   return out;
+}
+
+TensorPtr Tensor::mean(TensorPtr a) {
+  const bool rg = a->requires_grad();
+  TensorPtr out =
+      allocate_like(std::vector<vecCapInt>{1U}, std::vector<vecCapInt>{0U}, a,
+                    a->storage->dtype, rg);
+
+  Weed::mean(*(a.get()), *(out.get()));
+
+  if (rg) {
+    make_mean_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
+        TensorPtr a_grad = a->grad;
+        TensorPtr out_grad = out->grad;
+        TensorPtr scale = std::make_shared<RealScalar>(
+            ONE_R1 / (real1)a->get_size(), false, out->storage->device);
+        // da += dout / N   (broadcast)
+        const DType &dt = out_grad->storage->dtype;
+        a_grad->upcast(dt);
+        TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
+        Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
+        TensorPtr n_out = Tensor::allocate_like(out_grad, dt, false);
+        Weed::add(*(a_grad.get()), *(tmp.get()), *(n_out.get()));
+        a->grad = n_out;
+      });
 }
 
 TensorPtr Tensor::abs(TensorPtr a) {

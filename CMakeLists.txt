@@ -27,6 +27,7 @@ add_library (weed STATIC
     src/commuting.cpp
     src/div.cpp
     src/matmul.cpp
+    src/mean.cpp
     src/relu.cpp
     src/sub.cpp
     src/tensor.cpp
@@ -300,6 +301,7 @@ install (FILES
     include/gpu_complex_storage.hpp
     include/gpu_real_storage.hpp
     include/matmul.hpp
+    include/mean.hpp
     include/module.hpp
     include/node.hpp
     include/parameter.hpp

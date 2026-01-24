@@ -41,6 +41,28 @@ using namespace Weed;
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 #define GET_COMPLEX(ptr) static_cast<ComplexScalar *>((ptr).get())->get_item()
 
+TEST_CASE("test_mean_real") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{1.0, 2.0, 3.0}, std::vector<vecCapInt>{3, 1},
+      std::vector<vecCapInt>{1, 3}, true, TEST_DTAG);
+  TensorPtr y = Tensor::mean(x);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == (ONE_R1 * 2));
+  REQUIRE(GET_REAL(x->grad) == (ONE_R1 / 3));
+}
+
+TEST_CASE("test_mean_complex") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<complex>{1.0, 2.0, 3.0}, std::vector<vecCapInt>{3, 1},
+      std::vector<vecCapInt>{1, 3}, true, TEST_DTAG);
+  TensorPtr y = Tensor::mean(x);
+  Tensor::backward(y);
+
+  REQUIRE_CMPLX(GET_COMPLEX(y), (ONE_R1 * 2));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), (ONE_R1 / 3));
+}
+
 TEST_CASE("test_scalar_relu") {
   TensorPtr x = std::make_shared<RealScalar>(2.0, true, TEST_DTAG);
   TensorPtr y = Tensor::relu(x);

@@ -314,4 +314,34 @@ real1 GpuDevice::GetReal(BufferPtr buffer, vecCapIntGpu idx) {
 
   return v;
 }
+complex GpuDevice::GetComplex(BufferPtr buffer, vecCapIntGpu idx) {
+  complex v;
+  EventVecPtr waitVec = ResetWaitEvents();
+  DISPATCH_BLOCK_READ(waitVec, *buffer, sizeof(complex) * idx, sizeof(complex),
+                      &v);
+
+  return v;
+}
+void GpuDevice::SetReal(real1 val, BufferPtr buffer, vecCapIntGpu idx) {
+  EventVecPtr waitVec = ResetWaitEvents();
+  device_context->EmplaceEvent(
+      [this, val, buffer, idx, waitVec](cl::Event &event) {
+        tryOcl("Failed to enqueue buffer write", [&] {
+          return queue.enqueueWriteBuffer(*buffer, CL_FALSE,
+                                          sizeof(real1) * idx, sizeof(real1),
+                                          &val, waitVec.get(), &event);
+        });
+      });
+}
+void GpuDevice::SetComplex(complex val, BufferPtr buffer, vecCapIntGpu idx) {
+  EventVecPtr waitVec = ResetWaitEvents();
+  device_context->EmplaceEvent([this, val, buffer, idx,
+                                waitVec](cl::Event &event) {
+    tryOcl("Failed to enqueue buffer write", [&] {
+      return queue.enqueueWriteBuffer(*buffer, CL_FALSE, sizeof(complex) * idx,
+                                      sizeof(complex), &val, waitVec.get(),
+                                      &event);
+    });
+  });
+}
 } // namespace Weed

@@ -119,6 +119,9 @@ struct Tensor {
 
   static TensorPtr transpose(TensorPtr a);
 
+  static TensorPtr mean(TensorPtr a);
+  static void make_mean_node(TensorPtr a, TensorPtr out);
+
   static TensorPtr abs(TensorPtr a);
   static void make_abs_node(TensorPtr a, TensorPtr out);
 

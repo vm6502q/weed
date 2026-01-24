@@ -31,6 +31,8 @@ private:
 public:
   ParallelFor();
 
+  unsigned GetNumCores() { return numCores; }
+
   void SetConcurrencyLevel(unsigned num) {
     if (!num) {
       num = 1U;

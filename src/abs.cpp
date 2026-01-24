@@ -54,7 +54,7 @@
         0U, 0U                                                                 \
   }
 namespace Weed {
-void AbsKernel::AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
+void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
   const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];
   const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];
   CAST_STORAGE(pa, a, real1, CpuRealStorage);

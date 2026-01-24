@@ -105,6 +105,41 @@ struct GpuDevice {
     }
   }
 
+  bool LockSync(BufferPtr buffer, size_t sz, void *array) {
+    EventVecPtr waitVec = ResetWaitEvents();
+
+    if (device_context->use_host_mem) {
+      // Needs unlock
+      tryOcl("Failed to map buffer", [&] {
+        cl_int error;
+        queue.enqueueMapBuffer(*buffer, CL_TRUE, CL_MAP_READ, 0U, sz,
+                               waitVec.get(), nullptr, &error);
+        return error;
+      });
+      wait_refs.clear();
+    } else {
+      // Just a copy: don't need to unlock
+      tryOcl("Failed to read buffer", [&] {
+        return queue.enqueueReadBuffer(*buffer, CL_TRUE, 0U, sz, array,
+                                       waitVec.get());
+      });
+      wait_refs.clear();
+    }
+
+    return device_context->use_host_mem;
+  }
+
+  void UnlockSync(BufferPtr buffer, void *array) {
+    EventVecPtr waitVec = ResetWaitEvents();
+    cl::Event unmapEvent;
+    tryOcl("Failed to unmap buffer", [&] {
+      return queue.enqueueUnmapMemObject(*buffer, array, waitVec.get(),
+                                         &unmapEvent);
+    });
+    unmapEvent.wait();
+    wait_refs.clear();
+  }
+
   void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize,
                  std::vector<BufferPtr> args, size_t wic2 = 0U,
                  size_t lgs2 = 0U, size_t localBuffSize = 0U,
@@ -130,5 +165,8 @@ struct GpuDevice {
                         const size_t nwi);
 
   real1 GetReal(BufferPtr buffer, vecCapIntGpu idx);
+  complex GetComplex(BufferPtr buffer, vecCapIntGpu idx);
+  void SetReal(real1 val, BufferPtr buffer, vecCapIntGpu idx);
+  void SetComplex(complex val, BufferPtr buffer, vecCapIntGpu idx);
 };
 } // namespace Weed
