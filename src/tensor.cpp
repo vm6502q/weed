@@ -16,6 +16,7 @@
 #include "abs.hpp"
 #include "commuting.hpp"
 #include "div.hpp"
+#include "in_place.hpp"
 #include "matmul.hpp"
 #include "mean.hpp"
 #include "relu.hpp"
@@ -286,9 +287,7 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         a_grad->upcast(dt);
         TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
-        TensorPtr n_out = Tensor::allocate_like(out_grad, dt, false);
-        Weed::add(*(a_grad.get()), *(tmp.get()), *(n_out.get()));
-        a->grad = n_out;
+        Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
       });
 }
 
@@ -375,16 +374,12 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (a->requires_grad()) {
       TensorPtr a_grad = a->grad;
       a_grad->upcast(dt);
-      TensorPtr n_out = Tensor::allocate_like(b, dt, false);
-      Weed::add(*(a_grad.get()), *(out_grad.get()), *(n_out.get()));
-      a->grad = n_out;
+      Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
     }
     if (b->requires_grad()) {
       TensorPtr b_grad = b->grad;
       b_grad->upcast(dt);
-      TensorPtr n_out = Tensor::allocate_like(a, dt, false);
-      Weed::add(*(b_grad.get()), *(out_grad.get()), *(n_out.get()));
-      b->grad = n_out;
+      Weed::add_in_place(*(b_grad.get()), *(out_grad.get()));
     }
   });
 }
@@ -427,18 +422,14 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           TensorPtr a_grad = a->grad;
           a_grad->upcast(dt);
           Weed::mul(*(out_grad.get()), *(b.get()), *(tmp.get()));
-          TensorPtr n_out = Tensor::allocate_like(tmp, dt, false);
-          Weed::add(*(a_grad.get()), *(tmp.get()), *(n_out.get()));
-          a->grad = n_out;
+          Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         }
         if (b->requires_grad()) {
           TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           TensorPtr b_grad = b->grad;
           b_grad->upcast(dt);
           Weed::mul(*(out_grad.get()), *(a.get()), *(tmp.get()));
-          TensorPtr n_out = Tensor::allocate_like(tmp, dt, false);
-          Weed::add(*(b_grad.get()), *(tmp.get()), *(n_out.get()));
-          b->grad = n_out;
+          Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
         }
       });
 }
@@ -480,9 +471,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           TensorPtr a_grad = a->grad;
           a_grad->upcast(dt);
           Weed::matmul(*(out->grad.get()), *(bt.get()), *(tmp.get()));
-          TensorPtr n_out = Tensor::allocate_like(tmp, dt, false);
-          Weed::add(*(a_grad.get()), *(tmp.get()), *(n_out.get()));
-          a->grad = n_out;
+          Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         }
         if (b->requires_grad()) {
           TensorPtr at = transpose(a);
@@ -490,9 +479,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           TensorPtr b_grad = b->grad;
           b_grad->upcast(dt);
           Weed::matmul(*(at.get()), *(out->grad.get()), *(tmp.get()));
-          TensorPtr n_out = Tensor::allocate_like(tmp, dt, false);
-          Weed::add(*(b_grad.get()), *(tmp.get()), *(n_out.get()));
-          b->grad = n_out;
+          Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
         }
       });
 }
@@ -532,16 +519,12 @@ void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (a->requires_grad()) {
       TensorPtr a_grad = a->grad;
       a_grad->upcast(dt);
-      TensorPtr n_out = Tensor::allocate_like(b, dt, false);
-      Weed::add(*(a_grad.get()), *(out_grad.get()), *(n_out.get()));
-      a->grad = n_out;
+      Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
     }
     if (b->requires_grad()) {
       TensorPtr b_grad = b->grad;
       b_grad->upcast(dt);
-      TensorPtr n_out = Tensor::allocate_like(a, dt, false);
-      Weed::sub(*(b_grad.get()), *(out_grad.get()), *(n_out.get()));
-      b->grad = n_out;
+      Weed::sub_in_place(*(b_grad.get()), *(out_grad.get()));
     }
   });
 }
@@ -584,9 +567,7 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           a_grad->upcast(dt);
           TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           Weed::div(*(out_grad.get()), *(b.get()), *(tmp.get()));
-          TensorPtr n_out = Tensor::allocate_like(tmp, dt, false);
-          Weed::add(*(a_grad.get()), *(tmp.get()), *(n_out.get()));
-          a->grad = n_out;
+          Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         }
         if (b->requires_grad()) {
           TensorPtr b_grad = b->grad;
@@ -595,9 +576,7 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           Weed::mul(*(b.get()), *(b.get()), *(b_sqr.get()));
           TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           Weed::div(*(a.get()), *(b_sqr.get()), *(tmp.get()));
-          TensorPtr n_out = Tensor::allocate_like(tmp, dt, false);
-          Weed::sub(*(b_grad.get()), *(tmp.get()), *(n_out.get()));
-          b->grad = n_out;
+          Weed::sub_in_place(*(b_grad.get()), *(tmp.get()));
         }
       });
 }

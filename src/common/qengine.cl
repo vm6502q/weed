@@ -242,3 +242,29 @@ void kernel div_mixed_c_right(global real1* a, global cmplx* b, global cmplx* ou
 {
     out[i_X * I_C + O_C] = zdiv((cmplx)(a[i_X * I_A + O_A], ZERO_R1), b[i_X * I_B + O_B]);
 }
+
+void kernel add_in_place_real(global real1* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs)
+{
+    a[i_X * I_A + O_A] += b[i_X * I_B + O_B];
+}
+void kernel add_in_place_complex(global cmplx* a, global cmplx* b, constant vecCapIntGpu* vecCapIntArgs)
+{
+    a[i_X * I_A + O_A] += b[i_X * I_B + O_B];
+}
+void kernel add_in_place_mixed(global cmplx* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs)
+{
+    a[i_X * I_A + O_A] += (cmplx)(b[i_X * I_B + O_B], 0);
+}
+
+void kernel sub_in_place_real(global real1* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs)
+{
+    a[i_X * I_A + O_A] -= b[i_X * I_B + O_B];
+}
+void kernel sub_in_place_complex(global cmplx* a, global cmplx* b, constant vecCapIntGpu* vecCapIntArgs)
+{
+    a[i_X * I_A + O_A] -= b[i_X * I_B + O_B];
+}
+void kernel sub_in_place_mixed(global cmplx* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs)
+{
+    a[i_X * I_A + O_A] -= (cmplx)(b[i_X * I_B + O_B], 0);
+}

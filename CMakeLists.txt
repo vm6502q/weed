@@ -26,6 +26,7 @@ add_library (weed STATIC
     src/abs.cpp
     src/commuting.cpp
     src/div.cpp
+    src/in_place.cpp
     src/matmul.cpp
     src/mean.cpp
     src/relu.cpp
@@ -300,6 +301,7 @@ install (FILES
     include/gpu_device.hpp
     include/gpu_complex_storage.hpp
     include/gpu_real_storage.hpp
+    include/in_place.hpp
     include/matmul.hpp
     include/mean.hpp
     include/module.hpp

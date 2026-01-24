@@ -96,7 +96,13 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_DIV_REAL, "div_real"),
     OCLKernelHandle(OCL_API_DIV_COMPLEX, "div_complex"),
     OCLKernelHandle(OCL_API_DIV_MIXED_C_LEFT, "div_mixed_c_left"),
-    OCLKernelHandle(OCL_API_DIV_MIXED_C_RIGHT, "div_mixed_c_right")
+    OCLKernelHandle(OCL_API_DIV_MIXED_C_RIGHT, "div_mixed_c_right"),
+    OCLKernelHandle(OCL_API_ADD_IN_PLACE_REAL, "add_in_place_real"),
+    OCLKernelHandle(OCL_API_ADD_IN_PLACE_COMPLEX, "add_in_place_complex"),
+    OCLKernelHandle(OCL_API_ADD_IN_PLACE_MIXED, "add_in_place_mixed"),
+    OCLKernelHandle(OCL_API_SUB_IN_PLACE_REAL, "sub_in_place_real"),
+    OCLKernelHandle(OCL_API_SUB_IN_PLACE_COMPLEX, "sub_in_place_complex"),
+    OCLKernelHandle(OCL_API_SUB_IN_PLACE_MIXED, "sub_in_place_mixed")
 };
 // clang-format on
 
