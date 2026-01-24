@@ -96,6 +96,8 @@ struct Tensor {
     return left->storage->dtype;
   }
 
+  static bool all_same_device(const std::vector<TensorPtr>&);
+
   static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
                                  const bool &rg);
   static TensorPtr allocate_like(const std::vector<vecCapInt> &shape,
