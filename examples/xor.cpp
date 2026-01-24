@@ -21,11 +21,13 @@ using namespace Weed;
 
 int main() {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{0, 0, 1, 0, 0, 1, 1, 1}, std::vector<vecCapInt>{4, 2},
-      std::vector<vecCapInt>{1, 4});
-  TensorPtr y = std::make_shared<Tensor>(std::vector<real1>{0, 1, 1, 0},
-                                         std::vector<vecCapInt>{4, 1},
-                                         std::vector<vecCapInt>{1, 4});
+    std::vector<real1>{0, 0, 1, 0, 0, 1, 1, 1},
+    std::vector<vecCapInt>{4, 2},
+    std::vector<vecCapInt>{2, 1});
+  TensorPtr y = std::make_shared<Tensor>(
+    std::vector<real1>{0, 1, 1, 0},
+    std::vector<vecCapInt>{4, 1},
+    std::vector<vecCapInt>{1, 1});
 
   Linear l1(2, 8);
   Linear l2(8, 1);
@@ -42,7 +44,7 @@ int main() {
     TensorPtr loss = Tensor::mean((y_pred - y) * (y_pred - y));
 
     Tensor::backward(loss);
-    sgd_step(params, 1e-3);
+    sgd_step(params, 0.1);
 
     loss_r = GET_REAL(loss);
     if (!(epoch % 100)) {

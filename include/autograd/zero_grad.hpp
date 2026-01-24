@@ -19,10 +19,8 @@ namespace Weed {
  * back-propagation and optimization)
  */
 inline void zero_grad(const std::vector<ParameterPtr> &params) {
-  for (auto &p : params) {
-    if (p->grad) {
-      p->grad->storage->FillZeros();
-    }
+  for (auto p : params) {
+    p->grad->storage->FillZeros();
   }
 }
 } // namespace Weed
