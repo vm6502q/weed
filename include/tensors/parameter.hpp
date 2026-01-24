@@ -12,6 +12,10 @@
 #include "tensor.hpp"
 
 namespace Weed {
+/**
+ * A Parameter is simply a tensor that always requires gradient calculation and
+ * "lives" on a module"
+ */
 struct Parameter : Tensor {
   Parameter(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd,
             DType dtype = DType::REAL,

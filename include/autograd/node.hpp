@@ -16,10 +16,22 @@
 #include <functional>
 
 namespace Weed {
+/**
+ * Autograd graph node
+ */
 struct Node {
+  /**
+   * Parent tensors of this operation in the autograd graph
+   */
   std::vector<TensorPtr> parents;
+  /**
+   * Autograd back-propagation function
+   */
   std::function<void()> backward;
 
+  /**
+   * Used by Weed::Tensor or user code to construct an autograd graph node
+   */
   Node(std::vector<TensorPtr> p, std::function<void()> b)
       : parents(p), backward(b) {}
 };

@@ -14,6 +14,9 @@
 #include "config.h"
 
 namespace Weed {
+/**
+ * Back-end device types available in Weed
+ */
 enum DeviceTag {
   CPU = 1,
   GPU = 2,

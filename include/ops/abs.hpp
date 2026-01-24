@@ -35,6 +35,12 @@ struct AbsKernel {
 
 extern AbsKernel abs_kernel;
 
+/**
+ * Absolute value
+ */
 void abs(const Tensor &a, Tensor &out);
+/**
+ * Absolute value gradient
+ */
 void abs_grad(Tensor &din, const Tensor &in, const Tensor &dout);
 } // namespace Weed

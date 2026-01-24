@@ -14,11 +14,17 @@
 #include "storage/storage.hpp"
 
 namespace Weed {
+/**
+ * Storage for real data type elements
+ */
 struct RealStorage : Storage {
   RealStorage(DeviceTag dtg, vecCapInt n) : Storage(dtg, DType::REAL, n) {}
 
   virtual ~RealStorage() {}
 
+  /**
+   * Get the complex element at the position
+   */
   virtual real1 operator[](vecCapInt idx) = 0;
 
 #if defined(__APPLE__)

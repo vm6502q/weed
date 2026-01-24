@@ -14,6 +14,10 @@
 #include "parameter.hpp"
 
 namespace Weed {
+/**
+ * Composable module with forward function and parameters for autograd
+ * optimization
+ */
 struct Module {
   virtual Tensor forward(const Tensor &) = 0;
   virtual std::vector<ParameterPtr> parameters() = 0;

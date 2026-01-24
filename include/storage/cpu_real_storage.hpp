@@ -17,6 +17,9 @@
 #include <algorithm>
 
 namespace Weed {
+/**
+ * CPU-accessible storage for real data type elements
+ */
 struct CpuRealStorage : RealStorage {
   RealPtr data;
 

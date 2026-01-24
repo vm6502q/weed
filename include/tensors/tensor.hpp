@@ -23,6 +23,9 @@ struct Tensor;
 
 typedef std::shared_ptr<Tensor> TensorPtr;
 
+/**
+ * Tensor with arbitrary dimensions and autograd
+ */
 struct Tensor {
   StoragePtr storage;
 
@@ -46,8 +49,14 @@ struct Tensor {
          std::vector<vecCapInt> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
 
+  /**
+   * Will we calculate gradients on back-propagation?
+   */
   bool requires_grad() { return !!grad; }
 
+  /**
+   * How many elements are in this tensor?
+   */
   virtual vecCapInt get_size() const {
     if (shape.empty()) {
       return ZERO_VCI;
@@ -60,7 +69,9 @@ struct Tensor {
     return max_index + ONE_VCI;
   }
 
-  // Shallow copy:
+  /**
+   * Make a shallow copy of this tensor
+   */
   TensorPtr copy() {
     TensorPtr cp = std::make_shared<Tensor>();
     // A tensor is a view on storage:
@@ -74,6 +85,9 @@ struct Tensor {
     return cp;
   }
 
+  /**
+   * Make this tensor a shallow copy of another
+   */
   void copy(TensorPtr cp) {
     // A tensor is a view on storage:
     storage = cp->storage;
@@ -84,8 +98,15 @@ struct Tensor {
     grad = cp->grad;
   }
 
+  /**
+   * Internally cast this real-value tensor to a complex-value tensor (if
+   * necessary)
+   */
   void upcast(DType dt) { storage = storage->Upcast(dt); }
 
+  /**
+   * For broadcast, make this scalar match the shape of a target Tensor
+   */
   void match_shape(const TensorPtr a) {
     shape = a->shape;
     const size_t sz = shape.size();
@@ -96,8 +117,14 @@ struct Tensor {
     }
   }
 
+  /**
+   * Select a sub-tensor from the position in the outermost tensor index
+   */
   TensorPtr operator[](vecCapInt idx);
 
+  /**
+   * Compare the data type of two tensors and return the more-encompassing one
+   */
   static DType get_dtype_by_presidence(const TensorPtr left,
                                        const TensorPtr right) {
     if (right->storage->dtype == DType::COMPLEX) {
@@ -106,40 +133,80 @@ struct Tensor {
     return left->storage->dtype;
   }
 
+  /**
+   * Ensure that all tensors in a list are on the same device
+   */
   static bool all_same_device(const std::vector<TensorPtr> &);
 
+  /**
+   * Create a new Tensor like the original, without Storage value initialization
+   */
   static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
                                  const bool &rg);
+  /**
+   * Create a new Tensor like the original, without Storage value initialization
+   */
   static TensorPtr allocate_like(const std::vector<vecCapInt> &shape,
                                  const std::vector<vecCapInt> &stride,
                                  const TensorPtr orig, const DType &dt,
                                  const bool &rg);
 
+  /**
+   * Use autograd to calculate gradients that are in the same graph as this
+   * Tensor
+   */
   static void backward(TensorPtr loss);
 
+  /**
+   * If the tensor has exactly two indices, transpose them
+   */
   static TensorPtr transpose(TensorPtr a);
 
+  /**
+   * Average of all elements (with autograd)
+   */
   static TensorPtr mean(TensorPtr a);
   static void make_mean_node(TensorPtr a, TensorPtr out);
 
+  /**
+   * Absolute value (with autograd)
+   */
   static TensorPtr abs(TensorPtr a);
   static void make_abs_node(TensorPtr a, TensorPtr out);
 
+  /**
+   * Rectified linear activation function (with autograd)
+   */
   static TensorPtr relu(TensorPtr a);
   static void make_relu_node(TensorPtr a, TensorPtr out);
 
+  /**
+   * Element-wise addition (with autograd)
+   */
   static TensorPtr add(TensorPtr a, TensorPtr b);
   static void make_add_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
+  /**
+   * Element-wise multiplication (with autograd)
+   */
   static TensorPtr mul(TensorPtr a, TensorPtr b);
   static void make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
+  /**
+   * Matrix multiplication (with autograd)
+   */
   static TensorPtr matmul(TensorPtr a, TensorPtr b);
   static void make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
+  /**
+   * Element-wise subtraction (with autograd)
+   */
   static TensorPtr sub(TensorPtr a, TensorPtr b);
   static void make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
+  /**
+   * Element-wise division (with autograd)
+   */
   static TensorPtr div(TensorPtr a, TensorPtr b);
   static void make_div_node(TensorPtr a, TensorPtr b, TensorPtr out);
 };

@@ -14,6 +14,9 @@
 #include "storage/complex_storage.hpp"
 
 namespace Weed {
+/**
+ * CPU-accessible storage for complex data type elements
+ */
 struct CpuComplexStorage : ComplexStorage {
   ComplexPtr data;
 

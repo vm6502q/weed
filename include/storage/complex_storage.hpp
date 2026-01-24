@@ -14,12 +14,18 @@
 #include "storage/storage.hpp"
 
 namespace Weed {
+/**
+ * Storage for complex data type elements
+ */
 struct ComplexStorage : Storage {
   ComplexStorage(DeviceTag dtg, vecCapInt n)
       : Storage(dtg, DType::COMPLEX, n) {}
 
   virtual ~ComplexStorage() {}
 
+  /**
+   * Get the complex element at the position
+   */
   virtual complex operator[](vecCapInt idx) = 0;
 
 #if defined(__APPLE__)

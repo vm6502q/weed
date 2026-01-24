@@ -18,6 +18,9 @@ struct Scalar;
 
 typedef std::shared_ptr<Scalar> ScalarPtr;
 
+/**
+ * Tensor with only 1 element (with broadcast on tensor operations)
+ */
 struct Scalar : public Tensor {
   Scalar(real1 v, bool rg, DeviceTag dtag, int64_t did = -1)
       : Tensor(std::vector<real1>{v}, std::vector<vecCapInt>{ONE_VCI},

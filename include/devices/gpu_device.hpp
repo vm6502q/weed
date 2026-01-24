@@ -21,10 +21,18 @@
 #include <list>
 
 namespace Weed {
+/**
+ * Manages a GPU (or accelerator) device context, per discrete (or integrated)
+ * device, or per device queue of dependent events
+ */
 struct GpuDevice {
+  /**
+   * Unique hardware device identifier
+   */
+  int64_t deviceID;
+
   cl_int callbackError;
   size_t totalOclAllocSize;
-  int64_t deviceID;
   DeviceContextPtr device_context;
   cl::Context context;
   cl::CommandQueue queue;
@@ -33,8 +41,12 @@ struct GpuDevice {
   std::list<QueueItem> wait_queue_items;
   std::vector<PoolItemPtr> poolItems;
 
+  /**
+   * Create a context to manage a specific device ID or device queue of
+   * dependent events
+   */
   GpuDevice(int64_t did = -1)
-      : callbackError(CL_SUCCESS), totalOclAllocSize(0U), deviceID(did) {
+      : deviceID(did), callbackError(CL_SUCCESS), totalOclAllocSize(0U) {
     const size_t deviceCount = OCLEngine::Instance().GetDeviceCount();
 
     if (!deviceCount) {
@@ -54,14 +66,37 @@ struct GpuDevice {
   }
   ~GpuDevice() {}
 
+  /**
+   * Create a buffer on this device context
+   */
   BufferPtr MakeBuffer(cl_mem_flags flags, size_t size,
                        void *host_ptr = nullptr);
+
+  /**
+   * Flush and finish queue of dependent events (or flush and finish for entire
+   * hardware device with doHard=True)
+   */
   void clFinish(bool doHard = false);
+  /**
+   * Error-handling wrapper for OpenCL calls
+   */
   void tryOcl(std::string message, std::function<int()> oclCall);
+  /**
+   * For kernel callback to free resources and start the next queue event
+   */
   void PopQueue(bool isDispatch);
+  /**
+   * Start kernel dispatch and callback cycle
+   */
   void DispatchQueue();
+  /**
+   * Get dependent events to wait for next and clear the wait events buffer
+   */
   EventVecPtr ResetWaitEvents(bool waitQueue = true);
 
+  /**
+   * Handle any OpenCL error on kernel callback
+   */
   void CheckCallbackError() {
     if (callbackError == CL_SUCCESS) {
       return;
@@ -74,6 +109,9 @@ struct GpuDevice {
                              std::to_string(callbackError));
   }
 
+  /**
+   * Add byte count to manual GPU memory tracking
+   */
   void AddAlloc(size_t size) {
     size_t currentAlloc =
         OCLEngine::Instance().AddToActiveAllocSize(deviceID, size);
@@ -85,11 +123,17 @@ struct GpuDevice {
     totalOclAllocSize += size;
   }
 
+  /**
+   * Subtract byte count to manual GPU memory tracking
+   */
   void SubtractAlloc(size_t size) {
     OCLEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
     totalOclAllocSize -= size;
   }
 
+  /**
+   * Insert a new item into the kernel callback queue
+   */
   void AddQueueItem(const QueueItem &item) {
     bool isBase;
     // For lock_guard:
@@ -105,6 +149,9 @@ struct GpuDevice {
     }
   }
 
+  /**
+   * Map or copy a GPU buffer into (CPU-accessible) host memory
+   */
   bool LockSync(BufferPtr buffer, size_t sz, void *array) {
     EventVecPtr waitVec = ResetWaitEvents();
 
@@ -129,6 +176,9 @@ struct GpuDevice {
     return device_context->use_host_mem;
   }
 
+  /**
+   * If LockSync() mapped a buffer rather than copying, unmap it for GPU use
+   */
   void UnlockSync(BufferPtr buffer, void *array) {
     EventVecPtr waitVec = ResetWaitEvents();
     cl::Event unmapEvent;
@@ -140,6 +190,9 @@ struct GpuDevice {
     wait_refs.clear();
   }
 
+  /**
+   * Construct a new queue item and insert it into the kernel callback queue
+   */
   void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize,
                  std::vector<BufferPtr> args, size_t wic2 = 0U,
                  size_t lgs2 = 0U, size_t localBuffSize = 0U,
@@ -152,21 +205,53 @@ struct GpuDevice {
                            args, wic2, lgs2, localBuffSize));
   }
 
+  /**
+   * Reuse or construct a new queue item holder that isn't in use
+   */
   PoolItemPtr GetFreePoolItem();
 
+  /**
+   * Construct a new queue item for a kernel call and insert it into the kernel
+   * callback queue
+   */
   void RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
                      const size_t nwi, std::vector<BufferPtr> buffers,
                      const size_t nwi2 = 0);
 
+  /**
+   * Request a buffer zeroing in the queue (OpenCL v1.1 compatible style)
+   */
   void ClearRealBuffer(BufferPtr buffer, const size_t nwi);
+  /**
+   * Fill a buffer of Weed:real1 elements with 1.0
+   */
   void FillOnesReal(BufferPtr buffer, const size_t nwi);
+  /**
+   * Fill a buffer of Weed:complex elements with 1.0
+   */
   void FillOnesComplex(BufferPtr buffer, const size_t nwi);
+  /**
+   * Up-cast a real1 buffer to a (double-stride) complex buffer with the same
+   * values
+   */
   void UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
                         const size_t nwi);
 
+  /**
+   * Read a single real1 from a buffer
+   */
   real1 GetReal(BufferPtr buffer, vecCapIntGpu idx);
+  /**
+   * Read a single complex from a buffer
+   */
   complex GetComplex(BufferPtr buffer, vecCapIntGpu idx);
+  /**
+   * Write a single real1 to a buffer
+   */
   void SetReal(real1 val, BufferPtr buffer, vecCapIntGpu idx);
+  /**
+   * Write a single complex to a buffer
+   */
   void SetComplex(complex val, BufferPtr buffer, vecCapIntGpu idx);
 };
 } // namespace Weed

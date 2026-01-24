@@ -15,6 +15,10 @@
 #include "storage/real_storage.hpp"
 
 namespace Weed {
+/**
+ * Tensor with only 1 element of real-number value (with broadcast on tensor
+ * operations)
+ */
 struct RealScalar : public Scalar {
   RealScalar(real1 v, bool rg = false, DeviceTag dtag = DeviceTag::CPU,
              int64_t did = -1)

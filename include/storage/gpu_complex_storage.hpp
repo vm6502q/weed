@@ -21,6 +21,9 @@
 #include <list>
 
 namespace Weed {
+/**
+ * GPU-accessible storage for complex data type elements
+ */
 struct GpuComplexStorage : ComplexStorage {
   GpuDevicePtr gpu;
   BufferPtr buffer;
@@ -44,6 +47,9 @@ struct GpuComplexStorage : ComplexStorage {
 
   ~GpuComplexStorage() {}
 
+  /**
+   * Which GPU device are we on? (Migration happens automatically as necessary.)
+   */
   int64_t get_device_id() { return gpu->deviceID; }
 
   void FillZeros() { gpu->ClearRealBuffer(buffer, size << 1U); }

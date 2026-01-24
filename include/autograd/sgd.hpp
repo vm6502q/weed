@@ -16,6 +16,9 @@
 #include "tensors/real_scalar.hpp"
 
 namespace Weed {
+/**
+ * Stochastic gradient descent (SGD) optimization step
+ */
 inline void sgd_step(const std::vector<TensorPtr> &params, real1 lr) {
   if (params.empty()) {
     return;

@@ -26,5 +26,8 @@ struct MeanKernel {
 
 extern MeanKernel mean_kernel;
 
+/**
+ * Average of all elements
+ */
 void mean(const Tensor &a, Tensor &out);
 } // namespace Weed

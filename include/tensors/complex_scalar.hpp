@@ -15,6 +15,10 @@
 #include "storage/complex_storage.hpp"
 
 namespace Weed {
+/**
+ * Tensor with only 1 element of complex-number value (with broadcast on tensor
+ * operations)
+ */
 struct ComplexScalar : public Scalar {
   ComplexScalar(complex v, bool rg = false, DeviceTag dtag = DeviceTag::CPU,
                 int64_t did = -1)

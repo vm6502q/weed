@@ -29,6 +29,12 @@ struct ReluKernel {
 
 extern ReluKernel relu_kernel;
 
+/**
+ * Rectified-linear activation function
+ */
 void relu(const Tensor &a, Tensor &out);
+/**
+ * Rectified-linear activation function gradient
+ */
 void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout);
 } // namespace Weed

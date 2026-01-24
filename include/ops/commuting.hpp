@@ -29,6 +29,12 @@ struct CommutingKernel {
 extern CommutingKernel add_kernel;
 extern CommutingKernel mul_kernel;
 
+/**
+ * Element-wise addition
+ */
 void add(const Tensor &a, const Tensor &b, Tensor &out);
+/**
+ * Element-wise multiplication
+ */
 void mul(const Tensor &a, const Tensor &b, Tensor &out);
 } // namespace Weed

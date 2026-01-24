@@ -17,6 +17,10 @@
 #include <vector>
 
 namespace Weed {
+/**
+ * Simple struct to wrap the parameters of a kernel call request, before
+ * assigning a PoolItem
+ */
 struct QueueItem {
   OCLAPI api_call;
   size_t workItemCount;

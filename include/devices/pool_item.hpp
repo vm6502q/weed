@@ -21,6 +21,9 @@
 #define VCI_ARG_LEN 10
 
 namespace Weed {
+/**
+ * OpenCL bad_alloc wrapper with informative error message
+ */
 struct bad_alloc : public std::bad_alloc {
   std::string m;
 
@@ -31,6 +34,9 @@ struct bad_alloc : public std::bad_alloc {
   const char *what() const noexcept { return m.c_str(); }
 };
 
+/**
+ * Queue pool item for OpenCL kernel callback cycle
+ */
 struct PoolItem {
   BufferPtr complexBuffer;
   BufferPtr vciBuffer;

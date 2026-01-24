@@ -14,6 +14,10 @@
 #include "tensors/tensor.hpp"
 
 namespace Weed {
+/**
+ * Zeros gradients on specified specified params (between learning cycles of
+ * back-propagation and optimization)
+ */
 inline void zero_grad(const std::vector<TensorPtr> &params) {
   for (auto &p : params) {
     if (p->grad) {

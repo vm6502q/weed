@@ -33,5 +33,8 @@ struct MatMulKernel {
 
 extern MatMulKernel matmul_kernel;
 
+/**
+ * Matrix multiplication (on 2 indices)
+ */
 void matmul(const Tensor &a, const Tensor &b, Tensor &out);
 } // namespace Weed

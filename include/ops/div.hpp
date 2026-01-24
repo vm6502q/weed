@@ -30,5 +30,8 @@ struct DivKernel {
 
 extern DivKernel div_kernel;
 
+/**
+ * Element-wise division
+ */
 void div(const Tensor &a, const Tensor &b, Tensor &out);
 } // namespace Weed

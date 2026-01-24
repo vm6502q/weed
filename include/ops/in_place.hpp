@@ -29,6 +29,12 @@ struct InPlaceKernel {
 extern InPlaceKernel add_in_place_kernel;
 extern InPlaceKernel sub_in_place_kernel;
 
+/**
+ * Element-wise add-in-place
+ */
 void add_in_place(Tensor &a, const Tensor &b);
+/**
+ * Element-wise subtract-in-place
+ */
 void sub_in_place(Tensor &a, const Tensor &b);
 } // namespace Weed

@@ -22,6 +22,9 @@
 #include <list>
 
 namespace Weed {
+/**
+ * GPU-accessible storage for real data type elements
+ */
 struct GpuRealStorage : RealStorage {
   GpuDevicePtr gpu;
   BufferPtr buffer;

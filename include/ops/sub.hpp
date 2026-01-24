@@ -30,5 +30,8 @@ struct SubKernel {
 
 extern SubKernel sub_kernel;
 
+/**
+ * Element-wise subtraction
+ */
 void sub(const Tensor &a, const Tensor &b, Tensor &out);
 } // namespace Weed
