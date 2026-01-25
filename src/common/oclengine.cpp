@@ -109,7 +109,9 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_ADD_IN_PLACE_MIXED, "add_in_place_mixed"),
     OCLKernelHandle(OCL_API_SUB_IN_PLACE_REAL, "sub_in_place_real"),
     OCLKernelHandle(OCL_API_SUB_IN_PLACE_COMPLEX, "sub_in_place_complex"),
-    OCLKernelHandle(OCL_API_SUB_IN_PLACE_MIXED, "sub_in_place_mixed")
+    OCLKernelHandle(OCL_API_SUB_IN_PLACE_MIXED, "sub_in_place_mixed"),
+    OCLKernelHandle(OCL_API_POW_REAL, "pow_real"),
+    OCLKernelHandle(OCL_API_POW_COMPLEX, "pow_complex")
 };
 // clang-format on
 

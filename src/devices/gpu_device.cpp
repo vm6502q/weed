@@ -272,16 +272,26 @@ inline size_t pick_group_size(const size_t &nwi) {
 
 void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
                               const size_t nwi, std::vector<BufferPtr> buffers,
-                              const size_t nwi2) {
+                              const size_t nwi2, const complex *c) {
   EventVecPtr waitVec = ResetWaitEvents();
   PoolItemPtr poolItem = GetFreePoolItem();
   cl::Event writeArgsEvent;
   DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer),
                       sizeof(vecCapIntGpu) * VCI_ARG_LEN, vciArgs,
                       writeArgsEvent);
+  cl::Event writeArgsEvent2;
+  if (c) {
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->complexBuffer),
+                        sizeof(complex) * CMPLX_ARG_LEN, c, writeArgsEvent2);
+  }
   const size_t ngs = pick_group_size(nwi);
   const size_t ngs2 = (!nwi2) ? 0U : pick_group_size(nwi2);
+  writeArgsEvent.wait();
   buffers.push_back(poolItem->vciBuffer);
+  if (c) {
+    writeArgsEvent2.wait();
+    buffers.push_back(poolItem->complexBuffer);
+  }
   QueueCall(api_call, nwi, ngs, buffers, nwi2, ngs2);
 }
 
@@ -310,6 +320,7 @@ void GpuDevice::FillValueReal(BufferPtr buffer, const size_t nwi,
                       sizeof(complex) * CMPLX_ARG_LEN, cmplxArgs,
                       writeArgsEvent);
   const size_t ngs = pick_group_size(nwi);
+  writeArgsEvent.wait();
   QueueCall(OCLAPI::OCL_API_FILL_VALUE_REAL, nwi, ngs,
             std::vector<BufferPtr>{buffer, poolItem->complexBuffer});
 }
@@ -322,6 +333,7 @@ void GpuDevice::FillValueComplex(BufferPtr buffer, const size_t nwi,
   DISPATCH_TEMP_WRITE(waitVec, *(poolItem->complexBuffer),
                       sizeof(complex) * CMPLX_ARG_LEN, cmplxArgs,
                       writeArgsEvent);
+  writeArgsEvent.wait();
   const size_t ngs = pick_group_size(nwi);
   QueueCall(OCLAPI::OCL_API_FILL_VALUE_COMPLEX, nwi, ngs,
             std::vector<BufferPtr>{buffer, poolItem->complexBuffer});

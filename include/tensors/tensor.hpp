@@ -219,6 +219,12 @@ struct Tensor {
    */
   static TensorPtr div(TensorPtr a, TensorPtr b);
   static void make_div_node(TensorPtr a, TensorPtr b, TensorPtr out);
+
+  /**
+   * Element-wise power
+   */
+  static TensorPtr pow(TensorPtr a, TensorPtr p);
+  static void make_pow_node(TensorPtr a, TensorPtr p, TensorPtr out);
 };
 
 inline TensorPtr operator+(TensorPtr left, TensorPtr right) {

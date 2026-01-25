@@ -359,3 +359,15 @@ void kernel sub_in_place_mixed(global cmplx* a, global real1* b, constant vecCap
 {
     a[i_X * I_A + O_A] -= (cmplx)(b[i_X * I_B + O_B], 0);
 }
+
+void kernel pow_real(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs, constant real1* p)
+{
+    out[i_X * I_B] = pow(a[i_X * I_A + O_A], *p);
+}
+void kernel pow_complex(global cmplx* a, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs, constant real1* p)
+{
+    const real1 pp = *p;
+    const cmplx c = a[i_X * I_A + O_A];
+    const real1 angle = SineShift * pp;
+    out[i_X * I_B] = (cmplx)(pow(c.x, pp), ZERO_R1) + (pow(c.y, pp) * sin((cmplx)(angle + SineShift, angle)));
+}

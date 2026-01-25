@@ -216,7 +216,7 @@ struct GpuDevice {
    */
   void RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
                      const size_t nwi, std::vector<BufferPtr> buffers,
-                     const size_t nwi2 = 0);
+                     const size_t nwi2 = 0U, const complex *c = nullptr);
 
   /**
    * Request a buffer zeroing in the queue (OpenCL v1.1 compatible style)

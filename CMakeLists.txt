@@ -33,6 +33,7 @@ add_library (weed STATIC
     src/ops/reduce.cpp
     src/ops/real_unary.cpp
     src/ops/sub.cpp
+    src/ops/pow.cpp
     src/tensors/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -308,6 +309,7 @@ install (FILES
     include/ops/reduce.hpp
     include/ops/real_unary.hpp
     includes/ops/sub.hpp
+    includes/ops/pow.hpp
     include/storage/all_storage.hpp
     include/storage/complex_storage.hpp
     include/storage/cpu_complex_storage.hpp

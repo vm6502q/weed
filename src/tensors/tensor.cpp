@@ -16,6 +16,7 @@
 #include "ops/in_place.hpp"
 #include "ops/matmul.hpp"
 #include "ops/mean.hpp"
+#include "ops/pow.hpp"
 #include "ops/real_unary.hpp"
 #include "ops/reduce.hpp"
 #include "ops/sub.hpp"
@@ -635,5 +636,50 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           b->reduce_grad_broadcast();
         }
       });
+}
+
+TensorPtr Tensor::pow(TensorPtr a, TensorPtr p) {
+  if ((p->storage->dtype != DType::REAL) || (p->get_size() != ONE_VCI)) {
+    throw std::invalid_argument("p must be a RealScalar Tensor::pow(a, p)!");
+  }
+  if (p->requires_grad()) {
+    throw std::invalid_argument(
+        "Cannot calculate gradient of RealScalar p in Tensor::pow(a, p)!");
+  }
+
+  RealScalarPtr y = std::make_shared<RealScalar>(p);
+
+  y->match_shape(a);
+
+  const bool rg = a->requires_grad();
+  TensorPtr out = allocate_like(a, a->storage->dtype, rg);
+
+  Weed::pow(*(a.get()), *(y.get()), *(out.get()));
+
+  if (rg) {
+    make_pow_node(a, p, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_pow_node(TensorPtr x, TensorPtr p, TensorPtr y) {
+  y->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, p, y]() {
+    TensorPtr dx = x->grad;
+    TensorPtr dy = y->grad;
+
+    dx->upcast(y->storage->dtype);
+
+    TensorPtr dy_y = Tensor::allocate_like(dy, dy->storage->dtype, false);
+    Weed::mul(*(dy.get()), *(y.get()), *(dy_y.get()));
+
+    TensorPtr dy_y_p = Tensor::allocate_like(dy_y, dy_y->storage->dtype, false);
+    Weed::mul(*(dy_y.get()), *(p.get()), *(dy_y_p.get()));
+
+    TensorPtr r = Tensor::allocate_like(dy_y_p, dy_y_p->storage->dtype, false);
+    Weed::div(*(dy_y_p.get()), *(x.get()), *(r.get()));
+
+    Weed::add_in_place(*(dx.get()), *(r.get()));
+  });
 }
 } // namespace Weed
