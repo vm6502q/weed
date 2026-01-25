@@ -517,17 +517,17 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
         TensorPtr out_grad = out->grad;
         const DType &dt = out_grad->storage->dtype;
         if (a->requires_grad()) {
-          TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           TensorPtr a_grad = a->grad;
           a_grad->upcast(dt);
+          TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           Weed::mul(*(out_grad.get()), *(b.get()), *(tmp.get()));
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
           a->reduce_grad_broadcast();
         }
         if (b->requires_grad()) {
-          TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           TensorPtr b_grad = b->grad;
           b_grad->upcast(dt);
+          TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           Weed::mul(*(out_grad.get()), *(a.get()), *(tmp.get()));
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
           b->reduce_grad_broadcast();
@@ -567,18 +567,18 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
         TensorPtr out_grad = out->grad;
         const DType &dt = out_grad->storage->dtype;
         if (a->requires_grad()) {
-          TensorPtr bt = transpose(b);
-          TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           TensorPtr a_grad = a->grad;
           a_grad->upcast(dt);
+          TensorPtr bt = transpose(b);
+          TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           Weed::matmul(*(out->grad.get()), *(bt.get()), *(tmp.get()));
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         }
         if (b->requires_grad()) {
-          TensorPtr at = transpose(a);
-          TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           TensorPtr b_grad = b->grad;
           b_grad->upcast(dt);
+          TensorPtr at = transpose(a);
+          TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           Weed::matmul(*(at.get()), *(out->grad.get()), *(tmp.get()));
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
         }
