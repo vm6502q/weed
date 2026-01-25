@@ -37,7 +37,7 @@
     for (vecCapIntGpu j = 0U; j < a.shape[id]; ++j) {                          \
       sum += pa[base + j * a.stride[id]];                                      \
     }                                                                          \
-    po[out.offset + o * I_o] = sum;                                            \
+    po[o * I_o] = sum;                                                         \
   });
 
 #define DISPATCH_GPU_KERNEL(type, api_call)                                    \

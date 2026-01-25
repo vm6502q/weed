@@ -133,7 +133,7 @@ void kernel reduce_real(global real1* a, global real1* b, constant vecCapIntGpu*
   for (vecCapIntGpu j = 0U; j < shape[id]; ++j) {
     sum += a[base + j * stride[id]];
   }
-  b[O_B + i_X * I_B] = sum;
+  b[i_X * I_B] = sum;
 }
 
 void kernel reduce_complex(global cmplx* a, global cmplx* b, constant vecCapIntGpu* shape, constant vecCapIntGpu* stride, constant vecCapIntGpu* vecCapIntArgs)
@@ -158,7 +158,7 @@ void kernel reduce_complex(global cmplx* a, global cmplx* b, constant vecCapIntG
   for (vecCapIntGpu j = 0U; j < shape[id]; ++j) {
     sum += a[base + j * stride[id]];
   }
-  b[O_B + i_X * I_B] = sum;
+  b[i_X * I_B] = sum;
 }
 
 void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
