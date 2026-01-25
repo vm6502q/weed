@@ -212,6 +212,12 @@ struct Tensor {
   static void make_relu_node(TensorPtr a, TensorPtr out);
 
   /**
+   * Element-wise clamp
+   */
+  static TensorPtr clamp(TensorPtr a, real1 lo, real1 hi);
+  static void make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out);
+
+  /**
    * Element-wise addition (with autograd)
    */
   static TensorPtr add(TensorPtr a, TensorPtr b);

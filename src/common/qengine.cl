@@ -192,11 +192,11 @@ void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecC
 }
 void kernel relu_grad_real(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
-    din[i_X * I_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : ZERO_R1;
+    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : ZERO_R1;
 }
 void kernel relu_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
-    din[i_X * I_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : (cmplx)(ZERO_R1, ZERO_R1);
+    din[i_X * I_A + O_A] = (in[i_X * I_B + O_B] > 0) ? dout[i_X * I_C + O_C] : (cmplx)(ZERO_R1, ZERO_R1);
 }
 
 void kernel sigmoid(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
@@ -206,12 +206,12 @@ void kernel sigmoid(global real1* a, global real1* out, constant vecCapIntGpu* v
 void kernel sigmoid_grad_real(global real1* din, global real1* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
-    din[i_X * I_A] += dout[i_X * I_C + O_C] * yi * (ONE_R1 - yi);
+    din[i_X * I_A + O_A] += dout[i_X * I_C + O_C] * yi * (ONE_R1 - yi);
 }
 void kernel sigmoid_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
     const cmplx yi = in[i_X * I_B + O_B];
-    din[i_X * I_A] += zmul(zmul(dout[i_X * I_C + O_C], yi), ((cmplx)(ONE_R1, ZERO_R1) - yi));
+    din[i_X * I_A + O_A] += zmul(zmul(dout[i_X * I_C + O_C], yi), ((cmplx)(ONE_R1, ZERO_R1) - yi));
 }
 
 void kernel abs_real(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
@@ -228,13 +228,13 @@ void kernel abs_real_grad_real(global real1* din, global real1* in, global real1
 {
     const real1 tmp = in[i_X * I_B + O_B];
     const real1 tmp_o = dout[i_X * I_C + O_C];
-    din[i_X * I_A] = (tmp == ZERO_R1) ? ZERO_R1 : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
+    din[i_X * I_A + O_A] = (tmp == ZERO_R1) ? ZERO_R1 : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
 }
 void kernel abs_real_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
     const real1 tmp = in[i_X * I_B + O_B];
     const cmplx tmp_o = dout[i_X * I_C + O_C];
-    din[i_X * I_A] = (tmp == ZERO_R1) ? (cmplx)(ZERO_R1, ZERO_R1) : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
+    din[i_X * I_A + O_A] = (tmp == ZERO_R1) ? (cmplx)(ZERO_R1, ZERO_R1) : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
 }
 void kernel abs_complex_grad_real(global cmplx* din, global cmplx* in, global real1* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
@@ -242,7 +242,7 @@ void kernel abs_complex_grad_real(global cmplx* din, global cmplx* in, global re
     const cmplx tmp = in[i_X * I_B + O_B];
     const real1 tmp_o = dout[i_X * I_C + O_C];
     const real1 out = sqrt(dot(tmp, tmp));
-    din[i_X * I_A] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : ((tmp_o / out) * tmp);
+    din[i_X * I_A + O_A] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : ((tmp_o / out) * tmp);
 }
 void kernel abs_complex_grad_complex(global cmplx* din, global cmplx* in, global cmplx* dout, constant vecCapIntGpu* vecCapIntArgs)
 {
@@ -250,7 +250,7 @@ void kernel abs_complex_grad_complex(global cmplx* din, global cmplx* in, global
     const cmplx tmp = in[i_X * I_B + O_B];
     const cmplx tmp_o = dout[i_X * I_C + O_C];
     const real1 out = sqrt(dot(tmp, tmp));
-    din[i_X * I_A] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : zmul(tmp_o, tmp / out);
+    din[i_X * I_A + O_A] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : zmul(tmp_o, tmp / out);
 }
 
 void kernel add_real(global real1* a, global real1* b, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
@@ -396,7 +396,7 @@ void kernel exp_real(global real1* a, global real1* out, constant vecCapIntGpu* 
 {
     out[i_X * I_B] = exp(a[i_X * I_A + O_A] * (*log_b));
 }
-void kernel exp_complex(global cmplx* a, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs, constant real1*log_b)
+void kernel exp_complex(global cmplx* a, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs, constant real1* log_b)
 {
     out[i_X * I_B] = zexp(a[i_X * I_A + O_A] * (*log_b));
 }
@@ -407,4 +407,27 @@ void kernel log_real(global real1* a, global real1* out, constant vecCapIntGpu* 
 void kernel log_complex(global cmplx* a, global cmplx* out, constant vecCapIntGpu* vecCapIntArgs, constant real1* inv_log_b)
 {
     out[i_X * I_B] = zlog(a[i_X * I_A + O_A]) * (*inv_log_b);
+}
+
+void kernel clamp_real(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs, constant cmplx* p)
+{
+    const real1 tmp = a[i_X * I_A + O_A];
+    const cmplx b = *p;
+    out[i_X * I_B] = (tmp > b.x) ? ((tmp < b.y) ? tmp  : b.y) : b.x;
+}
+void kernel clamp_grad_real(global real1* dy, global real1* x, global real1* dx, constant vecCapIntGpu* vecCapIntArgs, constant cmplx* p)
+{
+    const real1 xi = x[i_X * I_B + O_B];
+    const cmplx b = *p;
+    if (xi > b.x && xi < b.y) {
+      dx[i_X * I_C + O_C] += dy[i_X * I_A + O_A];
+    }
+}
+void kernel clamp_grad_complex(global cmplx* dy, global real1* x, global cmplx* dx, constant vecCapIntGpu* vecCapIntArgs, constant cmplx* p)
+{
+    const real1 xi = x[i_X * I_B + O_B];
+    const cmplx b = *p;
+    if (xi > b.x && xi < b.y) {
+      dx[i_X * I_C + O_C] += dy[i_X * I_A + O_A];
+    }
 }

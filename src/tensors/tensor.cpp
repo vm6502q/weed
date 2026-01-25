@@ -11,6 +11,7 @@
 
 #include "autograd/node.hpp"
 #include "ops/abs.hpp"
+#include "ops/clamp.hpp"
 #include "ops/commuting.hpp"
 #include "ops/div.hpp"
 #include "ops/in_place.hpp"
@@ -407,6 +408,31 @@ void Tensor::make_relu_node(TensorPtr a, TensorPtr out) {
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(dt);
         Weed::relu_grad(a_grad, *(a.get()), out_grad);
+      });
+}
+
+TensorPtr Tensor::clamp(TensorPtr a, real1 lo, real1 hi) {
+  const bool rg = a->requires_grad();
+  TensorPtr out = allocate_like(a, a->storage->dtype, rg);
+
+  Weed::clamp(*(a.get()), lo, hi, *(out.get()));
+
+  if (rg) {
+    make_clamp_node(a, lo, hi, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out, lo, hi]() {
+        TensorPtr dx = a->grad;
+        TensorPtr dy = out->grad;
+
+        dx->upcast(out->storage->dtype);
+
+        Weed::clamp_grad(*(dy.get()), *(a.get()), lo, hi, *(dx.get()));
       });
 }
 

@@ -25,6 +25,7 @@ add_library (weed STATIC
     src/common/parallel_for.cpp
     src/modules/linear.cpp
     src/ops/abs.cpp
+    src/ops/clamp.cpp
     src/ops/commuting.cpp
     src/ops/div.cpp
     src/ops/in_place.cpp
@@ -302,6 +303,7 @@ install (FILES
     include/modules/linear.hpp
     include/modules/module.hpp
     include/ops/abs.hpp
+    include/ops/clamp.hpp
     include/ops/div.hpp
     include/ops/in_place.hpp
     include/ops/matmul.hpp
