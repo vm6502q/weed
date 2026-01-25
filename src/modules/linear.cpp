@@ -41,7 +41,7 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
                                        std::vector<vecCapIntGpu>{1, in_f},
                                        dtype, device, device_id);
 
-  FILL_STORAGE(0.5, weight->storage);
+  weight->storage->FillZeros();
 
   if (use_bias) {
     bias = std::make_shared<Parameter>(std::vector<vecCapIntGpu>{out_f},

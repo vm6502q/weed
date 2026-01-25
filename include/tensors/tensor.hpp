@@ -179,6 +179,12 @@ struct Tensor {
   static void make_abs_node(TensorPtr a, TensorPtr out);
 
   /**
+   * Sigmoid activation function (with autograd)
+   */
+  static TensorPtr sigmoid(TensorPtr a);
+  static void make_sigmoid_node(TensorPtr a, TensorPtr out);
+
+  /**
    * Rectified linear activation function (with autograd)
    */
   static TensorPtr relu(TensorPtr a);

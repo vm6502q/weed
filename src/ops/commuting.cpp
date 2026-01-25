@@ -63,21 +63,21 @@
       {a_storage->buffer, b_storage->buffer, o_storage->buffer})
 
 namespace Weed {
-void cpu_real_add(const Tensor &a, const Tensor &b, Tensor &out) {
+static void cpu_real_add(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
   CAST_STORAGE(pb, b, real1, CpuRealStorage);
   CAST_STORAGE(po, out, real1, CpuRealStorage);
 
   ADD_KERNEL();
 }
-void cpu_complex_add(const Tensor &a, const Tensor &b, Tensor &out) {
+static void cpu_complex_add(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(pb, b, complex, CpuComplexStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
   ADD_KERNEL();
 }
-void cpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
+static void cpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(pb, b, real1, CpuRealStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
@@ -86,33 +86,33 @@ void cpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
 }
 
 #if ENABLE_GPU
-void gpu_real_add(const Tensor &a, const Tensor &b, Tensor &out) {
+static void gpu_real_add(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_ADD_REAL);
 }
-void gpu_complex_add(const Tensor &a, const Tensor &b, Tensor &out) {
+static void gpu_complex_add(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage,
                       OCL_API_ADD_COMPLEX);
 }
-void gpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
+static void gpu_mixed_add(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_ADD_MIXED);
 }
 #endif
 
-void cpu_real_mul(const Tensor &a, const Tensor &b, Tensor &out) {
+static void cpu_real_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
   CAST_STORAGE(pb, b, real1, CpuRealStorage);
   CAST_STORAGE(po, out, real1, CpuRealStorage);
 
   MUL_KERNEL();
 }
-void cpu_complex_mul(const Tensor &a, const Tensor &b, Tensor &out) {
+static void cpu_complex_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(pb, b, complex, CpuComplexStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
 
   MUL_KERNEL();
 }
-void cpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
+static void cpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(pb, b, real1, CpuRealStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
@@ -121,14 +121,14 @@ void cpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
 }
 
 #if ENABLE_GPU
-void gpu_real_mul(const Tensor &a, const Tensor &b, Tensor &out) {
+static void gpu_real_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_MUL_REAL);
 }
-void gpu_complex_mul(const Tensor &a, const Tensor &b, Tensor &out) {
+static void gpu_complex_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage,
                       OCL_API_MUL_COMPLEX);
 }
-void gpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
+static void gpu_mixed_mul(const Tensor &a, const Tensor &b, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuRealStorage, OCL_API_MUL_MIXED);
 }
 #endif

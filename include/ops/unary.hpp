@@ -14,9 +14,9 @@
 #include "tensors/tensor.hpp"
 
 namespace Weed {
-struct ReluKernel {
+struct UnaryKernel {
   void cpu(const Tensor &, Tensor &);
-  void relu(const Tensor &, Tensor &);
+  void unary(const Tensor &, Tensor &);
   void cpu_grad_real(Tensor &, const Tensor &, const Tensor &);
   void cpu_grad_complex(Tensor &, const Tensor &, const Tensor &);
 #if ENABLE_GPU
@@ -24,10 +24,10 @@ struct ReluKernel {
   void gpu_grad_real(Tensor &, const Tensor &, const Tensor &);
   void gpu_grad_complex(Tensor &, const Tensor &, const Tensor &);
 #endif
-  void relu_grad(Tensor &, const Tensor &, const Tensor &);
+  void unary_grad(Tensor &, const Tensor &, const Tensor &);
 };
 
-extern ReluKernel relu_kernel;
+extern UnaryKernel unary_kernel;
 
 /**
  * Rectified-linear activation function
@@ -37,4 +37,13 @@ void relu(const Tensor &a, Tensor &out);
  * Rectified-linear activation function gradient
  */
 void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout);
+
+/**
+ * Sigmoid activation function
+ */
+void sigmoid(const Tensor &a, Tensor &out);
+/**
+ * Sigmoid activation function gradient
+ */
+void sigmoid_grad(Tensor &din, const Tensor &in, const Tensor &dout);
 } // namespace Weed

@@ -31,7 +31,7 @@ add_library (weed STATIC
     src/ops/matmul.cpp
     src/ops/mean.cpp
     src/ops/reduce.cpp
-    src/ops/relu.cpp
+    src/ops/real_unary.cpp
     src/ops/sub.cpp
     src/tensors/tensor.cpp
     )
@@ -306,7 +306,7 @@ install (FILES
     include/ops/matmul.hpp
     include/ops/mean.hpp
     include/ops/reduce.hpp
-    include/ops/relu.hpp
+    include/ops/real_unary.hpp
     includes/ops/sub.hpp
     include/storage/all_storage.hpp
     include/storage/complex_storage.hpp

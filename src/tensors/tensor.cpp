@@ -16,8 +16,8 @@
 #include "ops/in_place.hpp"
 #include "ops/matmul.hpp"
 #include "ops/mean.hpp"
+#include "ops/real_unary.hpp"
 #include "ops/reduce.hpp"
-#include "ops/relu.hpp"
 #include "ops/sub.hpp"
 #include "tensors/complex_scalar.hpp"
 #include "tensors/real_scalar.hpp"
@@ -336,6 +336,30 @@ void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(dt);
         Weed::abs_grad(a_grad, *(a.get()), out_grad);
+      });
+}
+
+TensorPtr Tensor::sigmoid(TensorPtr a) {
+  const bool rg = a->requires_grad();
+  TensorPtr out = allocate_like(a, a->storage->dtype, rg);
+
+  Weed::sigmoid(*(a.get()), *(out.get()));
+
+  if (rg) {
+    make_sigmoid_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_sigmoid_node(TensorPtr a, TensorPtr out) {
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
+        Tensor &out_grad = *(out->grad.get());
+        const DType &dt = out_grad.storage->dtype;
+        Tensor &a_grad = *(a->grad.get());
+        a_grad.upcast(dt);
+        Weed::sigmoid_grad(a_grad, *(a.get()), out_grad);
       });
 }
 
