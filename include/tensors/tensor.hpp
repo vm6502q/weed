@@ -244,7 +244,7 @@ struct Tensor {
   /**
    * Element-wise logarithm
    */
-  static TensorPtr log(TensorPtr a, real1 p = E_R1);
+  static TensorPtr log(TensorPtr a, real1 b = E_R1);
   static void make_log_node(TensorPtr a, TensorPtr inv_log_b, TensorPtr out);
 };
 
