@@ -55,8 +55,14 @@
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
-  a_storage->gpu->RequestKernel(api_call, args, out.get_size(),                \
-                                {a_storage->buffer, o_storage->buffer})
+  const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
+  BufferPtr shapeBuffer = a_storage->gpu->MakeBuffer(                          \
+      flags, sizeof(vecCapIntGpu) * a.shape.size(), (void *)&(a.shape[0U]));   \
+  BufferPtr strideBuffer = a_storage->gpu->MakeBuffer(                         \
+      flags, sizeof(vecCapIntGpu) * a.stride.size(), (void *)&(a.stride[0U])); \
+  a_storage->gpu->RequestKernel(                                               \
+      api_call, args, out.get_size(),                                          \
+      {a_storage->buffer, o_storage->buffer, shapeBuffer, strideBuffer})
 
 #define DEVICE_SWITCH(cpu, gpu)                                                \
   switch (out.storage->device) {                                               \
@@ -85,11 +91,11 @@ void ReduceKernel::cpu_complex(const size_t &index, const Tensor &a,
 
 #if ENABLE_GPU
 void ReduceKernel::gpu_real(const size_t &index, const Tensor &a, Tensor &out) {
-  // DISPATCH_GPU_KERNEL(GpuRealStorage, OCL_API_REDUCE_REAL);
+  DISPATCH_GPU_KERNEL(GpuRealStorage, OCL_API_REDUCE_REAL);
 }
 void ReduceKernel::gpu_complex(const size_t &index, const Tensor &a,
                                Tensor &out) {
-  // DISPATCH_GPU_KERNEL(GpuComplexStorage, OCL_API_REDUCE_COMPLEX);
+  DISPATCH_GPU_KERNEL(GpuComplexStorage, OCL_API_REDUCE_COMPLEX);
 }
 #endif
 

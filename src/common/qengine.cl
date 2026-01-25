@@ -111,9 +111,54 @@ void kernel real_to_complex_buffer(global real1* a, global cmplx* b)
     b[i_X] = (cmplx)(a[i_X], ZERO_R1);
 }
 
-void kernel reduce_real(global real1* a, global real1* b, constant vecCapIntGpu* vecCapIntArgs, local real1* lBuffer)
+void kernel reduce_real(global real1* a, global real1* b, constant vecCapIntGpu* shape, constant vecCapIntGpu* stride, constant vecCapIntGpu* vecCapIntArgs)
 {
-  SUM_LOCAL(a, lBuffer, b)
+  vecCapIntGpu tmp = i_X;
+  vecCapIntGpu base = O_A;
+  const vecCapIntGpu id = I_A;
+
+  for (int d = O_C - 1; d >= 0; --d) {
+    if (d == id) {
+      continue;
+    }
+
+    vecCapIntGpu dim = shape[d];
+    vecCapIntGpu i_d = tmp % dim;
+    tmp /= dim;
+
+    base += i_d * stride[d];
+  }
+
+  real1 sum = ZERO_R1;
+  for (vecCapIntGpu j = 0U; j < shape[id]; ++j) {
+    sum += a[base + j * stride[id]];
+  }
+  b[O_B + i_X * I_B] = sum;
+}
+
+void kernel reduce_complex(global cmplx* a, global cmplx* b, constant vecCapIntGpu* shape, constant vecCapIntGpu* stride, constant vecCapIntGpu* vecCapIntArgs)
+{
+  vecCapIntGpu tmp = i_X;
+  vecCapIntGpu base = O_A;
+  const vecCapIntGpu id = I_A;
+
+  for (int d = O_C - 1; d >= 0; --d) {
+    if (d == id) {
+      continue;
+    }
+
+    vecCapIntGpu dim = shape[d];
+    vecCapIntGpu i_d = tmp % dim;
+    tmp /= dim;
+
+    base += i_d * stride[d];
+  }
+
+  cmplx sum = ZERO_R1;
+  for (vecCapIntGpu j = 0U; j < shape[id]; ++j) {
+    sum += a[base + j * stride[id]];
+  }
+  b[O_B + i_X * I_B] = sum;
 }
 
 void kernel relu(global real1* a, global real1* out, constant vecCapIntGpu* vecCapIntArgs)
