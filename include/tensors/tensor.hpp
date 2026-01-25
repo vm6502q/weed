@@ -182,6 +182,12 @@ struct Tensor {
   static TensorPtr transpose(TensorPtr a);
 
   /**
+   * Sum of all elements (with autograd)
+   */
+  static TensorPtr sum(TensorPtr a);
+  static void make_sum_node(TensorPtr a, TensorPtr out);
+
+  /**
    * Average of all elements (with autograd)
    */
   static TensorPtr mean(TensorPtr a);

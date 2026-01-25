@@ -15,11 +15,11 @@
 #include "ops/div.hpp"
 #include "ops/in_place.hpp"
 #include "ops/matmul.hpp"
-#include "ops/mean.hpp"
 #include "ops/pow.hpp"
 #include "ops/real_unary.hpp"
 #include "ops/reduce.hpp"
 #include "ops/sub.hpp"
+#include "ops/sum.hpp"
 #include "tensors/complex_scalar.hpp"
 #include "tensors/real_scalar.hpp"
 
@@ -274,6 +274,37 @@ TensorPtr Tensor::transpose(TensorPtr a) {
   std::swap(out->stride[0U], out->stride[1U]);
 
   return out;
+}
+
+TensorPtr Tensor::sum(TensorPtr a) {
+  const bool rg = a->requires_grad();
+  TensorPtr out =
+      allocate_like(std::vector<vecCapInt>{1U}, std::vector<vecCapInt>{0U}, a,
+                    a->storage->dtype, rg);
+
+  Weed::sum(*(a.get()), *(out.get()));
+
+  if (rg) {
+    make_sum_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
+        TensorPtr a_grad = a->grad;
+        TensorPtr out_grad = out->grad;
+        TensorPtr scale =
+            std::make_shared<RealScalar>(ONE_R1, false, out->storage->device);
+        // da += dout  (broadcast)
+        const DType &dt = out_grad->storage->dtype;
+        a_grad->upcast(dt);
+        TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
+        Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
+        Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+      });
 }
 
 TensorPtr Tensor::mean(TensorPtr a) {
