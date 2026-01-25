@@ -76,6 +76,9 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
   }
   d.M = a.shape[0U];
   d.N = b.shape[1U];
+  if ((d.M != out.shape[0U]) || (d.N != out.shape[1U])) {
+    throw std::invalid_argument("MatMul output dimensions don't match inputs!");
+  }
 
   d.A_o = a.offset;
   d.B_o = b.offset;
