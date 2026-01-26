@@ -466,7 +466,7 @@ TEST_CASE("test_mixed_matmul") {
   y = std::make_shared<Tensor>(std::vector<real1>{4.0, 5.0},
                                std::vector<vecCapInt>{2, 1},
                                std::vector<vecCapInt>{1, 2}, false, TEST_DTAG);
-  z = x >> y;
+  z = y << x;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), (ONE_R1 * 23));
 
@@ -478,7 +478,7 @@ TEST_CASE("test_mixed_matmul") {
   y = std::make_shared<Tensor>(std::vector<complex>{4.0, 5.0},
                                std::vector<vecCapInt>{1, 2},
                                std::vector<vecCapInt>{1, 1}, false, TEST_DTAG);
-  z = x >> y;
+  z = y << x;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[0])[0]), (ONE_R1 * 8));
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[0])[1]), (ONE_R1 * 12));
