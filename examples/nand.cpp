@@ -36,7 +36,7 @@ int main() {
 
   std::vector<ParameterPtr> params = l.parameters();
 
-  Adam opt(1e-3);
+  Adam opt(0.1);
   opt.register_parameters(params);
 
   size_t epoch = 1;
