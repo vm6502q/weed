@@ -310,6 +310,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
         const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
         a_grad->upcast(dt);
         TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
+        scale->match_shape(out_grad);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
       });
@@ -340,6 +341,7 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         // da += dout / N   (broadcast)
         const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
         a_grad->upcast(dt);
+        scale->match_shape(out_grad);
         TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -714,6 +716,7 @@ void Tensor::make_pow_node(TensorPtr x, TensorPtr p, TensorPtr y) {
     Weed::mul(*(dy.get()), *(y.get()), *(dy_y.get()));
 
     TensorPtr dy_y_p = Tensor::allocate_like(dy_y, dy_y->storage->dtype, false);
+    p->match_shape(dy_y);
     Weed::mul(*(dy_y.get()), *(p.get()), *(dy_y_p.get()));
 
     TensorPtr r = Tensor::allocate_like(dy_y_p, dy_y_p->storage->dtype, false);
@@ -746,6 +749,7 @@ void Tensor::make_exp_node(TensorPtr x, TensorPtr log_b, TensorPtr y) {
         TensorPtr dy = y->grad;
 
         TensorPtr dy_v = Tensor::allocate_like(dy, dy->storage->dtype, false);
+        log_b->match_shape(dy);
         Weed::mul(*(dy.get()), *(log_b.get()), *(dy_v.get()));
 
         TensorPtr r = Tensor::allocate_like(dy_v, dy_v->storage->dtype, false);
@@ -779,6 +783,7 @@ void Tensor::make_log_node(TensorPtr x, TensorPtr inv_log_b, TensorPtr y) {
         TensorPtr dy = y->grad;
 
         TensorPtr dy_v = Tensor::allocate_like(dy, dy->storage->dtype, false);
+        inv_log_b->match_shape(dy);
         Weed::mul(*(dy.get()), *(inv_log_b.get()), *(dy_v.get()));
 
         TensorPtr r = Tensor::allocate_like(dy_v, dy_v->storage->dtype, false);
