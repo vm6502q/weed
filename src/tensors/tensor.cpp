@@ -367,7 +367,6 @@ void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
-        out_grad.upcast(a_grad.storage->dtype);
         Weed::abs_grad(a_grad, *(a.get()), out_grad);
       });
 }

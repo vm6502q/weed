@@ -87,6 +87,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_ABS_COMPLEX, "abs_complex"),
     OCLKernelHandle(OCL_API_ABS_REAL_GRAD_REAL, "abs_real_grad_real"),
     OCLKernelHandle(OCL_API_ABS_REAL_GRAD_COMPLEX, "abs_real_grad_complex"),
+    OCLKernelHandle(OCL_API_ABS_COMPLEX_GRAD_REAL, "abs_complex_grad_real"),
     OCLKernelHandle(OCL_API_ABS_COMPLEX_GRAD_COMPLEX, "abs_complex_grad_complex"),
     OCLKernelHandle(OCL_API_ADD_REAL, "add_real"),
     OCLKernelHandle(OCL_API_ADD_COMPLEX, "add_complex"),
