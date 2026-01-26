@@ -238,12 +238,11 @@ void Tensor::reduce_grad_broadcast() {
 }
 
 void Tensor::backward(TensorPtr loss) {
-  if (!loss->requires_grad()) {
+  if (!loss || !loss->requires_grad()) {
     return;
   }
 
-  // Seed gradient of loss (scalar assumed)
-  // loss.grad already allocated by our invariant
+  // Seed gradient
   loss->grad->storage->FillOnes();
 
   std::vector<NodePtr> topo;
@@ -253,16 +252,17 @@ void Tensor::backward(TensorPtr loss) {
     if (!n || seen.count(n.get())) {
       return;
     }
+
     seen.insert(n.get());
     for (auto &p : n->parents) {
       if (p && p->grad_node) {
-        p->grad_node->backward();
+        dfs(p->grad_node);
       }
     }
     topo.push_back(n);
   };
 
-  loss->grad_node->backward();
+  dfs(loss->grad_node);
 
   for (auto it = topo.rbegin(); it != topo.rend(); ++it) {
     (*it)->backward();

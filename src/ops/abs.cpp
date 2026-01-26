@@ -123,7 +123,7 @@ void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     const real1 tmp = pi[i * I_i];
     const real1 tmp_o = po[i * I_o];
-    pdi[i * I_d] =
+    pdi[i * I_d] +=
         (tmp == ZERO_R1) ? ZERO_R1 : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
   });
 }
@@ -139,7 +139,7 @@ void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     const real1 tmp = pi[i * I_i];
     const complex tmp_o = po[i * I_o];
-    pdi[i * I_d] =
+    pdi[i * I_d] +=
         (tmp == ZERO_R1) ? ZERO_CMPLX : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
   });
 }
@@ -156,7 +156,7 @@ void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
     const complex tmp = pi[i * I_i];
     const real1 tmp_o = po[i * I_o];
     const real1 out = std::abs(tmp);
-    pdi[i * I_d] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : ((tmp_o / out) * tmp);
+    pdi[i * I_d] += (tmp == ZERO_CMPLX) ? ZERO_CMPLX : ((tmp_o / out) * tmp);
   });
 }
 void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
@@ -165,14 +165,14 @@ void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
   const vecCapIntGpu I_i = (vecCapIntGpu)(in.stride[0U]);
   const vecCapIntGpu I_o = (vecCapIntGpu)(dout.stride[0U]);
   CAST_STORAGE(pdi, din, complex, CpuComplexStorage);
-  CAST_STORAGE(pi, in, real1, CpuRealStorage);
+  CAST_STORAGE(pi, in, complex, CpuComplexStorage);
   CAST_STORAGE(po, dout, complex, CpuComplexStorage);
   size_t n = dout.storage->size;
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     const complex tmp = pi[i * I_i];
     const complex tmp_o = po[i * I_o];
     const real1 out = std::abs(tmp);
-    pdi[i * I_d] = (tmp == ZERO_CMPLX) ? ZERO_CMPLX : (tmp_o * tmp / out);
+    pdi[i * I_d] += (tmp == ZERO_CMPLX) ? ZERO_CMPLX : (tmp_o * tmp / out);
   });
 }
 #if ENABLE_GPU
@@ -237,7 +237,7 @@ void AbsKernel::abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
     throw std::invalid_argument(
         "In Weed::abs_grad(din, in, dout), sizes do not match!");
   }
-  switch (din.storage->dtype) {
+  switch (in.storage->dtype) {
   case DType::COMPLEX:
     switch (dout.storage->dtype) {
     case DType::COMPLEX:
