@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "ops/in_place.hpp"
 #include "tensors/parameter.hpp"
 
 #include <unordered_map>
@@ -36,7 +37,8 @@ struct Adam {
 
   std::unordered_map<ParameterPtr, AdamState> state;
 
-  Adam(real1 l, real1 b1, real1 b2, real1 e)
+  Adam(real1 l = 1e-3, real1 b1 = ADAM_BETA1_DEFAULT,
+       real1 b2 = ADAM_BETA2_DEFAULT, real1 e = ADAM_EPSILON_DEFAULT)
       : lr(l), beta1(b1), beta2(b2), eps(e), t(0U) {}
 
   /**
