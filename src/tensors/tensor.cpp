@@ -318,6 +318,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
         scale->match_shape(out_grad);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -350,6 +351,7 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+        a->reduce_grad_broadcast();
       });
 }
 
