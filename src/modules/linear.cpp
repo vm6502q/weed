@@ -12,16 +12,42 @@
 #include "modules/linear.hpp"
 #include "storage/all_storage.hpp"
 
+#include <random>
+
 namespace Weed {
 Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
                DType dtype, DeviceTag device, int64_t device_id)
     : in_features(in_f), out_features(out_f) {
-  // weight is stored as W^T
-  weight = std::make_shared<Parameter>(std::vector<vecCapIntGpu>{in_f, out_f},
-                                       std::vector<vecCapIntGpu>{1, in_f},
-                                       dtype, device, device_id);
 
-  weight->storage->FillZeros();
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  const size_t sz = in_f * out_f;
+  if (dtype == DType::REAL) {
+    std::uniform_real_distribution<> dis(0.0, 1.0 / std::sqrt(in_f));
+    std::vector<real1> init;
+    init.reserve(sz);
+    for (size_t n = 0; n < sz; ++n) {
+      init.push_back(dis(gen));
+    }
+
+    weight = std::make_shared<Parameter>(init,
+                                         std::vector<vecCapIntGpu>{in_f, out_f},
+                                         std::vector<vecCapIntGpu>{1, in_f},
+                                         device, device_id);
+  } else {
+    std::uniform_real_distribution<> dis(0.0, 1.0 / std::pow(in_f, 0.25));
+    std::vector<complex> init;
+    init.reserve(sz);
+    for (size_t n = 0; n < sz; ++n) {
+      init.push_back(complex(dis(gen), dis(gen)));
+    }
+
+    weight = std::make_shared<Parameter>(init,
+                                         std::vector<vecCapIntGpu>{in_f, out_f},
+                                         std::vector<vecCapIntGpu>{1, in_f},
+                                         device, device_id);
+  }
 
   if (use_bias) {
     bias = std::make_shared<Parameter>(std::vector<vecCapIntGpu>{out_f},
