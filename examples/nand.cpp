@@ -24,10 +24,9 @@ int main() {
   TensorPtr x = std::make_shared<Tensor>(
       std::vector<real1>{0, 0, 1, 0, 0, 1, 1, 1}, std::vector<vecCapInt>{4, 2},
       std::vector<vecCapInt>{2, 1}, false, DeviceTag::CPU);
-  TensorPtr y = std::make_shared<Tensor>(std::vector<real1>{1, 1, 1, 0},
-                                         std::vector<vecCapInt>{4, 1},
-                                         std::vector<vecCapInt>{1, 1},
-                                         false, DeviceTag::CPU);
+  TensorPtr y = std::make_shared<Tensor>(
+      std::vector<real1>{1, 1, 1, 0}, std::vector<vecCapInt>{4, 1},
+      std::vector<vecCapInt>{1, 1}, false, DeviceTag::CPU);
 
   Linear l(2, 1, true, DType::REAL, DeviceTag::CPU);
 

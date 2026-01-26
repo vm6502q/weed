@@ -19,6 +19,9 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
                DType dtype, DeviceTag device, int64_t device_id)
     : in_features(in_f), out_features(out_f) {
 
+  const std::vector<vecCapIntGpu> shape{in_f, out_f};
+  const std::vector<vecCapIntGpu> stride{1, in_f};
+
   std::random_device rd;
   std::mt19937 gen(rd());
 
@@ -32,10 +35,8 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
       init.push_back(dis(gen));
     }
 
-    weight = std::make_shared<Parameter>(init,
-                                         std::vector<vecCapIntGpu>{in_f, out_f},
-                                         std::vector<vecCapIntGpu>{1, in_f},
-                                         device, device_id);
+    weight =
+        std::make_shared<Parameter>(init, shape, stride, device, device_id);
   } else {
     real1 lim = 1.0 / std::pow(in_f, 0.25);
     std::uniform_real_distribution<real1> dis(-lim, lim);
@@ -45,10 +46,8 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
       init.push_back(complex(dis(gen), dis(gen)));
     }
 
-    weight = std::make_shared<Parameter>(init,
-                                         std::vector<vecCapIntGpu>{in_f, out_f},
-                                         std::vector<vecCapIntGpu>{1, in_f},
-                                         device, device_id);
+    weight =
+        std::make_shared<Parameter>(init, shape, stride, device, device_id);
   }
 
   if (use_bias) {
