@@ -144,113 +144,13 @@ inline vecLenInt log2Gpu(vecCapIntGpu n) {
 #endif
 }
 
-inline vecLenInt popCountGpu(vecCapIntGpu n) {
-#if CPP_STD >= 20
-  return (vecLenInt)std::popcount(n);
-#elif (defined(__GNUC__) || defined(__clang__)) && !TARGET_OS_IPHONE &&        \
-    !TARGET_IPHONE_SIMULATOR
-  return __builtin_popcount(n);
-#else
-  vecLenInt popCount;
-  for (popCount = 0U; n; ++popCount) {
-    n &= n - 1U;
-  }
-  return popCount;
-#endif
-}
-
-#if (QBCAPPOW < 7) || ((QBCAPPOW < 8) && defined(__SIZEOF_INT128__)) ||        \
-    ((QBCAPPOW > 7) && defined(BOOST_AVAILABLE))
-inline int bi_log2(const vecCapInt &n) { return log2Gpu((vecCapIntGpu)n); }
-#endif
-inline vecLenInt log2(vecCapInt n) { return (vecLenInt)bi_log2(n); }
-
-inline vecCapInt pow2(const vecLenInt &p) { return ONE_VCI << p; }
 inline vecCapIntGpu pow2Gpu(const vecLenInt &p) {
   return (vecCapIntGpu)1U << p;
-}
-inline vecCapInt pow2Mask(const vecLenInt &p) {
-  vecCapInt toRet = ONE_VCI << p;
-  bi_decrement(&toRet, 1U);
-  return toRet;
-}
-inline vecCapIntGpu pow2MaskGpu(const vecLenInt &p) {
-  return ((vecCapIntGpu)1U << p) - 1U;
-}
-inline vecCapInt bitSlice(const vecLenInt &bit, const vecCapInt &source) {
-  return (ONE_VCI << bit) & source;
-}
-inline vecCapIntGpu bitSliceGpu(const vecLenInt &bit,
-                                const vecCapIntGpu &source) {
-  return ((vecCapIntGpu)1U << bit) & source;
-}
-inline vecCapInt bitRegMask(const vecLenInt &start, const vecLenInt &length) {
-  vecCapInt toRet = ONE_VCI << length;
-  bi_decrement(&toRet, 1U);
-  bi_lshift_ip(&toRet, start);
-  return toRet;
-}
-inline vecCapIntGpu bitRegMaskGpu(const vecLenInt &start,
-                                  const vecLenInt &length) {
-  return (((vecCapIntGpu)1U << length) - 1U) << start;
-}
-// Source:
-// https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const vecCapInt &x) {
-  vecCapInt y = x;
-  bi_decrement(&y, 1U);
-  bi_and_ip(&y, x);
-  return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
-}
-inline bool isPowerOfTwoGpu(const vecCapIntGpu &x) {
-  return x && !(x & (x - 1U));
-}
-inline bool isBadBitRange(const vecLenInt &start, const vecLenInt &length,
-                          const vecLenInt &qubitCount) {
-  return ((start + length) > qubitCount) ||
-         ((vecLenInt)(start + length) < start);
-}
-inline bool isBadPermRange(const vecCapIntGpu &start,
-                           const vecCapIntGpu &length,
-                           const vecCapIntGpu &maxQPowerGpu) {
-  return ((start + length) > maxQPowerGpu) ||
-         ((vecCapIntGpu)(start + length) < start);
-}
-inline void ThrowIfQbIdArrayIsBad(const std::vector<vecLenInt> &controls,
-                                  const vecLenInt &qubitCount,
-                                  std::string message) {
-  std::set<vecLenInt> dupes;
-  for (const vecLenInt &control : controls) {
-    if (control >= qubitCount) {
-      throw std::invalid_argument(message);
-    }
-
-    if (dupes.find(control) == dupes.end()) {
-      dupes.insert(control);
-    } else {
-      throw std::invalid_argument(message +
-                                  " (Found duplicate qubit indices!)");
-    }
-  }
 }
 
 // These are utility functions defined in qinterface/protected.cpp:
 unsigned char *cl_alloc(size_t ucharCount);
 void cl_free(void *toFree);
-void mul2x2(const complex *left, const complex *right, complex *out);
-void exp2x2(const complex *matrix2x2, complex *outMatrix2x2);
-void log2x2(const complex *matrix2x2, complex *outMatrix2x2);
-void inv2x2(const complex *matrix2x2, complex *outMatrix2x2);
-bool isOverflowAdd(vecCapIntGpu inOutInt, vecCapIntGpu inInt,
-                   const vecCapIntGpu &signMask,
-                   const vecCapIntGpu &lengthPower);
-bool isOverflowSub(vecCapIntGpu inOutInt, vecCapIntGpu inInt,
-                   const vecCapIntGpu &signMask,
-                   const vecCapIntGpu &lengthPower);
-vecCapInt pushApartBits(const vecCapInt &perm,
-                        const std::vector<vecCapInt> &skipPowers);
-vecCapInt intPow(const vecCapInt &base, const vecCapInt &power);
-vecCapIntGpu intPowGpu(vecCapIntGpu base, vecCapIntGpu power);
 
 #if QBCAPPOW > 6
 std::ostream &operator<<(std::ostream &os, const vecCapInt &b);
