@@ -4,7 +4,27 @@
 Minimalist AI/ML inference and backprogation in the style of [Qrack](https://github.com/unitaryfoundation/qrack)
 
 ## Development Status
-**Weed** is a rapidly-developing **work-in-progress**. It does not yet provide any functionality. Its ABI may change drastically and without notice.
+**Weed** is a rapidly-developing **work-in-progress**. Its ABI may change drastically and without notice.
+
+The project provides a set of essential CPU and GPU **kernels**, used by `Tensor` instances that perform _autograd._ We also provide _stochastic gradient descent (SGD)_ and _Adam_ optimizer implementations. (Build and check the API reference to get started.)
+
+## Building the API reference
+
+```sh
+    $ doxygen doxygen.config
+```
+
+## Performing code coverage
+
+```sh
+    $ cd _build
+    $ cmake -DENABLE_CODECOVERAGE=ON ..
+    $ make -j 8 unittest
+    $ ./unittest
+    $ make coverage
+    $ cd coverage_results
+    $ python -m http.server
+```
 
 ## Copyright, License, and Acknowledgments
 
