@@ -294,6 +294,7 @@ install (FILES
 
 # Install weed library headers
 install (FILES
+    include/autograd/adam.hpp
     include/autograd/bci_loss.hpp
     include/autograd/mse_loss.hpp
     include/autograd/node.hpp

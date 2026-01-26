@@ -48,6 +48,14 @@ struct Tensor {
   Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
          std::vector<vecCapInt> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
+  Tensor(real1 val, bool rg = false, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
+         int64_t did = -1)
+      : Tensor(std::vector<real1>{val}, std::vector<vecCapInt>{1},
+               std::vector<vecCapInt>{0}, rg, dtag, did) {}
+  Tensor(complex val, bool rg = false,
+         DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
+      : Tensor(std::vector<complex>{val}, std::vector<vecCapInt>{1},
+               std::vector<vecCapInt>{0}, rg, dtag, did) {}
 
   /**
    * Will we calculate gradients on back-propagation?
@@ -269,14 +277,52 @@ struct Tensor {
 inline TensorPtr operator+(TensorPtr left, TensorPtr right) {
   return Tensor::add(left, right);
 }
+inline TensorPtr operator+(real1 left, TensorPtr right) {
+  TensorPtr l = std::make_shared<Tensor>(left, right->requires_grad(),
+                                         right->storage->device,
+                                         right->storage->get_device_id());
+  return Tensor::add(l, right);
+}
+inline TensorPtr operator+(TensorPtr left, real1 right) { return right + left; }
 inline TensorPtr operator-(TensorPtr left, TensorPtr right) {
   return Tensor::sub(left, right);
+}
+inline TensorPtr operator-(real1 left, TensorPtr right) {
+  TensorPtr l = std::make_shared<Tensor>(left, right->requires_grad(),
+                                         right->storage->device,
+                                         right->storage->get_device_id());
+  return Tensor::sub(l, right);
+}
+inline TensorPtr operator-(TensorPtr left, real1 right) {
+  TensorPtr r = std::make_shared<Tensor>(right, left->requires_grad(),
+                                         left->storage->device,
+                                         left->storage->get_device_id());
+  return Tensor::sub(left, r);
 }
 inline TensorPtr operator*(TensorPtr left, TensorPtr right) {
   return Tensor::mul(left, right);
 }
+inline TensorPtr operator*(real1 left, TensorPtr right) {
+  TensorPtr l = std::make_shared<Tensor>(left, right->requires_grad(),
+                                         right->storage->device,
+                                         right->storage->get_device_id());
+  return Tensor::mul(l, right);
+}
+inline TensorPtr operator*(TensorPtr left, real1 right) { return right * left; }
 inline TensorPtr operator/(TensorPtr left, TensorPtr right) {
   return Tensor::div(left, right);
+}
+inline TensorPtr operator/(real1 left, TensorPtr right) {
+  TensorPtr l = std::make_shared<Tensor>(left, right->requires_grad(),
+                                         right->storage->device,
+                                         right->storage->get_device_id());
+  return Tensor::div(l, right);
+}
+inline TensorPtr operator/(TensorPtr left, real1 right) {
+  TensorPtr r = std::make_shared<Tensor>(right, left->requires_grad(),
+                                         left->storage->device,
+                                         left->storage->get_device_id());
+  return Tensor::div(left, r);
 }
 inline TensorPtr operator>>(TensorPtr left, TensorPtr right) {
   return Tensor::matmul(left, right);
