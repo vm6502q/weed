@@ -20,15 +20,19 @@ struct AbsKernel {
   void abs(const Tensor &, Tensor &);
   void cpu_real_grad_real(Tensor &, const Tensor &, const Tensor &);
   void cpu_real_grad_complex(Tensor &, const Tensor &, const Tensor &);
+  void cpu_real_grad_mixed(Tensor &, const Tensor &, const Tensor &);
   void cpu_complex_grad_real(Tensor &, const Tensor &, const Tensor &);
   void cpu_complex_grad_complex(Tensor &, const Tensor &, const Tensor &);
+  void cpu_complex_grad_mixed(Tensor &, const Tensor &, const Tensor &);
 #if ENABLE_GPU
   void gpu_real(const Tensor &, Tensor &);
   void gpu_complex(const Tensor &, Tensor &);
   void gpu_real_grad_real(Tensor &, const Tensor &, const Tensor &);
   void gpu_real_grad_complex(Tensor &, const Tensor &, const Tensor &);
+  void gpu_real_grad_mixed(Tensor &, const Tensor &, const Tensor &);
   void gpu_complex_grad_real(Tensor &, const Tensor &, const Tensor &);
   void gpu_complex_grad_complex(Tensor &, const Tensor &, const Tensor &);
+  void gpu_complex_grad_mixed(Tensor &, const Tensor &, const Tensor &);
 #endif
   void abs_grad(Tensor &, const Tensor &, const Tensor &);
 };
