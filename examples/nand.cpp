@@ -18,14 +18,18 @@
 
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 
+#define R(v) real1(v)
+#define C(v) complex(v)
+
 using namespace Weed;
 
 int main() {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{0, 0, 1, 0, 0, 1, 1, 1}, std::vector<vecCapInt>{4, 2},
-      std::vector<vecCapInt>{2, 1}, false, DeviceTag::CPU);
+      std::vector<real1>{R(0), R(0), R(1), R(0), R(0), R(1), R(1), R(1)},
+      std::vector<vecCapInt>{4, 2}, std::vector<vecCapInt>{2, 1}, false,
+      DeviceTag::CPU);
   TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{1, 1, 1, 0}, std::vector<vecCapInt>{4, 1},
+      std::vector<real1>{R(1), R(1), R(1), R(0)}, std::vector<vecCapInt>{4, 1},
       std::vector<vecCapInt>{1, 1}, false, DeviceTag::CPU);
 
   Linear l(2, 1, true, DType::REAL, DeviceTag::CPU);
@@ -40,7 +44,7 @@ int main() {
     TensorPtr loss = bci_loss(y_pred, y);
 
     Tensor::backward(loss);
-    sgd_step(params, 0.1);
+    sgd_step(params, R(0.1));
 
     loss_r = GET_REAL(loss);
     if (!(epoch % 100)) {

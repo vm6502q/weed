@@ -46,7 +46,7 @@ static void cpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
   const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
   CAST_STORAGE(po, out, real1, CpuRealStorage);
-  const real1 log_b = std::log(b);
+  const real1 log_b = (real1)std::log(b);
   size_t n = out.storage->size;
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     po[i * I_o] = std::exp(pa[i * I_a] * log_b);
@@ -57,7 +57,7 @@ static void cpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
   const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
   CAST_STORAGE(po, out, real1, CpuRealStorage);
-  const real1 inv_log_b = ONE_R1 / std::log(b);
+  const real1 inv_log_b = (real1)(1.0 / std::log(b));
   size_t n = out.storage->size;
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     po[i * I_o] = std::log(pa[i * I_a]) * inv_log_b;
@@ -78,7 +78,7 @@ static void cpu_complex_exp(const Tensor &a, const real1 &b, Tensor &out) {
   const vecCapIntGpu I_o = (vecCapIntGpu)(out.stride[0U]);
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
-  const real1 log_b = std::log(b);
+  const real1 log_b = (real1)std::log(b);
   size_t n = out.storage->size;
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     po[i * I_o] = std::exp(pa[i * I_a] * log_b);
@@ -89,7 +89,7 @@ static void cpu_complex_log(const Tensor &a, const real1 &b, Tensor &out) {
   const vecCapIntGpu I_o = (vecCapIntGpu)(out.stride[0U]);
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
-  const real1 inv_log_b = ONE_R1 / std::log(b);
+  const real1 inv_log_b = (real1)(1.0 / std::log(b));
   size_t n = out.storage->size;
   pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
     po[i * I_o] = std::log(pa[i * I_a]) * inv_log_b;
@@ -112,7 +112,7 @@ static void gpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  const complex v = complex(std::log(b));
+  const complex v = complex((real1)std::log(b));
   a_storage->gpu->RequestKernel(OCLAPI::OCL_API_EXP_REAL, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer}, 0U, &v);
 }
@@ -122,7 +122,7 @@ static void gpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  const complex v = complex(ONE_R1 / std::log(b));
+  const complex v = complex((real1)(1.0 / std::log(b)));
   a_storage->gpu->RequestKernel(OCLAPI::OCL_API_LOG_REAL, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer}, 0U, &v);
 }
@@ -142,7 +142,7 @@ static void gpu_complex_exp(const Tensor &a, const real1 &b, Tensor &out) {
       std::dynamic_pointer_cast<GpuComplexStorage>(a.storage);
   GpuComplexStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(out.storage);
-  const complex v = complex(std::log(b));
+  const complex v = complex((real1)std::log(b));
   a_storage->gpu->RequestKernel(OCLAPI::OCL_API_EXP_COMPLEX, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer}, 0U, &v);
 }
@@ -152,7 +152,7 @@ static void gpu_complex_log(const Tensor &a, const real1 &b, Tensor &out) {
       std::dynamic_pointer_cast<GpuComplexStorage>(a.storage);
   GpuComplexStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(out.storage);
-  const complex v = complex(ONE_R1 / std::log(b));
+  const complex v = complex((real1)(1.0 / std::log(b)));
   a_storage->gpu->RequestKernel(OCLAPI::OCL_API_LOG_COMPLEX, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer}, 0U, &v);
 }

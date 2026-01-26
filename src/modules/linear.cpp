@@ -27,23 +27,23 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
 
   const size_t sz = in_f * out_f;
   if (dtype == DType::REAL) {
-    real1 lim = 1.0 / std::sqrt(in_f);
-    std::uniform_real_distribution<real1> dis(-lim, lim);
+    real1_f lim = (real1_f)(1.0 / std::sqrt(in_f));
+    std::uniform_real_distribution<real1_f> dis(-lim, lim);
     std::vector<real1> init;
     init.reserve(sz);
     for (size_t n = 0; n < sz; ++n) {
-      init.push_back(dis(gen));
+      init.push_back((real1)dis(gen));
     }
 
     weight =
         std::make_shared<Parameter>(init, shape, stride, device, device_id);
   } else {
-    real1 lim = 1.0 / std::pow(in_f, 0.25);
-    std::uniform_real_distribution<real1> dis(-lim, lim);
+    real1_f lim = (real1_f)(1.0 / std::pow(in_f, 0.25));
+    std::uniform_real_distribution<real1_f> dis(-lim, lim);
     std::vector<complex> init;
     init.reserve(sz);
     for (size_t n = 0; n < sz; ++n) {
-      init.push_back(complex(dis(gen), dis(gen)));
+      init.push_back(complex((real1)dis(gen), (real1)dis(gen)));
     }
 
     weight =

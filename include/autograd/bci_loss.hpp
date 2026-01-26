@@ -20,9 +20,9 @@ namespace Weed {
 inline TensorPtr bci_loss(TensorPtr y_pred, TensorPtr y_true) {
   const DeviceTag dtag = y_pred->storage->device;
   const int64_t did = y_pred->storage->get_device_id();
-  WEED_CONST real1 eps = 40 * FP_NORM_EPSILON;
+  WEED_CONST real1 eps(40 * FP_NORM_EPSILON);
   y_pred = Tensor::clamp(y_pred, eps, ONE_R1 - eps);
-  TensorPtr unit = std::make_shared<RealScalar>(1.0, false, dtag, did);
+  TensorPtr unit = std::make_shared<RealScalar>(real1(1), false, dtag, did);
   return Tensor::mean((y_true - unit) * Tensor::log(unit - y_pred) -
                       y_true * Tensor::log(y_pred));
 }

@@ -86,7 +86,7 @@ static void cpu_sum_complex(const Tensor &a, Tensor &out) {
 static void cpu_mean_complex(const Tensor &a, Tensor &out) {
   cpu_sum_complex(a, out);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
-  po[0U] /= a.get_size();
+  po[0U] /= (real1)a.get_size();
 }
 #if ENABLE_GPU
 static void gpu_sum_real(const Tensor &a, Tensor &out) {
@@ -120,7 +120,7 @@ static void gpu_mean_complex(const Tensor &a, Tensor &out) {
   GpuComplexStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuComplexStorage>(out.storage);
   GPU_SUM(complex);
-  t /= sz;
+  t /= (real1)sz;
   GPU_WRITE(SetComplex);
 }
 #endif
