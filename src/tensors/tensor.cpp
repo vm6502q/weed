@@ -307,8 +307,9 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
         TensorPtr scale =
             std::make_shared<RealScalar>(ONE_R1, false, out->storage->device);
         // da += dout  (broadcast)
-        const DType &dt = out_grad->storage->dtype;
+        const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
         a_grad->upcast(dt);
+        out_grad->upcast(dt);
         TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -338,8 +339,9 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         TensorPtr scale = std::make_shared<RealScalar>(
             ONE_R1 / (real1)a->get_size(), false, out->storage->device);
         // da += dout / N   (broadcast)
-        const DType &dt = out_grad->storage->dtype;
+        const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
         a_grad->upcast(dt);
+        out_grad->upcast(dt);
         TensorPtr tmp = Tensor::allocate_like(out_grad, dt, false);
         Weed::mul(*(out_grad.get()), *(scale.get()), *(tmp.get()));
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -365,6 +367,7 @@ void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
+        out_grad.upcast(a_grad.storage->dtype);
         Weed::abs_grad(a_grad, *(a.get()), out_grad);
       });
 }
@@ -388,6 +391,7 @@ void Tensor::make_sigmoid_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
+        out_grad.upcast(a_grad.storage->dtype);
         Weed::sigmoid_grad(a_grad, *(a.get()), out_grad);
       });
 }
@@ -411,6 +415,7 @@ void Tensor::make_relu_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
+        out_grad.upcast(a_grad.storage->dtype);
         Weed::relu_grad(a_grad, *(a.get()), out_grad);
       });
 }
@@ -434,6 +439,7 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
         TensorPtr dx = a->grad;
         TensorPtr dy = out->grad;
         dx->upcast(dy->storage->dtype);
+        dy->upcast(dx->storage->dtype);
         Weed::clamp_grad(*(dy.get()), *(a.get()), lo, hi, *(dx.get()));
       });
 }
@@ -469,16 +475,17 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
 void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
     TensorPtr out_grad = out->grad;
-    const DType &dt = out_grad->storage->dtype;
     if (a->requires_grad()) {
       TensorPtr a_grad = a->grad;
-      a_grad->upcast(dt);
+      a_grad->upcast(out_grad->storage->dtype);
+      out_grad->upcast(a_grad->storage->dtype);
       Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
       a->reduce_grad_broadcast();
     }
     if (b->requires_grad()) {
       TensorPtr b_grad = b->grad;
-      b_grad->upcast(dt);
+      b_grad->upcast(out_grad->storage->dtype);
+      out_grad->upcast(b_grad->storage->dtype);
       Weed::add_in_place(*(b_grad.get()), *(out_grad.get()));
       b->reduce_grad_broadcast();
     }
@@ -517,10 +524,11 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(
       filterParents(std::vector<TensorPtr>{a, b}), [a, b, out]() {
         TensorPtr out_grad = out->grad;
-        const DType &dt = out_grad->storage->dtype;
         if (a->requires_grad()) {
           TensorPtr a_grad = a->grad;
+          const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
           a_grad->upcast(dt);
+          out_grad->upcast(dt);
           TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           Weed::mul(*(out_grad.get()), *(b.get()), *(tmp.get()));
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -528,7 +536,9 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
         }
         if (b->requires_grad()) {
           TensorPtr b_grad = b->grad;
+          const DType &dt = get_dtype_by_presidence(b_grad, out_grad);
           b_grad->upcast(dt);
+          out_grad->upcast(dt);
           TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           Weed::mul(*(out_grad.get()), *(a.get()), *(tmp.get()));
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
@@ -567,10 +577,11 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(
       filterParents(std::vector<TensorPtr>{a, b}), [a, b, out]() {
         TensorPtr out_grad = out->grad;
-        const DType &dt = out_grad->storage->dtype;
         if (a->requires_grad()) {
           TensorPtr a_grad = a->grad;
+          const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
           a_grad->upcast(dt);
+          out_grad->upcast(dt);
           TensorPtr bt = transpose(b);
           TensorPtr tmp = Tensor::allocate_like(a, dt, false);
           Weed::matmul(*(out->grad.get()), *(bt.get()), *(tmp.get()));
@@ -578,7 +589,9 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
         }
         if (b->requires_grad()) {
           TensorPtr b_grad = b->grad;
+          const DType &dt = get_dtype_by_presidence(b_grad, out_grad);
           b_grad->upcast(dt);
+          out_grad->upcast(dt);
           TensorPtr at = transpose(a);
           TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           Weed::matmul(*(at.get()), *(out->grad.get()), *(tmp.get()));
@@ -618,16 +631,17 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
 void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
     TensorPtr out_grad = out->grad;
-    const DType &dt = out_grad->storage->dtype;
     if (a->requires_grad()) {
       TensorPtr a_grad = a->grad;
-      a_grad->upcast(dt);
+      a_grad->upcast(out_grad->storage->dtype);
+      out_grad->upcast(a_grad->storage->dtype);
       Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
       a->reduce_grad_broadcast();
     }
     if (b->requires_grad()) {
       TensorPtr b_grad = b->grad;
-      b_grad->upcast(dt);
+      b_grad->upcast(out_grad->storage->dtype);
+      out_grad->upcast(b_grad->storage->dtype);
       Weed::sub_in_place(*(b_grad.get()), *(out_grad.get()));
       b->reduce_grad_broadcast();
     }
@@ -666,10 +680,11 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->grad_node = std::make_shared<Node>(
       filterParents(std::vector<TensorPtr>{a, b}), [a, b, out]() {
         TensorPtr out_grad = out->grad;
-        const DType &dt = out_grad->storage->dtype;
         if (a->requires_grad()) {
           TensorPtr a_grad = a->grad;
+          const DType &dt = get_dtype_by_presidence(a_grad, out_grad);
           a_grad->upcast(dt);
+          out_grad->upcast(dt);
           TensorPtr tmp = Tensor::allocate_like(b, dt, false);
           Weed::div(*(out_grad.get()), *(b.get()), *(tmp.get()));
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -677,7 +692,9 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
         }
         if (b->requires_grad()) {
           TensorPtr b_grad = b->grad;
+          const DType &dt = get_dtype_by_presidence(b_grad, out_grad);
           b_grad->upcast(dt);
+          out_grad->upcast(dt);
           TensorPtr b_sqr = Tensor::allocate_like(b, b->storage->dtype, false);
           Weed::mul(*(b.get()), *(b.get()), *(b_sqr.get()));
           TensorPtr tmp = Tensor::allocate_like(a, dt, false);
@@ -709,6 +726,7 @@ void Tensor::make_pow_node(TensorPtr x, TensorPtr p, TensorPtr y) {
     TensorPtr dy = y->grad;
 
     dx->upcast(dy->storage->dtype);
+    dy->upcast(dx->storage->dtype);
 
     TensorPtr dy_y = Tensor::allocate_like(dy, dy->storage->dtype, false);
     Weed::mul(*(dy.get()), *(y.get()), *(dy_y.get()));
@@ -745,6 +763,7 @@ void Tensor::make_exp_node(TensorPtr x, TensorPtr log_b, TensorPtr y) {
         TensorPtr dy = y->grad;
 
         dx->upcast(dy->storage->dtype);
+        dy->upcast(dx->storage->dtype);
 
         TensorPtr dy_v = Tensor::allocate_like(dy, dy->storage->dtype, false);
         Weed::mul(*(dy.get()), *(log_b.get()), *(dy_v.get()));
@@ -779,6 +798,7 @@ void Tensor::make_log_node(TensorPtr x, TensorPtr inv_log_b, TensorPtr y) {
         TensorPtr dy = y->grad;
 
         dx->upcast(dy->storage->dtype);
+        dy->upcast(dx->storage->dtype);
 
         TensorPtr dy_v = Tensor::allocate_like(dy, dy->storage->dtype, false);
         Weed::mul(*(dy.get()), *(inv_log_b.get()), *(dy_v.get()));

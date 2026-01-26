@@ -240,7 +240,7 @@ void RealUnaryKernel::unary_grad(Tensor &din, const Tensor &in,
   }
   if (in.storage->dtype != DType::REAL) {
     throw std::invalid_argument(
-        "In Weed::unary_grad(din, in, dout), in must be real-number!");
+        "In Weed::unary_grad(din, in, dout), 'in' dtype must be real-number!");
   }
   switch (din.storage->dtype) {
   case DType::COMPLEX:

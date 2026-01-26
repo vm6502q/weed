@@ -143,22 +143,6 @@ void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
         (tmp == ZERO_R1) ? ZERO_CMPLX : ((tmp > ZERO_R1) ? tmp_o : -tmp_o);
   });
 }
-void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
-                                      const Tensor &dout) {
-  const vecCapIntGpu I_d = (vecCapIntGpu)(din.stride[0U]);
-  const vecCapIntGpu I_i = (vecCapIntGpu)(in.stride[0U]);
-  const vecCapIntGpu I_o = (vecCapIntGpu)(dout.stride[0U]);
-  CAST_STORAGE(pdi, din, complex, CpuComplexStorage);
-  CAST_STORAGE(pi, in, complex, CpuComplexStorage);
-  CAST_STORAGE(po, dout, real1, CpuRealStorage);
-  size_t n = dout.storage->size;
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
-    const complex tmp = pi[i * I_i];
-    const real1 tmp_o = po[i * I_o];
-    const real1 out = std::abs(tmp);
-    pdi[i * I_d] += (tmp == ZERO_CMPLX) ? ZERO_CMPLX : ((tmp_o / out) * tmp);
-  });
-}
 void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
   const vecCapIntGpu I_d = (vecCapIntGpu)(din.stride[0U]);
@@ -202,19 +186,6 @@ void AbsKernel::gpu_real_grad_complex(Tensor &din, const Tensor &in,
       OCLAPI::OCL_API_ABS_REAL_GRAD_COMPLEX, args, din.get_size(),
       {a_storage->buffer, b_storage->buffer, c_storage->buffer});
 }
-void AbsKernel::gpu_complex_grad_real(Tensor &din, const Tensor &in,
-                                      const Tensor &dout) {
-  GPU_GRAD_ARGS();
-  GpuComplexStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuComplexStorage>(din.storage);
-  GpuComplexStoragePtr b_storage =
-      std::dynamic_pointer_cast<GpuComplexStorage>(in.storage);
-  GpuRealStoragePtr c_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(dout.storage);
-  a_storage->gpu->RequestKernel(
-      OCLAPI::OCL_API_ABS_COMPLEX_GRAD_REAL, args, din.get_size(),
-      {a_storage->buffer, b_storage->buffer, c_storage->buffer});
-}
 void AbsKernel::gpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
   GPU_GRAD_ARGS();
@@ -230,6 +201,10 @@ void AbsKernel::gpu_complex_grad_complex(Tensor &din, const Tensor &in,
 }
 #endif
 void AbsKernel::abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+  if (din.storage->dtype != dout.storage->dtype) {
+    throw std::invalid_argument("In Weed::abs_grad(din, in, dout), din dtype "
+                                "and dout dtype must match!");
+  }
   const size_t dinSize = din.get_size();
   const size_t inSize = in.get_size();
   const size_t doutSize = dout.get_size();
@@ -239,24 +214,12 @@ void AbsKernel::abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   }
   switch (in.storage->dtype) {
   case DType::COMPLEX:
-    switch (dout.storage->dtype) {
-    case DType::COMPLEX:
 #if ENABLE_GPU
-      DEVICE_SWITCH_GRAD(cpu_complex_grad_complex, gpu_complex_grad_complex,
-                         din, in, dout)
+    DEVICE_SWITCH_GRAD(cpu_complex_grad_complex, gpu_complex_grad_complex, din,
+                       in, dout)
 #else
-      cpu_complex_grad_complex(din, in, dout);
+    cpu_complex_grad_complex(din, in, dout);
 #endif
-      break;
-    case DType::REAL:
-    default:
-#if ENABLE_GPU
-      DEVICE_SWITCH_GRAD(cpu_complex_grad_real, gpu_complex_grad_real, din, in,
-                         dout);
-#else
-      cpu_complex_grad_real(din, in, dout);
-#endif
-    }
     break;
   case DType::REAL:
   default:
