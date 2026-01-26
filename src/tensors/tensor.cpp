@@ -437,7 +437,7 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
         TensorPtr dx = a->grad;
         TensorPtr dy = out->grad;
 
-        dx->upcast(out->storage->dtype);
+        dx->upcast(dy->storage->dtype);
 
         Weed::clamp_grad(*(dy.get()), *(a.get()), lo, hi, *(dx.get()));
       });

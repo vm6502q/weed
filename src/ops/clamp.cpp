@@ -147,6 +147,14 @@ void ClampKernel::clamp(const Tensor &a, const real1 &l, const real1 &h,
 }
 void ClampKernel::clamp_grad(const Tensor &dy, const Tensor &x, const real1 &l,
                              const real1 &h, Tensor &dx) {
+  if (x.storage->dtype != DType::REAL) {
+    throw std::invalid_argument(
+        "In Weed::clamp_grad(dy, x, l, h, dx), x must be real-number!");
+  }
+  if (dy.storage->dtype != dy.storage->dtype) {
+    throw std::invalid_argument(
+        "In Weed::clamp_grad(dy, x, l, h, dx), dy dtype must match dx dtype!");
+  }
   switch (dy.storage->dtype) {
   case DType::COMPLEX:
 #if ENABLE_GPU

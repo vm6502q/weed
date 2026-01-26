@@ -238,6 +238,10 @@ void RealUnaryKernel::unary_grad(Tensor &din, const Tensor &in,
     throw std::invalid_argument(
         "In Weed::unary_grad(din, in, dout), sizes do not match!");
   }
+  if (in.storage->dtype != DType::REAL) {
+    throw std::invalid_argument(
+        "In Weed::unary_grad(din, in, dout), in must be real-number!");
+  }
   switch (din.storage->dtype) {
   case DType::COMPLEX:
 #if ENABLE_GPU
