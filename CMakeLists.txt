@@ -321,6 +321,7 @@ install (FILES
     include/storage/cpu_real_storage.hpp
     include/storage/gpu_complex_storage.hpp
     include/storage/gpu_real_storage.hpp
+    include/storage/gpu_storage.hpp
     include/storage/real_storage.hpp
     include/storage/storage.hpp
     include/tensors/complex_scalar.hpp

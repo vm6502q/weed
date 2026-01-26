@@ -13,6 +13,7 @@
 
 #include "devices/gpu_device.hpp"
 #include "storage/complex_storage.hpp"
+#include "storage/gpu_storage.hpp"
 
 #if !ENABLE_OPENCL && !ENABLE_CUDA
 #error GPU files were included without either OpenCL and CUDA enabled.
@@ -24,23 +25,21 @@ namespace Weed {
 /**
  * GPU-accessible storage for complex data type elements
  */
-struct GpuComplexStorage : ComplexStorage {
-  GpuDevicePtr gpu;
-  BufferPtr buffer;
+struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
   ComplexPtr array;
 
   GpuComplexStorage(vecCapIntGpu n, int64_t did)
       : ComplexStorage(DeviceTag::GPU, n),
-        gpu(OCLEngine::Instance().GetWeedDevice(did)),
         array(nullptr, [](complex *) {}) {
+    gpu = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(complex) * size);
     buffer = MakeBuffer(n);
   }
 
   GpuComplexStorage(std::vector<complex> val, int64_t did)
       : ComplexStorage(DeviceTag::GPU, val.size()),
-        gpu(OCLEngine::Instance().GetWeedDevice(did)),
         array(Alloc(val.size())) {
+    gpu = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(complex) * size);
     std::copy(val.begin(), val.end(), array.get());
     buffer = MakeBuffer(val.size());
@@ -48,23 +47,6 @@ struct GpuComplexStorage : ComplexStorage {
   }
 
   virtual ~GpuComplexStorage() { SubtractAlloc(sizeof(complex) * size); }
-
-  void AddAlloc(size_t sz) {
-    size_t currentAlloc =
-        OCLEngine::Instance().AddToActiveAllocSize(gpu->deviceID, sz);
-    if (currentAlloc > gpu->device_context->GetGlobalAllocLimit()) {
-      OCLEngine::Instance().SubtractFromActiveAllocSize(gpu->deviceID, sz);
-      throw bad_alloc("VRAM limits exceeded in GpuComplexStorage::AddAlloc()");
-    }
-  }
-  void SubtractAlloc(size_t sz) {
-    OCLEngine::Instance().SubtractFromActiveAllocSize(gpu->deviceID, sz);
-  }
-
-  /**
-   * Which GPU device are we on? (Migration happens automatically as necessary.)
-   */
-  int64_t get_device_id() override { return gpu->deviceID; }
 
   void FillZeros() override { gpu->ClearRealBuffer(buffer, size << 1U); }
   void FillOnes() override { gpu->FillOnesComplex(buffer, size); }
