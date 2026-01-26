@@ -84,10 +84,6 @@ Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-  if (!validate_shape(shape, stride)) {
-    throw std::invalid_argument(
-        "Initial tensor shape and stride must be contiguous!");
-  }
 
   const vecCapInt size = get_size();
 
