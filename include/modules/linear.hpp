@@ -27,7 +27,7 @@ struct Linear : public Module {
 
   Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias = true,
          DType dtype = DType::REAL,
-         DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1);
+         DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1, bool init_rand = true);
 
   TensorPtr forward(const TensorPtr x) override;
   std::vector<ParameterPtr> parameters() override;

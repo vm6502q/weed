@@ -16,39 +16,44 @@
 
 namespace Weed {
 Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
-               DType dtype, DeviceTag device, int64_t device_id)
+               DType dtype, DeviceTag device, int64_t device_id, bool init_rand)
     : in_features(in_f), out_features(out_f) {
 
   const std::vector<vecCapIntGpu> shape{in_f, out_f};
   const std::vector<vecCapIntGpu> stride{1, in_f};
 
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  if (init_rand) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
 
-  real1_f lim = (real1_f)(0.5 / std::sqrt(in_f));
-  std::uniform_real_distribution<real1_f> dis(-lim, lim);
+    real1_f lim = (real1_f)(0.5 / std::sqrt(in_f));
+    std::uniform_real_distribution<real1_f> dis(-lim, lim);
 
-  const size_t sz = in_f * out_f;
-  if (dtype == DType::REAL) {
-    std::vector<real1> init;
-    init.reserve(sz);
-    for (size_t n = 0; n < sz; ++n) {
-      init.push_back((real1)dis(gen));
+    const size_t sz = in_f * out_f;
+    if (dtype == DType::REAL) {
+      std::vector<real1> init;
+      init.reserve(sz);
+      for (size_t n = 0; n < sz; ++n) {
+        init.push_back((real1)dis(gen));
+      }
+
+      weight =
+          std::make_shared<Parameter>(init, shape, stride, device, device_id);
+    } else {
+      std::uniform_real_distribution<real1_f> adis((real1_f)(-PI_R1),
+                                                   (real1_f)PI_R1);
+      std::vector<complex> init;
+      init.reserve(sz);
+      for (size_t n = 0; n < sz; ++n) {
+        init.push_back(std::polar((real1)dis(gen), (real1)adis(gen)));
+      }
+
+      weight =
+          std::make_shared<Parameter>(init, shape, stride, device, device_id);
     }
-
-    weight =
-        std::make_shared<Parameter>(init, shape, stride, device, device_id);
   } else {
-    std::uniform_real_distribution<real1_f> adis((real1_f)(-PI_R1),
-                                                 (real1_f)PI_R1);
-    std::vector<complex> init;
-    init.reserve(sz);
-    for (size_t n = 0; n < sz; ++n) {
-      init.push_back(std::polar((real1)dis(gen), (real1)adis(gen)));
-    }
-
-    weight =
-        std::make_shared<Parameter>(init, shape, stride, device, device_id);
+    weight = std::make_shared<Parameter>(shape, stride, dtype, device, device_id);
+    weight->storage->FillZeros();
   }
 
   if (use_bias) {
