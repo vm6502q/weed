@@ -41,7 +41,9 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
     AddAlloc(sizeof(complex) * size);
     std::copy(val.begin(), val.end(), array.get());
     buffer = MakeBuffer(val.size());
-    array.reset();
+    if (!(dev->device_context->use_host_mem)) {
+      array.reset();
+    }
   }
 
   virtual ~GpuComplexStorage() {

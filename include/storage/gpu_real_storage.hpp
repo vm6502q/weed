@@ -42,7 +42,9 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     AddAlloc(sizeof(real1) * size);
     std::copy(val.begin(), val.end(), array.get());
     buffer = MakeBuffer(val.size());
-    array.reset();
+    if (!(dev->device_context->use_host_mem)) {
+      array.reset();
+    }
   }
 
   virtual ~GpuRealStorage() {

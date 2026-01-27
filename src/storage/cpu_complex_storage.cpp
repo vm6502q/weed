@@ -19,6 +19,9 @@ StoragePtr CpuComplexStorage::gpu(int64_t did) {
   cp->array = cp->Alloc(size);
   cp->AddAlloc(sizeof(complex) * size);
   cp->buffer = cp->MakeBuffer(size);
+  if (!(cp->dev->device_context->use_host_mem)) {
+    cp->array.reset();
+  }
 
   return cp;
 }

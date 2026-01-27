@@ -18,6 +18,9 @@ StoragePtr CpuRealStorage::gpu(int64_t did) {
   cp->array = cp->Alloc(size);
   cp->AddAlloc(sizeof(real1) * size);
   cp->buffer = cp->MakeBuffer(size);
+  if (!(cp->dev->device_context->use_host_mem)) {
+    cp->array.reset();
+  }
 
   return cp;
 }
