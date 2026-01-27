@@ -307,7 +307,7 @@ void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   relu_kernel.unary_grad(din, in, dout);
 }
 
-void sigmoid(const Tensor &a, Tensor &out) { relu_kernel.unary(a, out); }
+void sigmoid(const Tensor &a, Tensor &out) { sigmoid_kernel.unary(a, out); }
 void sigmoid_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   sigmoid_kernel.unary_grad(din, in, dout);
 }
