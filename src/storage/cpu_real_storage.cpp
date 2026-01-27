@@ -16,6 +16,7 @@ namespace Weed {
 StoragePtr CpuRealStorage::gpu(int64_t did) {
   GpuRealStoragePtr cp = std::make_shared<GpuRealStorage>(size, did, false);
   cp->array = cp->Alloc(size);
+  std::copy(data.get(), data.get() + size, cp->array.get());
   cp->AddAlloc(sizeof(real1) * size);
   cp->buffer = cp->MakeBuffer(size);
   if (!(cp->dev->device_context->use_host_mem)) {

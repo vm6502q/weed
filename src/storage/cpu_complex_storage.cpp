@@ -17,6 +17,7 @@ StoragePtr CpuComplexStorage::gpu(int64_t did) {
   GpuComplexStoragePtr cp =
       std::make_shared<GpuComplexStorage>(size, did, false);
   cp->array = cp->Alloc(size);
+  std::copy(data.get(), data.get() + size, cp->array.get());
   cp->AddAlloc(sizeof(complex) * size);
   cp->buffer = cp->MakeBuffer(size);
   if (!(cp->dev->device_context->use_host_mem)) {

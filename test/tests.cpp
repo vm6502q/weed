@@ -60,6 +60,32 @@ TEST_CASE("test_fill_value_real") {
 #endif
 }
 
+#if ENABLE_GPU
+TEST_CASE("test_real_cpu_gpu_conversions") {
+  TensorPtr x = std::make_shared<RealScalar>(R(2), false, DeviceTag::CPU);
+  x->storage = x->storage->gpu();
+
+  REQUIRE(GET_REAL(x) == R(2));
+
+  x = std::make_shared<RealScalar>(R(2), false, DeviceTag::GPU);
+  x->storage = x->storage->cpu();
+
+  REQUIRE(GET_REAL(x) == R(2));
+}
+
+TEST_CASE("test_complex_cpu_gpu_conversions") {
+  TensorPtr x = std::make_shared<ComplexScalar>(C(2), false, DeviceTag::CPU);
+  x->storage = x->storage->gpu();
+
+  REQUIRE_CMPLX(GET_COMPLEX(x), R(2));
+
+  x = std::make_shared<ComplexScalar>(C(2), false, DeviceTag::GPU);
+  x->storage = x->storage->cpu();
+
+  REQUIRE_CMPLX(GET_COMPLEX(x), R(2));
+}
+#endif
+
 TEST_CASE("test_sum_real") {
   TensorPtr x = std::make_shared<Tensor>(
       std::vector<real1>{R(1), R(2), R(3)}, std::vector<vecCapInt>{3, 1},
