@@ -37,8 +37,8 @@ struct Adam {
 
   std::unordered_map<ParameterPtr, AdamState> state;
 
-  Adam(real1 l = 1e-3, real1 b1 = ADAM_BETA1_DEFAULT,
-       real1 b2 = ADAM_BETA2_DEFAULT, real1 e = ADAM_EPSILON_DEFAULT)
+  Adam(real1 l, real1 b1 = ADAM_BETA1_DEFAULT, real1 b2 = ADAM_BETA2_DEFAULT,
+       real1 e = ADAM_EPSILON_DEFAULT)
       : lr(l), beta1(b1), beta2(b2), eps(e), t(0U) {}
 
   /**
@@ -68,8 +68,8 @@ struct Adam {
 void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
   opt.t += 1;
 
-  const real1 bias_correction1 = 1.0 - std::pow(opt.beta1, opt.t);
-  const real1 bias_correction2 = 1.0 - std::pow(opt.beta2, opt.t);
+  const real1 bias_correction1 = (real1)(1.0 - std::pow(opt.beta1, opt.t));
+  const real1 bias_correction2 = (real1)(1.0 - std::pow(opt.beta2, opt.t));
 
   for (auto &p : params) {
     AdamState &s = opt.state[p];
@@ -78,19 +78,19 @@ void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
     TensorPtr g = p->grad;
 
     // m = beta1 * m + (1 - beta1) * g
-    s.m = opt.beta1 * s.m + (1 - opt.beta1) * g;
+    s.m = opt.beta1 * s.m + (ONE_R1 - opt.beta1) * g;
 
     // v = beta2 * v + (1 - beta2) * g * g
-    s.v = opt.beta2 * s.v + (1 - opt.beta2) * g * g;
+    s.v = opt.beta2 * s.v + (ONE_R1 - opt.beta2) * g * g;
     // i.e., v += (1-beta2) * (g ⊙ g)
 
     // Compute bias-corrected step
     // tmp = m / bias_correction1
     // tmp2 = v / bias_correction2
     // p -= lr * tmp / (sqrt(tmp2) + eps)
-    TensorPtr tmp =
-        opt.lr * s.m /
-        (bias_correction1 * (((s.v / bias_correction2) ^ 0.5) + opt.eps));
+    TensorPtr tmp = opt.lr * s.m /
+                    (bias_correction1 *
+                     (((s.v / bias_correction2) ^ ((real1)0.5)) + opt.eps));
 
     Weed::sub_in_place(*(p.get()), *(tmp.get()));
   }

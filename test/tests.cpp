@@ -25,7 +25,7 @@
 using namespace Weed;
 
 #define R(v) real1(v)
-#define C(v) complex(v)
+#define C(v) complex(R(v))
 
 #define EPSILON 0.01f
 #define REQUIRE_FLOAT(A, B)                                                    \
@@ -744,15 +744,15 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   using namespace Weed;
 
   // A: 2x3 (row-major)
-  TensorPtr A = std::make_shared<Tensor>(std::vector<real1>{1, 2, 3, 4, 5, 6},
-                                         std::vector<vecCapInt>{2, 3},
-                                         std::vector<vecCapInt>{1, 2},
-                                         /*requires_grad=*/true);
+  TensorPtr A = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6)},
+      std::vector<vecCapInt>{2, 3}, std::vector<vecCapInt>{1, 2},
+      /*requires_grad=*/true);
 
   // B: 3x2 (row-major)
   TensorPtr B = std::make_shared<Tensor>(
-      std::vector<real1>{7, 8, 9, 10, 11, 12}, std::vector<vecCapInt>{3, 2},
-      std::vector<vecCapInt>{1, 3},
+      std::vector<real1>{R(7), R(8), R(9), R(10), R(11), R(12)},
+      std::vector<vecCapInt>{3, 2}, std::vector<vecCapInt>{1, 3},
       /*requires_grad=*/true);
 
   TensorPtr C = A >> B;
