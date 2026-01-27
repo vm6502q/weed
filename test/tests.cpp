@@ -163,7 +163,7 @@ TEST_CASE("test_scalar_sigmoid") {
   TensorPtr y = Tensor::sigmoid(x);
   Tensor::backward(y);
 
-  REQUIRE(GET_REAL(y) == ZERO_R1);
+  REQUIRE(GET_REAL(y) == R(0.5));
   REQUIRE(GET_REAL(x->grad) == ZERO_R1);
 }
 
@@ -174,7 +174,7 @@ TEST_CASE("test_scalar_sigmoid_complex_grad") {
   TensorPtr w = y * z;
   Tensor::backward(w);
 
-  REQUIRE(GET_REAL(y) == ZERO_R1);
+  REQUIRE(GET_REAL(y) == R(0.5));
   REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
 }
 
@@ -184,7 +184,7 @@ TEST_CASE("test_scalar_sigmoid_mixed_graf") {
   x->grad->upcast(DType::COMPLEX);
   Tensor::backward(y);
 
-  REQUIRE(GET_REAL(y) == ZERO_R1);
+  REQUIRE(GET_REAL(y) == R(0.5));
   REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
 }
 
