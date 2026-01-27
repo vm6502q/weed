@@ -43,7 +43,7 @@ struct PoolItem {
 
   PoolItem(cl::Context &context) {
     complexBuffer = MakeBuffer(context, sizeof(complex) * CMPLX_ARG_LEN);
-    vciBuffer = MakeBuffer(context, sizeof(vecCapIntGpu) * VCI_ARG_LEN);
+    vciBuffer = MakeBuffer(context, sizeof(tcapint) * VCI_ARG_LEN);
   }
 
   BufferPtr MakeBuffer(const cl::Context &context, size_t size) {

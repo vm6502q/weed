@@ -1,9 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2026. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2023. All rights reserved.
 //
-// Weed is for minimalist AI/ML inference and backprogation in the style of
-// Qrack.
+// This is a SIMD implementation of the float precision complex type.
+// The API is designed to (almost entirely) mirror that of the C++ standard
+// library float precision complex type.
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or
@@ -28,7 +29,7 @@
 
 #include <complex>
 
-namespace Weed {
+namespace Qrack {
 
 static const __m128 SIGNMASK = _mm_set_ps(0.0f, -0.0f, 0.0f, -0.0f);
 
@@ -166,4 +167,4 @@ inline float norm(const complex2 &c) {
   shuf = _mm_movehl_ps(shuf, sums);
   return _mm_cvtss_f32(_mm_add_ss(sums, shuf));
 }
-} // namespace Weed
+} // namespace Qrack

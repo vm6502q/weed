@@ -35,9 +35,9 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   /**
    * Number of elements (of data type) in this storage
    */
-  vecCapIntGpu size;
+  tcapint size;
 
-  Storage(DeviceTag dtg, DType dtp, vecCapIntGpu n)
+  Storage(DeviceTag dtg, DType dtp, tcapint n)
       : device(dtg), dtype(dtp), size(n) {
     if (!size) {
       throw std::invalid_argument("Storage must have size of at least 1!");

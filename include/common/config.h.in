@@ -11,8 +11,7 @@
 #cmakedefine ENABLE_SNUCL 1
 #cmakedefine FPPOW @FPPOW@
 #cmakedefine PSTRIDEPOW @PSTRIDEPOW@
-#cmakedefine VCAPPOW @VCAPPOW@
-#cmakedefine UINTPOW @UINTPOW@
+#cmakedefine TCAPPOW @TCAPPOW@
 #cmakedefine OPENCL_V3 @OPENCL_V3@
 #cmakedefine CPP_STD @CPP_STD@
 

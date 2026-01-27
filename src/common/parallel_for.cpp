@@ -19,7 +19,7 @@
 #include <atomic>
 #include <future>
 
-#define DECLARE_ATOMIC_vecCapInt() std::atomic<vecCapIntGpu> idx;
+#define DECLARE_ATOMIC_TCAPINT() std::atomic<tcapint> idx;
 #define ATOMIC_ASYNC(...)                                                      \
     std::async(std::launch::async, [__VA_ARGS__]()
 #define ATOMIC_INC() i = idx++;
@@ -30,11 +30,11 @@ namespace Weed {
 ParallelFor::ParallelFor()
 #if ENABLE_ENV_VARS
     : pStride(getenv("WEED_PSTRIDEPOW")
-                  ? pow2Gpu((vecLenInt)std::stoi(
+                  ? pow2Gpu((tlenint)std::stoi(
                         std::string(getenv("WEED_PSTRIDEPOW"))))
-                  : pow2Gpu((vecLenInt)PSTRIDEPOW))
+                  : pow2Gpu((tlenint)PSTRIDEPOW))
 #else
-    : pStride(pow2Gpu((vecLenInt)PSTRIDEPOW))
+    : pStride(pow2Gpu((tlenint)PSTRIDEPOW))
 #endif
 #if ENABLE_PTHREAD
       ,
@@ -44,17 +44,17 @@ ParallelFor::ParallelFor()
       numCores(1U)
 #endif
 {
-  const vecLenInt pStridePow = log2Gpu(pStride);
-  const vecLenInt minStridePow =
-      (numCores > 1U) ? (vecLenInt)pow2Gpu(log2Gpu(numCores - 1U)) : 0U;
+  const tlenint pStridePow = log2Gpu(pStride);
+  const tlenint minStridePow =
+      (numCores > 1U) ? (tlenint)pow2Gpu(log2Gpu(numCores - 1U)) : 0U;
   dispatchThreshold =
       (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 }
 
-void ParallelFor::par_for(const vecCapIntGpu begin, const vecCapIntGpu end,
+void ParallelFor::par_for(const tcapint begin, const tcapint end,
                           ParallelFunc fn) {
   par_for_inc(
-      begin, end - begin, [](const vecCapIntGpu &i) { return i; }, fn);
+      begin, end - begin, [](const tcapint &i) { return i; }, fn);
 }
 
 #if ENABLE_PTHREAD
@@ -62,40 +62,39 @@ void ParallelFor::par_for(const vecCapIntGpu begin, const vecCapIntGpu end,
  * Iterate through the permutations a maximum of end-begin times, allowing the
  * caller to control the incrementation offset through 'inc'.
  */
-void ParallelFor::par_for_inc(const vecCapIntGpu begin,
-                              const vecCapIntGpu itemCount, IncrementFunc inc,
-                              ParallelFunc fn) {
-  const vecCapIntGpu Stride = pStride;
+void ParallelFor::par_for_inc(const tcapint begin, const tcapint itemCount,
+                              IncrementFunc inc, ParallelFunc fn) {
+  const tcapint Stride = pStride;
   unsigned threads = (unsigned)(itemCount / pStride);
   if (threads > numCores) {
     threads = numCores;
   }
 
   if (threads <= 1U) {
-    const vecCapIntGpu maxLcv = begin + itemCount;
-    for (vecCapIntGpu j = begin; j < maxLcv; ++j) {
+    const tcapint maxLcv = begin + itemCount;
+    for (tcapint j = begin; j < maxLcv; ++j) {
       fn(inc(j), 0U);
     }
 
     return;
   }
 
-  DECLARE_ATOMIC_vecCapInt();
+  DECLARE_ATOMIC_TCAPINT();
   idx = 0U;
   std::vector<std::future<void>> futures;
   futures.reserve(threads);
   for (unsigned cpu = 0U; cpu != threads; ++cpu) {
         futures.emplace_back(ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, inc, fn) {
       for (;;) {
-        vecCapIntGpu i;
+        tcapint i;
         ATOMIC_INC();
-        const vecCapIntGpu l = i * Stride;
+        const tcapint l = i * Stride;
         if (l >= itemCount) {
           break;
         }
-        const vecCapIntGpu maxJ =
+        const tcapint maxJ =
             ((l + Stride) < itemCount) ? Stride : (itemCount - l);
-        for (vecCapIntGpu j = 0U; j < maxJ; ++j) {
+        for (tcapint j = 0U; j < maxJ; ++j) {
           fn(inc(begin + j + l), cpu);
         }
       }
@@ -111,11 +110,10 @@ void ParallelFor::par_for_inc(const vecCapIntGpu begin,
  * Iterate through the permutations a maximum of end-begin times, allowing the
  * caller to control the incrementation offset through 'inc'.
  */
-void ParallelFor::par_for_inc(const vecCapIntGpu begin,
-                              const vecCapIntGpu itemCount, IncrementFunc inc,
-                              ParallelFunc fn) {
-  const vecCapIntGpu maxLcv = begin + itemCount;
-  for (vecCapIntGpu j = begin; j < maxLcv; ++j) {
+void ParallelFor::par_for_inc(const tcapint begin, const tcapint itemCount,
+                              IncrementFunc inc, ParallelFunc fn) {
+  const tcapint maxLcv = begin + itemCount;
+  for (tcapint j = begin; j < maxLcv; ++j) {
     fn(inc(j), 0U);
   }
 }

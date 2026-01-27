@@ -24,32 +24,24 @@
   }
 
 #define ADD_KERNEL()                                                           \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
-  const vecCapIntGpu I_b = (vecCapIntGpu)b.stride[0U];                         \
+  const tcapint I_a = a.stride[0U];                                            \
+  const tcapint I_b = b.stride[0U];                                            \
   const size_t n = a.get_size();                                               \
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {    \
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
     pa[i * I_a] += pb[i * I_b];                                                \
   })
 
 #define SUB_KERNEL()                                                           \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
-  const vecCapIntGpu I_b = (vecCapIntGpu)b.stride[0U];                         \
+  const tcapint I_a = a.stride[0U];                                            \
+  const tcapint I_b = b.stride[0U];                                            \
   const size_t n = a.get_size();                                               \
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {    \
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
     pa[i * I_a] -= pb[i * I_b];                                                \
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, api_call)                             \
-  const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),                       \
-                               (vecCapIntGpu)(a.stride[0U]),                   \
-                               (vecCapIntGpu)(b.offset),                       \
-                               (vecCapIntGpu)(b.stride[0U]),                   \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U};                                            \
+  const tcapint args[10U]{a.offset, a.stride[0U], b.offset, b.stride[0U], 0U,  \
+                          0U,       0U,           0U,       0U,           0U}; \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \

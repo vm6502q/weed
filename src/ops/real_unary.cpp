@@ -14,16 +14,16 @@
 #include "storage/all_storage.hpp"
 
 #define CPU_INIT()                                                             \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
-  const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];                       \
+  const tcapint I_a = a.stride[0U];                                            \
+  const tcapint I_o = out.stride[0U];                                          \
   CAST_STORAGE(pa, a, real1, CpuRealStorage);                                  \
   CAST_STORAGE(po, out, real1, CpuRealStorage);                                \
   size_t n = out.storage->size
 
 #define CPU_GRAD_INIT(type1, storage1, type2, storage2, type3, storage3)       \
-  const vecCapIntGpu I_d = (vecCapIntGpu)(din.stride[0U]);                     \
-  const vecCapIntGpu I_i = (vecCapIntGpu)(in.stride[0U]);                      \
-  const vecCapIntGpu I_o = (vecCapIntGpu)(dout.stride[0U]);                    \
+  const tcapint I_d = din.stride[0U];                                          \
+  const tcapint I_i = in.stride[0U];                                           \
+  const tcapint I_o = dout.stride[0U];                                         \
   CAST_STORAGE(pdi, din, type1, storage1);                                     \
   CAST_STORAGE(pi, in, type2, storage2);                                       \
   CAST_STORAGE(po, dout, type3, storage3);                                     \
@@ -52,17 +52,15 @@
   }
 
 #define GPU_GRAD_ARGS()                                                        \
-  const vecCapIntGpu args[10U] {                                               \
-    (vecCapIntGpu)(din.offset), (vecCapIntGpu)(din.stride[0U]),                \
-        (vecCapIntGpu)(in.offset), (vecCapIntGpu)(in.stride[0U]),              \
-        (vecCapIntGpu)(dout.offset), (vecCapIntGpu)(dout.stride[0U]), 0U, 0U,  \
-        0U, 0U                                                                 \
+  const tcapint args[10U] {                                                    \
+    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
+        dout.stride[0U], 0U, 0U, 0U, 0U                                        \
   }
 
 namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
   CPU_INIT();
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = std::max(pa[i * I_a], ZERO_R1);
   });
 }
@@ -71,7 +69,7 @@ static void cpu_relu_grad_real(Tensor &din, const Tensor &in,
                                const Tensor &dout) {
   CPU_GRAD_INIT(real1, CpuRealStorage, real1, CpuRealStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     if (pi[i * I_i] > 0) {
       pdi[i * I_d] += po[i * I_o];
     }
@@ -81,7 +79,7 @@ static void cpu_relu_grad_complex(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
                 CpuComplexStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     if (pi[i * I_i] > 0) {
       pdi[i * I_d] += po[i * I_o];
     }
@@ -91,7 +89,7 @@ static void cpu_relu_grad_mixed(Tensor &din, const Tensor &in,
                                 const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     if (pi[i * I_i] > 0) {
       pdi[i * I_d] += po[i * I_o];
     }
@@ -100,16 +98,9 @@ static void cpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_relu(const Tensor &a, Tensor &out) {
-  const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),
-                               (vecCapIntGpu)(a.stride[0U]),
-                               (vecCapIntGpu)(out.offset),
-                               (vecCapIntGpu)(out.stride[0U]),
-                               0U,
-                               0U,
-                               0U,
-                               0U,
-                               0U,
-                               0U};
+  const tcapint args[10U]{
+      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
+      0U,       0U,           0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -137,7 +128,7 @@ static void gpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 
 static void cpu_sigmoid(const Tensor &a, Tensor &out) {
   CPU_INIT();
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = ONE_R1 / (ONE_R1 + exp(-pa[i * I_a]));
   });
 }
@@ -146,7 +137,7 @@ static void cpu_sigmoid_grad_real(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
   CPU_GRAD_INIT(real1, CpuRealStorage, real1, CpuRealStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 yi = pi[i * I_i];
     pdi[i * I_d] += yi * (ONE_R1 - yi) * po[i * I_o];
   });
@@ -155,7 +146,7 @@ static void cpu_sigmoid_grad_complex(Tensor &din, const Tensor &in,
                                      const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
                 CpuComplexStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 yi = pi[i * I_i];
     pdi[i * I_d] += yi * (ONE_R1 - yi) * po[i * I_o];
   });
@@ -164,7 +155,7 @@ static void cpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 yi = pi[i * I_i];
     pdi[i * I_d] += yi * (ONE_R1 - yi) * po[i * I_o];
   });
@@ -172,16 +163,9 @@ static void cpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_sigmoid(const Tensor &a, Tensor &out) {
-  const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),
-                               (vecCapIntGpu)(a.stride[0U]),
-                               (vecCapIntGpu)(out.offset),
-                               (vecCapIntGpu)(out.stride[0U]),
-                               0U,
-                               0U,
-                               0U,
-                               0U,
-                               0U,
-                               0U};
+  const tcapint args[10U]{
+      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
+      0U,       0U,           0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -238,9 +222,9 @@ void RealUnaryKernel::unary_grad(Tensor &din, const Tensor &in,
         "In Weed::unary_grad(din, in, dout), dout dtype "
         "must upcast to dout dtype!");
   }
-  const vecCapInt dinSize = din.get_broadcast_size();
-  const vecCapInt inSize = in.get_broadcast_size();
-  const vecCapInt doutSize = dout.get_broadcast_size();
+  const tcapint dinSize = din.get_broadcast_size();
+  const tcapint inSize = in.get_broadcast_size();
+  const tcapint doutSize = dout.get_broadcast_size();
   if ((dinSize != inSize) || (dinSize != doutSize)) {
     throw std::invalid_argument(
         "In Weed::unary_grad(din, in, dout), sizes do not match!");

@@ -27,11 +27,11 @@ using namespace Weed;
 int main() {
   TensorPtr x = std::make_shared<Tensor>(
       std::vector<real1>{R(0), R(0), R(1), R(0), R(0), R(1), R(1), R(1)},
-      std::vector<vecCapInt>{4, 2}, std::vector<vecCapInt>{1, 4}, false,
+      std::vector<tcapint>{4, 2}, std::vector<tcapint>{1, 4}, false,
       DeviceTag::CPU);
   TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(1), R(1), R(0)}, std::vector<vecCapInt>{4, 1},
-      std::vector<vecCapInt>{1, 4}, false, DeviceTag::CPU);
+      std::vector<real1>{R(1), R(1), R(1), R(0)}, std::vector<tcapint>{4, 1},
+      std::vector<tcapint>{1, 4}, false, DeviceTag::CPU);
 
   Linear l1(2, 1, true, DType::REAL, DeviceTag::CPU);
   Linear l2(1, 1, true, DType::REAL, DeviceTag::CPU);

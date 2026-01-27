@@ -18,13 +18,12 @@ namespace Weed {
  * Storage for complex data type elements
  */
 struct ComplexStorage : Storage {
-  ComplexStorage(DeviceTag dtg, vecCapIntGpu n)
-      : Storage(dtg, DType::COMPLEX, n) {}
+  ComplexStorage(DeviceTag dtg, tcapint n) : Storage(dtg, DType::COMPLEX, n) {}
 
   /**
    * Get the complex element at the position
    */
-  virtual complex operator[](vecCapIntGpu idx) = 0;
+  virtual complex operator[](tcapint idx) = 0;
 
   /**
    * Fill the entire Storage with specified complex value
@@ -32,7 +31,7 @@ struct ComplexStorage : Storage {
   virtual void FillValue(complex v) = 0;
 
 #if defined(__APPLE__)
-  static complex *_aligned_state_vec_alloc(vecCapIntGpu allocSize) {
+  static complex *_aligned_state_vec_alloc(tcapint allocSize) {
     void *toRet;
     posix_memalign(&toRet, WEED_ALIGN_SIZE, allocSize);
     return (complex *)toRet;
@@ -50,7 +49,7 @@ struct ComplexStorage : Storage {
   }
 
   static std::unique_ptr<complex[], void (*)(complex *)>
-  Alloc(vecCapIntGpu elemCount) {
+  Alloc(tcapint elemCount) {
 #if defined(__ANDROID__)
     return std::unique_ptr<complex[], void (*)(complex *)>(
         new complex[elemCount], deleter);

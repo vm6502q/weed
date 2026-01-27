@@ -30,6 +30,6 @@ extern ReduceKernel reduce_kernel;
  * Sum over a tensor index
  */
 void reduce(const size_t &index, const Tensor &a, Tensor &out);
-void reduce_broadcast(const std::vector<vecCapIntGpu> stride, const Tensor &a,
+void reduce_broadcast(const std::vector<tcapint> stride, const Tensor &a,
                       Tensor &out);
 } // namespace Weed

@@ -29,9 +29,9 @@ typedef std::shared_ptr<Tensor> TensorPtr;
 struct Tensor {
   StoragePtr storage;
 
-  std::vector<vecCapInt> shape;
-  std::vector<vecCapInt> stride;
-  vecCapIntGpu offset;
+  std::vector<tcapint> shape;
+  std::vector<tcapint> stride;
+  tcapint offset;
 
   NodePtr grad_node;
   TensorPtr grad;
@@ -39,27 +39,27 @@ struct Tensor {
   Tensor()
       : storage(nullptr), shape(), stride(), offset(ZERO_VCI),
         grad_node(nullptr), grad(nullptr) {}
-  Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd,
-         bool rg = false, DType dtype = DType::REAL,
+  Tensor(std::vector<tcapint> shp, std::vector<tcapint> strd, bool rg = false,
+         DType dtype = DType::REAL, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
+         int64_t did = -1);
+  Tensor(std::vector<real1> val, std::vector<tcapint> shp,
+         std::vector<tcapint> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
-  Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
-         std::vector<vecCapInt> strd, bool rg = false,
-         DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
-  Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
-         std::vector<vecCapInt> strd, bool rg = false,
+  Tensor(std::vector<complex> val, std::vector<tcapint> shp,
+         std::vector<tcapint> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
   Tensor(real1 val, bool rg = false, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
          int64_t did = -1)
-      : Tensor(std::vector<real1>{val}, std::vector<vecCapInt>{1},
-               std::vector<vecCapInt>{0}, rg, dtag, did) {}
+      : Tensor(std::vector<real1>{val}, std::vector<tcapint>{1},
+               std::vector<tcapint>{0}, rg, dtag, did) {}
   Tensor(complex val, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
-      : Tensor(std::vector<complex>{val}, std::vector<vecCapInt>{1},
-               std::vector<vecCapInt>{0}, rg, dtag, did) {}
+      : Tensor(std::vector<complex>{val}, std::vector<tcapint>{1},
+               std::vector<tcapint>{0}, rg, dtag, did) {}
 
-  bool validate_shape(const std::vector<vecCapInt> &shp,
-                      const std::vector<vecCapInt> &s) {
-    vecCapInt st = 1U;
+  bool validate_shape(const std::vector<tcapint> &shp,
+                      const std::vector<tcapint> &s) {
+    tcapint st = 1U;
     for (size_t i = 0U; i < s.size(); ++i) {
       if (!s[i]) {
         continue;
@@ -81,13 +81,13 @@ struct Tensor {
   /**
    * How many elements are in this tensor?
    */
-  virtual vecCapIntGpu get_size() const {
+  virtual tcapint get_size() const {
     if (shape.empty()) {
       return ZERO_VCI;
     }
-    vecCapIntGpu max_index = offset;
+    tcapint max_index = offset;
     for (size_t i = 0U; i < shape.size(); ++i) {
-      max_index += (vecCapIntGpu)((shape[i] - ONE_VCI) * stride[i]);
+      max_index += (shape[i] - ONE_VCI) * stride[i];
     }
 
     return max_index + 1U;
@@ -96,11 +96,11 @@ struct Tensor {
   /**
    * How many elements are broadcast in this tensor?
    */
-  virtual vecCapInt get_broadcast_size() const {
+  virtual tcapint get_broadcast_size() const {
     if (shape.empty()) {
       return ZERO_VCI;
     }
-    vecCapInt max_index = 0U;
+    tcapint max_index = 0U;
     for (size_t i = 0U; i < shape.size(); ++i) {
       max_index *= shape[i];
     }
@@ -153,7 +153,7 @@ struct Tensor {
   /**
    * Select a sub-tensor from the position in the outermost tensor index
    */
-  TensorPtr operator[](vecCapInt idx);
+  TensorPtr operator[](tcapint idx);
 
   /**
    * Compare the data type of two tensors and return the more-encompassing one
@@ -180,8 +180,8 @@ struct Tensor {
   /**
    * Create a new Tensor like the original, without Storage value initialization
    */
-  static TensorPtr allocate_like(const std::vector<vecCapInt> &shape,
-                                 const std::vector<vecCapInt> &stride,
+  static TensorPtr allocate_like(const std::vector<tcapint> &shape,
+                                 const std::vector<tcapint> &stride,
                                  const TensorPtr orig, const DType &dt,
                                  const bool &rg);
 

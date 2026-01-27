@@ -270,15 +270,14 @@ inline size_t pick_group_size(const size_t &nwi) {
   return ngs;
 }
 
-void GpuDevice::RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
+void GpuDevice::RequestKernel(OCLAPI api_call, const tcapint *vciArgs,
                               const size_t nwi, std::vector<BufferPtr> buffers,
                               const size_t nwi2, const complex *c) {
   EventVecPtr waitVec = ResetWaitEvents();
   PoolItemPtr poolItem = GetFreePoolItem();
   cl::Event writeArgsEvent;
   DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer),
-                      sizeof(vecCapIntGpu) * VCI_ARG_LEN, vciArgs,
-                      writeArgsEvent);
+                      sizeof(tcapint) * VCI_ARG_LEN, vciArgs, writeArgsEvent);
   cl::Event writeArgsEvent2;
   if (c) {
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->complexBuffer),
@@ -345,14 +344,14 @@ void GpuDevice::UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
             std::vector<BufferPtr>{buffer_in, buffer_out});
 }
 
-real1 GpuDevice::GetReal(BufferPtr buffer, vecCapIntGpu idx) {
+real1 GpuDevice::GetReal(BufferPtr buffer, tcapint idx) {
   real1 v;
   EventVecPtr waitVec = ResetWaitEvents();
   DISPATCH_BLOCK_READ(waitVec, *buffer, sizeof(real1) * idx, sizeof(real1), &v);
 
   return v;
 }
-complex GpuDevice::GetComplex(BufferPtr buffer, vecCapIntGpu idx) {
+complex GpuDevice::GetComplex(BufferPtr buffer, tcapint idx) {
   complex v;
   EventVecPtr waitVec = ResetWaitEvents();
   DISPATCH_BLOCK_READ(waitVec, *buffer, sizeof(complex) * idx, sizeof(complex),
@@ -360,7 +359,7 @@ complex GpuDevice::GetComplex(BufferPtr buffer, vecCapIntGpu idx) {
 
   return v;
 }
-void GpuDevice::SetReal(real1 val, BufferPtr buffer, vecCapIntGpu idx) {
+void GpuDevice::SetReal(real1 val, BufferPtr buffer, tcapint idx) {
   EventVecPtr waitVec = ResetWaitEvents();
   device_context->EmplaceEvent(
       [this, val, buffer, idx, waitVec](cl::Event &event) {
@@ -371,7 +370,7 @@ void GpuDevice::SetReal(real1 val, BufferPtr buffer, vecCapIntGpu idx) {
         });
       });
 }
-void GpuDevice::SetComplex(complex val, BufferPtr buffer, vecCapIntGpu idx) {
+void GpuDevice::SetComplex(complex val, BufferPtr buffer, tcapint idx) {
   EventVecPtr waitVec = ResetWaitEvents();
   device_context->EmplaceEvent([this, val, buffer, idx,
                                 waitVec](cl::Event &event) {

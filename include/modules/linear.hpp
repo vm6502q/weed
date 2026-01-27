@@ -22,10 +22,10 @@ struct Linear : public Module {
   ParameterPtr weight; // (out_features, in_features)
   ParameterPtr bias;   // (out_features) or null
 
-  vecCapIntGpu in_features;
-  vecCapIntGpu out_features;
+  tcapint in_features;
+  tcapint out_features;
 
-  Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias = true,
+  Linear(tcapint in_f, tcapint out_f, bool use_bias = true,
          DType dtype = DType::REAL,
          DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1,
          bool init_rand = true);

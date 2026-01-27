@@ -15,12 +15,12 @@
 #include <random>
 
 namespace Weed {
-Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
-               DType dtype, DeviceTag device, int64_t device_id, bool init_rand)
+Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, DType dtype,
+               DeviceTag device, int64_t device_id, bool init_rand)
     : in_features(in_f), out_features(out_f) {
 
-  const std::vector<vecCapInt> shape{in_f, out_f};
-  const std::vector<vecCapInt> stride{1U, in_f};
+  const std::vector<tcapint> shape{in_f, out_f};
+  const std::vector<tcapint> stride{1U, in_f};
 
   if (init_rand) {
     std::random_device rd;
@@ -58,9 +58,9 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
   }
 
   if (use_bias) {
-    bias = std::make_shared<Parameter>(std::vector<vecCapInt>{out_f},
-                                       std::vector<vecCapInt>{1U}, dtype,
-                                       device, device_id);
+    bias = std::make_shared<Parameter>(std::vector<tcapint>{out_f},
+                                       std::vector<tcapint>{1U}, dtype, device,
+                                       device_id);
     bias->storage->FillZeros();
   } else {
     bias = nullptr;

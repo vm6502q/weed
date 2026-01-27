@@ -14,8 +14,8 @@
 #include "storage/all_storage.hpp"
 
 #define CPU_INIT(type1, storage1, type2, storage2)                             \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
-  const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];                       \
+  const tcapint I_a = a.stride[0U];                                            \
+  const tcapint I_o = out.stride[0U];                                          \
   CAST_STORAGE(pa, a, type1, storage1);                                        \
   CAST_STORAGE(po, out, type2, storage2);                                      \
   size_t n = out.storage->size
@@ -30,9 +30,9 @@
                                 {a_storage->buffer, o_storage->buffer})
 
 #define CPU_GRAD_INIT(type1, storage1, type2, storage2, type3, storage3)       \
-  const vecCapIntGpu I_d = (vecCapIntGpu)(din.stride[0U]);                     \
-  const vecCapIntGpu I_i = (vecCapIntGpu)(in.stride[0U]);                      \
-  const vecCapIntGpu I_o = (vecCapIntGpu)(dout.stride[0U]);                    \
+  const tcapint I_d = din.stride[0U];                                          \
+  const tcapint I_i = in.stride[0U];                                           \
+  const tcapint I_o = dout.stride[0U];                                         \
   CAST_STORAGE(pdi, din, type1, storage1);                                     \
   CAST_STORAGE(pi, in, type2, storage2);                                       \
   CAST_STORAGE(po, dout, type3, storage3);                                     \
@@ -71,29 +71,25 @@
   }
 
 #define GPU_ARGS()                                                             \
-  const vecCapIntGpu args[10U] {                                               \
-    (vecCapIntGpu)(a.offset), (vecCapIntGpu)(a.stride[0U]),                    \
-        (vecCapIntGpu)(out.offset), (vecCapIntGpu)(out.stride[0U]), 0U, 0U,    \
-        0U, 0U, 0U, 0U                                                         \
+  const tcapint args[10U] {                                                    \
+    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U \
   }
 
 #define GPU_GRAD_ARGS()                                                        \
-  const vecCapIntGpu args[10U] {                                               \
-    (vecCapIntGpu)(din.offset), (vecCapIntGpu)(din.stride[0U]),                \
-        (vecCapIntGpu)(in.offset), (vecCapIntGpu)(in.stride[0U]),              \
-        (vecCapIntGpu)(dout.offset), (vecCapIntGpu)(dout.stride[0U]), 0U, 0U,  \
-        0U, 0U                                                                 \
+  const tcapint args[10U] {                                                    \
+    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
+        dout.stride[0U], 0U, 0U, 0U, 0U                                        \
   }
 namespace Weed {
 void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
   CPU_INIT(real1, CpuRealStorage, real1, CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = (pa[i * I_a] < ZERO_R1) ? -pa[i * I_a] : pa[i * I_a];
   });
 }
 void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
   CPU_INIT(complex, CpuComplexStorage, real1, CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = (real1)std::abs(pa[i * I_a]);
   });
 }
@@ -132,7 +128,7 @@ void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
   CPU_GRAD_INIT(real1, CpuRealStorage, real1, CpuRealStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 tmp = pi[i * I_i];
     if (tmp != ZERO_R1) {
       const real1 tmp_o = po[i * I_o];
@@ -144,7 +140,7 @@ void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
                 CpuComplexStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 tmp = pi[i * I_i];
     if (tmp != ZERO_R1) {
       const complex tmp_o = po[i * I_o];
@@ -156,7 +152,7 @@ void AbsKernel::cpu_real_grad_mixed(Tensor &din, const Tensor &in,
                                     const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 tmp = pi[i * I_i];
     if (tmp != ZERO_R1) {
       const real1 tmp_o = po[i * I_o];
@@ -168,7 +164,7 @@ void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, complex, CpuComplexStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const complex tmp = pi[i * I_i];
     if (tmp != ZERO_CMPLX) {
       pdi[i * I_d] += tmp * (po[i * I_o] / std::abs(tmp));
@@ -179,7 +175,7 @@ void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, complex, CpuComplexStorage, complex,
                 CpuComplexStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const complex tmp = pi[i * I_i];
     if (tmp != ZERO_CMPLX) {
       pdi[i * I_d] += po[i * I_o] * tmp / std::abs(tmp);
@@ -190,7 +186,7 @@ void AbsKernel::cpu_complex_grad_mixed(Tensor &din, const Tensor &in,
                                        const Tensor &dout) {
   CPU_GRAD_INIT(complex, CpuComplexStorage, complex, CpuComplexStorage, real1,
                 CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const complex tmp = pi[i * I_i];
     if (tmp != ZERO_CMPLX) {
       pdi[i * I_d] += po[i * I_o] * tmp / std::abs(tmp);

@@ -213,9 +213,9 @@ struct GpuDevice {
    * Construct a new queue item for a kernel call and insert it into the kernel
    * callback queue
    */
-  void RequestKernel(OCLAPI api_call, const vecCapIntGpu *vciArgs,
-                     const size_t nwi, std::vector<BufferPtr> buffers,
-                     const size_t nwi2 = 0U, const complex *c = nullptr);
+  void RequestKernel(OCLAPI api_call, const tcapint *vciArgs, const size_t nwi,
+                     std::vector<BufferPtr> buffers, const size_t nwi2 = 0U,
+                     const complex *c = nullptr);
 
   /**
    * Request a buffer zeroing in the queue (OpenCL v1.1 compatible style)
@@ -247,18 +247,18 @@ struct GpuDevice {
   /**
    * Read a single real1 from a buffer
    */
-  real1 GetReal(BufferPtr buffer, vecCapIntGpu idx);
+  real1 GetReal(BufferPtr buffer, tcapint idx);
   /**
    * Read a single complex from a buffer
    */
-  complex GetComplex(BufferPtr buffer, vecCapIntGpu idx);
+  complex GetComplex(BufferPtr buffer, tcapint idx);
   /**
    * Write a single real1 to a buffer
    */
-  void SetReal(real1 val, BufferPtr buffer, vecCapIntGpu idx);
+  void SetReal(real1 val, BufferPtr buffer, tcapint idx);
   /**
    * Write a single complex to a buffer
    */
-  void SetComplex(complex val, BufferPtr buffer, vecCapIntGpu idx);
+  void SetComplex(complex val, BufferPtr buffer, tcapint idx);
 };
 } // namespace Weed

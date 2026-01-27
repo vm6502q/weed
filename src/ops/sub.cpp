@@ -14,25 +14,18 @@
 #include "storage/all_storage.hpp"
 
 #define SUB_KERNEL()                                                           \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
-  const vecCapIntGpu I_b = (vecCapIntGpu)b.stride[0U];                         \
-  const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];                       \
+  const tcapint I_a = a.stride[0U];                                            \
+  const tcapint I_b = b.stride[0U];                                            \
+  const tcapint I_o = out.stride[0U];                                          \
   const size_t n = out.get_size();                                             \
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {    \
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
     po[i * I_o] = pa[i * I_a] - pb[i * I_b];                                   \
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, type3, api_call)                      \
-  const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),                       \
-                               (vecCapIntGpu)(a.stride[0U]),                   \
-                               (vecCapIntGpu)(b.offset),                       \
-                               (vecCapIntGpu)(b.stride[0U]),                   \
-                               (vecCapIntGpu)(out.offset),                     \
-                               (vecCapIntGpu)(out.stride[0U]),                 \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U};                                            \
+  const tcapint args[10U]{                                                     \
+      a.offset,       a.stride[0U], b.offset, b.stride[0U], out.offset,        \
+      out.stride[0U], 0U,           0U,       0U,           0U};               \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \
@@ -117,9 +110,9 @@ void SubKernel::sub(const Tensor &a, const Tensor &b, Tensor &out) {
   if (isOutComplex && (!isAComplex && !isBComplex)) {
     throw std::invalid_argument("Output tensor dtype mismatch!");
   }
-  const vecCapInt aSize = a.get_broadcast_size();
-  const vecCapInt bSize = b.get_broadcast_size();
-  const vecCapInt outSize = out.get_broadcast_size();
+  const tcapint aSize = a.get_broadcast_size();
+  const tcapint bSize = b.get_broadcast_size();
+  const tcapint outSize = out.get_broadcast_size();
   if (aSize != bSize) {
     throw std::invalid_argument(
         "In Weed::sub(a, b, out), 'a' size does not match 'b' size!");

@@ -14,8 +14,8 @@
 #include "storage/all_storage.hpp"
 
 #define CPU_INIT(type, strg)                                                   \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
-  const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];                       \
+  const tcapint I_a = a.stride[0U];                                            \
+  const tcapint I_o = out.stride[0U];                                          \
   CAST_STORAGE(pa, a, type, strg);                                             \
   CAST_STORAGE(po, out, type, strg);                                           \
   size_t n = out.storage->size
@@ -42,50 +42,48 @@
   }
 
 #define GPU_ARGS()                                                             \
-  const vecCapIntGpu args[10U] {                                               \
-    (vecCapIntGpu)(a.offset), (vecCapIntGpu)(a.stride[0U]),                    \
-        (vecCapIntGpu)(out.offset), (vecCapIntGpu)(out.stride[0U]), 0U, 0U,    \
-        0U, 0U, 0U, 0U                                                         \
+  const tcapint args[10U] {                                                    \
+    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U \
   }
 
 namespace Weed {
 static void cpu_real_pow(const Tensor &a, const real1 &p, Tensor &out) {
   CPU_INIT(real1, CpuRealStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = (real1)std::pow((real1_s)pa[i * I_a], (real1_s)p);
   });
 }
 static void cpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
   CPU_INIT(real1, CpuRealStorage);
   const real1 log_b = (real1)std::log((real1_s)b);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = (real1)std::exp((real1_s)(pa[i * I_a] * log_b));
   });
 }
 static void cpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
   CPU_INIT(real1, CpuRealStorage);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = (real1)(std::log((real1_s)pa[i * I_a])) * inv_log_b;
   });
 }
 static void cpu_complex_pow(const Tensor &a, const real1 &p, Tensor &out) {
   CPU_INIT(complex, CpuComplexStorage);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = std::pow(pa[i * I_a], p);
   });
 }
 static void cpu_complex_exp(const Tensor &a, const real1 &b, Tensor &out) {
   CPU_INIT(complex, CpuComplexStorage);
   const real1 log_b = (real1)std::log((real1_s)b);
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = std::exp(pa[i * I_a] * log_b);
   });
 }
 static void cpu_complex_log(const Tensor &a, const real1 &b, Tensor &out) {
   CPU_INIT(complex, CpuComplexStorage);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = std::log(pa[i * I_a]) * inv_log_b;
   });
 }
@@ -111,8 +109,8 @@ static void gpu_complex_log(const Tensor &a, const real1 &b, Tensor &out) {
 }
 #endif
 void PowKernel::pow(const Tensor &a, const real1 &p, Tensor &out) {
-  const vecCapInt aSize = a.get_broadcast_size();
-  const vecCapInt outSize = out.get_broadcast_size();
+  const tcapint aSize = a.get_broadcast_size();
+  const tcapint outSize = out.get_broadcast_size();
   if (aSize != outSize) {
     throw std::invalid_argument(
         "In Weed::pow(a, b, out), out size does not match input size!");

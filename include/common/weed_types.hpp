@@ -36,47 +36,39 @@ using std::size_t;
 #include "half.hpp"
 #endif
 
-#if VCAPPOW < 8
-#define vecLenInt uint8_t
-#elif VCAPPOW < 16
-#define vecLenInt uint16_t
-#elif VCAPPOW < 32
-#define vecLenInt uint32_t
-#elif (VCAPPOW < 64) || !defined(__SIZEOF_INT128__)
-#define vecLenInt uint64_t
+#if TCAPPOW < 8
+#define tlenint uint8_t
+#elif TCAPPOW < 16
+#define tlenint uint16_t
+#elif TCAPPOW < 32
+#define tlenint uint32_t
+#elif (TCAPPOW < 64) || !defined(__SIZEOF_INT128__)
+#define tlenint uint64_t
 #else
-#define vecLenInt unsigned __int128
+#define tlenint unsigned __int128
 #endif
 
-#if UINTPOW < 4
-#define vecCapIntGpu uint8_t
-#elif UINTPOW < 5
-#define vecCapIntGpu uint16_t
-#elif UINTPOW < 6
-#define vecCapIntGpu uint32_t
-#elif (UINTPOW < 7) || !defined(__SIZEOF_INT128__)
-#define vecCapIntGpu uint64_t
-#else
-#define vecCapIntGpu unsigned __int128
-#endif
-
-#if VCAPPOW < 6
-#define vecCapInt uint32_t
+#if TCAPPOW < 4
+#define tcapint uint8_t
+#elif TCAPPOW < 5
+#define tcapint uint16_t
+#elif TCAPPOW < 6
+#define tcapint uint32_t
 #define WEED_MAX_DIM_POW 32
-#elif VCAPPOW < 7
-#define vecCapInt uint64_t
+#elif TCAPPOW < 7
+#define tcapint uint64_t
 #define WEED_MAX_DIM_POW 64
-#elif (VCAPPOW < 8) && defined(__SIZEOF_INT128__)
-#define vecCapInt unsigned __int128
+#elif (TCAPPOW < 8) && defined(__SIZEOF_INT128__)
+#define tcapint unsigned __int128
 #define WEED_MAX_DIM_POW 128
 #elif BOOST_AVAILABLE
 #include <boost/multiprecision/cpp_int.hpp>
-typedef boost::multiprecision::cpp_int vecCapInt;
-constexpr size_t WEED_MAX_DIM_POW = (1 << VCAPPOW);
+typedef boost::multiprecision::cpp_int tcapint;
+constexpr size_t WEED_MAX_DIM_POW = (1 << TCAPPOW);
 #else
 #include "big_integer.hpp"
-#define vecCapInt BigInteger
-constexpr size_t WEED_MAX_DIM_POW = (1 << VCAPPOW);
+#define tcapint BigInteger
+constexpr size_t WEED_MAX_DIM_POW = (1 << TCAPPOW);
 #endif
 
 #if FPPOW < 5
@@ -132,9 +124,9 @@ typedef double real1_s;
 #endif
 
 typedef std::complex<real1> complex;
-const vecCapInt ONE_VCI = 1U;
-const vecCapInt ZERO_VCI = 0U;
-constexpr vecLenInt bitsInCap = ((vecLenInt)1U) << ((vecLenInt)VCAPPOW);
+const tcapint ONE_VCI = 1U;
+const tcapint ZERO_VCI = 0U;
+constexpr tlenint bitsInCap = ((tlenint)1U) << ((tlenint)TCAPPOW);
 
 struct Node;
 typedef std::shared_ptr<Node> NodePtr;
@@ -246,7 +238,7 @@ WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
 #endif
 #endif
 
-constexpr size_t SPARSE_KEY_BYTES = sizeof(vecCapIntGpu) + sizeof(complex);
+constexpr size_t SPARSE_KEY_BYTES = sizeof(tcapint) + sizeof(complex);
 
 WEED_CONST complex ONE_CMPLX = complex(ONE_R1, ZERO_R1);
 WEED_CONST complex ZERO_CMPLX = complex(ZERO_R1, ZERO_R1);

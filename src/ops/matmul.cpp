@@ -20,33 +20,30 @@
   CAST_STORAGE(pb, b, rtype, rstorage);                                        \
   CAST_STORAGE(po, out, otype, ostorage);                                      \
                                                                                \
-  pfControl.par_for(                                                           \
-      0, (vecCapIntGpu)((d.M) * (d.N)),                                        \
-      [&](const vecCapIntGpu &l, const unsigned &cpu) {                        \
-        const vecCapInt i = l / d.N;                                           \
-        const vecCapInt j = l % d.N;                                           \
-        stype sum = ZERO_R1;                                                   \
-        for (vecCapIntGpu k = 0; k < d.K; ++k) {                               \
-          const auto a_idx = (vecCapIntGpu)(d.A_o + i * d.A_s0 + k * d.A_s1);  \
-          const auto b_idx = (vecCapIntGpu)(d.B_o + k * d.B_s0 + j * d.B_s1);  \
-          sum += pa[a_idx] * pb[b_idx];                                        \
-        }                                                                      \
-        const auto o_idx = (vecCapIntGpu)(d.O_o + i * d.O_s0 + j * d.O_s1);    \
-        po[o_idx] = sum;                                                       \
-      })
+  pfControl.par_for(0, (d.M) * (d.N),                                          \
+                    [&](const tcapint &l, const unsigned &cpu) {               \
+                      const tcapint i = l / d.N;                               \
+                      const tcapint j = l % d.N;                               \
+                      stype sum = ZERO_R1;                                     \
+                      for (tcapint k = 0; k < d.K; ++k) {                      \
+                        const auto a_idx = d.A_o + i * d.A_s0 + k * d.A_s1;    \
+                        const auto b_idx = d.B_o + k * d.B_s0 + j * d.B_s1;    \
+                        sum += pa[a_idx] * pb[b_idx];                          \
+                      }                                                        \
+                      const auto o_idx = d.O_o + i * d.O_s0 + j * d.O_s1;      \
+                      po[o_idx] = sum;                                         \
+                    })
 
 #define GPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, call)   \
   MatrixDim d = get_dim(a, b, out);                                            \
-  const vecCapIntGpu args[10U]{d.A_o,  d.A_s0,           d.B_o,  d.B_s0,       \
-                               d.O_o,  d.O_s0,           d.A_s1, d.B_s1,       \
-                               d.O_s1, (vecCapIntGpu)d.K};                     \
+  const tcapint args[10U]{d.A_o,  d.A_s0, d.B_o,  d.B_s0, d.O_o,               \
+                          d.O_s0, d.A_s1, d.B_s1, d.O_s1, d.K};                \
   lstorage a_storage = std::dynamic_pointer_cast<ltype>(a.storage);            \
   rstorage b_storage = std::dynamic_pointer_cast<rtype>(b.storage);            \
   ostorage o_storage = std::dynamic_pointer_cast<otype>(out.storage);          \
   a_storage->dev->RequestKernel(                                               \
-      OCLAPI::call, args, (vecCapIntGpu)d.M,                                   \
-      {a_storage->buffer, b_storage->buffer, o_storage->buffer},               \
-      (vecCapIntGpu)d.N)
+      OCLAPI::call, args, d.M,                                                 \
+      {a_storage->buffer, b_storage->buffer, o_storage->buffer}, d.N)
 
 #define DEVICE_SWITCH(cpu, gpu)                                                \
   switch (out.storage->device) {                                               \
@@ -60,11 +57,11 @@
 
 namespace Weed {
 struct MatrixDim {
-  vecCapInt M, K, N;
-  vecCapIntGpu A_o, B_o, O_o;
-  vecCapIntGpu A_s0, A_s1;
-  vecCapIntGpu B_s0, B_s1;
-  vecCapIntGpu O_s0, O_s1;
+  tcapint M, K, N;
+  tcapint A_o, B_o, O_o;
+  tcapint A_s0, A_s1;
+  tcapint B_s0, B_s1;
+  tcapint O_s0, O_s1;
 };
 
 MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {

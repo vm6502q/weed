@@ -23,17 +23,14 @@ namespace Weed {
 struct CpuRealStorage : RealStorage {
   RealPtr data;
 
-  CpuRealStorage(vecCapIntGpu n)
-      : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
+  CpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
 
   CpuRealStorage(std::vector<real1> i)
       : RealStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
     std::copy(i.begin(), i.end(), data.get());
   }
 
-  real1 operator[](vecCapIntGpu idx) override {
-    return data.get()[(size_t)idx];
-  }
+  real1 operator[](tcapint idx) override { return data.get()[(size_t)idx]; }
 
   void FillZeros() override {
     std::fill(data.get(), data.get() + size, ZERO_R1);

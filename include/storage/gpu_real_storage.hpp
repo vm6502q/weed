@@ -27,7 +27,7 @@ namespace Weed {
 struct GpuRealStorage : public RealStorage, public GpuStorage {
   RealPtr array;
 
-  GpuRealStorage(vecCapIntGpu n, int64_t did, bool alloc = true)
+  GpuRealStorage(tcapint n, int64_t did, bool alloc = true)
       : RealStorage(DeviceTag::GPU, n), array(nullptr, [](real1 *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     if (alloc) {
@@ -84,7 +84,7 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     return n;
   };
 
-  BufferPtr MakeBuffer(vecCapIntGpu n) {
+  BufferPtr MakeBuffer(tcapint n) {
     if (dev->device_context->use_host_mem) {
       if (!array) {
         array = Alloc(n);
@@ -102,13 +102,13 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
                            sizeof(real1) * n, array.get());
   }
 
-  real1 operator[](vecCapIntGpu idx) {
+  real1 operator[](tcapint idx) {
     if (idx >= size) {
       throw std::invalid_argument(
           "GpuRealStorage::operator[] argument out-of-bounds!");
     }
 
-    return dev->GetReal(buffer, (vecCapIntGpu)idx);
+    return dev->GetReal(buffer, idx);
   }
 
   StoragePtr cpu() override;

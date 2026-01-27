@@ -18,14 +18,13 @@
 namespace Weed {
 
 // Called once per value between begin and end.
-typedef std::function<void(const vecCapIntGpu &, const unsigned &cpu)>
-    ParallelFunc;
-typedef std::function<vecCapIntGpu(const vecCapIntGpu &)> IncrementFunc;
+typedef std::function<void(const tcapint &, const unsigned &cpu)> ParallelFunc;
+typedef std::function<tcapint(const tcapint &)> IncrementFunc;
 
 class ParallelFor {
 private:
-  const vecCapIntGpu pStride;
-  vecLenInt dispatchThreshold;
+  const tcapint pStride;
+  tlenint dispatchThreshold;
   unsigned numCores;
 
 public:
@@ -41,14 +40,14 @@ public:
       return;
     }
     numCores = num;
-    const vecLenInt pStridePow = log2Gpu(pStride);
-    const vecLenInt minStridePow = (vecLenInt)pow2Gpu(log2Gpu(numCores - 1U));
+    const tlenint pStridePow = log2Gpu(pStride);
+    const tlenint minStridePow = (tlenint)pow2Gpu(log2Gpu(numCores - 1U));
     dispatchThreshold =
         (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
   }
   unsigned GetConcurrencyLevel() { return numCores; }
-  vecCapIntGpu GetStride() { return pStride; }
-  vecLenInt GetPreferredConcurrencyPower() { return dispatchThreshold; }
+  tcapint GetStride() { return pStride; }
+  tlenint GetPreferredConcurrencyPower() { return dispatchThreshold; }
   /*
    * Parallelization routines for spreading work across multiple cores.
    */
@@ -57,12 +56,11 @@ public:
    * Iterate through the permutations a maximum of end-begin times, allowing
    * the caller to control the incrementation offset through 'inc'.
    */
-  void par_for_inc(const vecCapIntGpu begin, const vecCapIntGpu itemCount,
-                   IncrementFunc, ParallelFunc fn);
+  void par_for_inc(const tcapint begin, const tcapint itemCount, IncrementFunc,
+                   ParallelFunc fn);
 
   /** Call fn once for every numerical value between begin and end. */
-  void par_for(const vecCapIntGpu begin, const vecCapIntGpu end,
-               ParallelFunc fn);
+  void par_for(const tcapint begin, const tcapint end, ParallelFunc fn);
 };
 
 extern ParallelFor pfControl;

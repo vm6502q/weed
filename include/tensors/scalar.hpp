@@ -42,8 +42,8 @@ struct Scalar : public Tensor {
       throw std::invalid_argument(
           "Cannot construct scalar from Tensor with get_size() > 1!");
     }
-    shape = std::vector<vecCapInt>{ONE_VCI};
-    stride = std::vector<vecCapInt>{0U};
+    shape = std::vector<tcapint>{1U};
+    stride = std::vector<tcapint>{0U};
     offset = orig->offset;
     storage = orig->storage;
     grad_node = orig->grad_node;

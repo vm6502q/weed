@@ -64,8 +64,8 @@ TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
   return std::make_shared<Tensor>(orig->shape, orig->stride, rg, dt, dtag, did);
 }
 
-TensorPtr Tensor::allocate_like(const std::vector<vecCapInt> &shape,
-                                const std::vector<vecCapInt> &stride,
+TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shape,
+                                const std::vector<tcapint> &stride,
                                 const TensorPtr orig, const DType &dt,
                                 const bool &rg) {
   const StoragePtr storage_ptr = orig->storage;
@@ -75,7 +75,7 @@ TensorPtr Tensor::allocate_like(const std::vector<vecCapInt> &shape,
   return std::make_shared<Tensor>(shape, stride, rg, dt, dtag, did);
 }
 
-Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
+Tensor::Tensor(std::vector<tcapint> shp, std::vector<tcapint> strd, bool rg,
                DType dtype, DeviceTag dtag, int64_t did)
     : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
       grad(rg ? std::make_shared<Tensor>(shp, strd, false, dtype, dtag, did)
@@ -85,7 +85,7 @@ Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
         "Tensor shape vector must have same length as stride vector!");
   }
 
-  const vecCapIntGpu size = get_size();
+  const tcapint size = get_size();
 
   switch (dtype) {
   case DType::COMPLEX:
@@ -109,9 +109,8 @@ Tensor::Tensor(std::vector<vecCapInt> shp, std::vector<vecCapInt> strd, bool rg,
   }
 }
 
-Tensor::Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
-               std::vector<vecCapInt> strd, bool rg, DeviceTag dtag,
-               int64_t did)
+Tensor::Tensor(std::vector<real1> val, std::vector<tcapint> shp,
+               std::vector<tcapint> strd, bool rg, DeviceTag dtag, int64_t did)
     : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
       grad(rg ? std::make_shared<Tensor>(shp, strd, false, DType::REAL, dtag,
                                          did)
@@ -125,7 +124,7 @@ Tensor::Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
         "Initial tensor shape and stride must be contiguous!");
   }
 
-  const vecCapIntGpu size = get_size();
+  const tcapint size = get_size();
 
   if (size != val.size()) {
     throw std::invalid_argument("Tensor value initializer vector must have "
@@ -142,9 +141,8 @@ Tensor::Tensor(std::vector<real1> val, std::vector<vecCapInt> shp,
     grad->storage->FillZeros();
   }
 }
-Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
-               std::vector<vecCapInt> strd, bool rg, DeviceTag dtag,
-               int64_t did)
+Tensor::Tensor(std::vector<complex> val, std::vector<tcapint> shp,
+               std::vector<tcapint> strd, bool rg, DeviceTag dtag, int64_t did)
     : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
       grad(rg ? std::make_shared<Tensor>(shp, strd, false, DType::COMPLEX, dtag,
                                          did)
@@ -158,7 +156,7 @@ Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
         "Initial tensor shape and stride must be contiguous!");
   }
 
-  const vecCapIntGpu size = get_size();
+  const tcapint size = get_size();
 
   if (size != val.size()) {
     throw std::invalid_argument("Tensor value initializer vector must have "
@@ -176,7 +174,7 @@ Tensor::Tensor(std::vector<complex> val, std::vector<vecCapInt> shp,
   }
 }
 
-TensorPtr Tensor::operator[](vecCapInt idx) {
+TensorPtr Tensor::operator[](tcapint idx) {
   if (idx > shape.back()) {
     throw std::invalid_argument("Tensor index out-of-range!");
   }
@@ -233,8 +231,8 @@ void Tensor::reduce_grad_broadcast() {
       continue;
     }
 
-    std::vector<vecCapInt> sh = grad->shape;
-    std::vector<vecCapInt> st = grad->stride;
+    std::vector<tcapint> sh = grad->shape;
+    std::vector<tcapint> st = grad->stride;
 
     if (sh.size() == 1U) {
       sh[0U] = 1U;
@@ -300,7 +298,7 @@ TensorPtr Tensor::transpose(TensorPtr a) {
 TensorPtr Tensor::sum(TensorPtr a) {
   const bool rg = a->requires_grad();
   TensorPtr out =
-      allocate_like(std::vector<vecCapInt>{1U}, std::vector<vecCapInt>{0U}, a,
+      allocate_like(std::vector<tcapint>{1U}, std::vector<tcapint>{0U}, a,
                     a->storage->dtype, rg);
 
   Weed::sum(*(a.get()), *(out.get()));
@@ -333,7 +331,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
 TensorPtr Tensor::mean(TensorPtr a) {
   const bool rg = a->requires_grad();
   TensorPtr out =
-      allocate_like(std::vector<vecCapInt>{1U}, std::vector<vecCapInt>{0U}, a,
+      allocate_like(std::vector<tcapint>{1U}, std::vector<tcapint>{0U}, a,
                     a->storage->dtype, rg);
 
   Weed::mean(*(a.get()), *(out.get()));
@@ -570,8 +568,8 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
         "Tensor::matmul is only for matrices with 2 indices!");
   }
 
-  const std::vector<vecCapInt> shp = {a->shape[0U], b->shape[1U]};
-  const std::vector<vecCapInt> str = {1U, a->shape[0U]};
+  const std::vector<tcapint> shp = {a->shape[0U], b->shape[1U]};
+  const std::vector<tcapint> str = {1U, a->shape[0U]};
   const bool rg = a->requires_grad() || b->requires_grad();
   DType dt = get_dtype_by_presidence({a, b});
   TensorPtr out = allocate_like(shp, str, a, dt, rg);

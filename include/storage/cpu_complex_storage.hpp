@@ -22,7 +22,7 @@ namespace Weed {
 struct CpuComplexStorage : ComplexStorage {
   ComplexPtr data;
 
-  CpuComplexStorage(vecCapIntGpu n)
+  CpuComplexStorage(tcapint n)
       : ComplexStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
 
   CpuComplexStorage(std::vector<complex> i)
@@ -30,9 +30,7 @@ struct CpuComplexStorage : ComplexStorage {
     std::copy(i.begin(), i.end(), data.get());
   }
 
-  complex operator[](vecCapIntGpu idx) override {
-    return data.get()[(size_t)idx];
-  }
+  complex operator[](tcapint idx) override { return data.get()[(size_t)idx]; }
 
   void FillZeros() override {
     std::fill(data.get(), data.get() + size, ZERO_CMPLX);

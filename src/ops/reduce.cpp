@@ -14,52 +14,47 @@
 #include "storage/all_storage.hpp"
 
 #define REDUCE_KERNEL(type)                                                    \
-  const vecCapIntGpu I_o = out.stride[0U];                                     \
+  const tcapint I_o = out.stride[0U];                                          \
   const size_t n = out.get_size();                                             \
   const int64_t id = index;                                                    \
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &o, const unsigned &cpu) {    \
-    vecCapInt base = a.offset;                                                 \
-    vecCapInt tmp = o;                                                         \
+  pfControl.par_for(0, n, [&](const tcapint &o, const unsigned &cpu) {         \
+    tcapint base = a.offset;                                                   \
+    tcapint tmp = o;                                                           \
                                                                                \
     for (int64_t d = a.shape.size() - 1; d >= 0; --d) {                        \
       if (d == id) {                                                           \
         continue;                                                              \
       }                                                                        \
                                                                                \
-      vecCapInt dim = a.shape[d];                                              \
-      vecCapInt i_d = tmp % dim;                                               \
+      tcapint dim = a.shape[d];                                                \
+      tcapint i_d = tmp % dim;                                                 \
       tmp /= dim;                                                              \
                                                                                \
       base += i_d * a.stride[d];                                               \
     }                                                                          \
                                                                                \
     type sum = ZERO_R1;                                                        \
-    for (vecCapIntGpu j = 0U; j < a.shape[id]; ++j) {                          \
-      sum += pa[(vecCapIntGpu)(base + j * a.stride[id])];                      \
+    for (tcapint j = 0U; j < a.shape[id]; ++j) {                               \
+      sum += pa[base + j * a.stride[id]];                                      \
     }                                                                          \
     po[o * I_o] = sum;                                                         \
   });
 
 #define DISPATCH_GPU_KERNEL(type, api_call)                                    \
-  const vecCapIntGpu args[10U]{(vecCapIntGpu)(a.offset),                       \
-                               (vecCapIntGpu)index,                            \
-                               (vecCapIntGpu)(out.offset),                     \
-                               (vecCapIntGpu)(out.stride[0U]),                 \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U,                                             \
-                               0U};                                            \
+  const tcapint args[10U]{a.offset,   (tcapint)index,                          \
+                          out.offset, out.stride[0U],                          \
+                          0U,         0U,                                      \
+                          0U,         0U,                                      \
+                          0U,         0U};                                     \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
   const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
   BufferPtr shapeBuffer = a_storage->dev->MakeBuffer(                          \
-      flags, sizeof(vecCapIntGpu) * a.shape.size(), (void *)&(a.shape[0U]));   \
+      flags, sizeof(tcapint) * a.shape.size(), (void *)&(a.shape[0U]));        \
   BufferPtr strideBuffer = a_storage->dev->MakeBuffer(                         \
-      flags, sizeof(vecCapIntGpu) * a.stride.size(), (void *)&(a.stride[0U])); \
+      flags, sizeof(tcapint) * a.stride.size(), (void *)&(a.stride[0U]));      \
   a_storage->dev->RequestKernel(                                               \
       api_call, args, out.get_size(),                                          \
       {a_storage->buffer, o_storage->buffer, shapeBuffer, strideBuffer})

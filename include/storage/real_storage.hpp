@@ -18,12 +18,12 @@ namespace Weed {
  * Storage for real data type elements
  */
 struct RealStorage : Storage {
-  RealStorage(DeviceTag dtg, vecCapIntGpu n) : Storage(dtg, DType::REAL, n) {}
+  RealStorage(DeviceTag dtg, tcapint n) : Storage(dtg, DType::REAL, n) {}
 
   /**
    * Get the complex element at the position
    */
-  virtual real1 operator[](vecCapIntGpu idx) = 0;
+  virtual real1 operator[](tcapint idx) = 0;
 
   /**
    * Fill the entire Storage with specified real value
@@ -31,7 +31,7 @@ struct RealStorage : Storage {
   virtual void FillValue(real1 v) = 0;
 
 #if defined(__APPLE__)
-  static real1 *_aligned_state_vec_alloc(vecCapIntGpu allocSize) {
+  static real1 *_aligned_state_vec_alloc(tcapint allocSize) {
     void *toRet;
     posix_memalign(&toRet, WEED_ALIGN_SIZE, allocSize);
     return (real1 *)toRet;
@@ -48,8 +48,7 @@ struct RealStorage : Storage {
 #endif
   }
 
-  static std::unique_ptr<real1[], void (*)(real1 *)>
-  Alloc(vecCapIntGpu elemCount) {
+  static std::unique_ptr<real1[], void (*)(real1 *)> Alloc(tcapint elemCount) {
 #if defined(__ANDROID__)
     return std::unique_ptr<real1[], void (*)(real1 *)>(new real1[elemCount],
                                                        deleter);

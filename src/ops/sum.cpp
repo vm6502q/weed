@@ -39,7 +39,7 @@
 #define CPU_SUM(type)                                                          \
   unsigned cpuCount = pfControl.GetNumCores();                                 \
   std::vector<type> total(cpuCount, ZERO_R1);                                  \
-  pfControl.par_for(0, sz, [&](const vecCapIntGpu &i, const unsigned &cpu) {   \
+  pfControl.par_for(0, sz, [&](const tcapint &i, const unsigned &cpu) {        \
     total[cpu] += pa[i * I_a];                                                 \
   });                                                                          \
   type t = ZERO_R1;                                                            \
@@ -48,7 +48,7 @@
   }
 
 #define GPU_SUM(type)                                                          \
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];                         \
+  const tcapint I_a = a.stride[0U];                                            \
   size_t sz = a_storage->size;                                                 \
   if (!(a_storage->array)) {                                                   \
     a_storage->array = a_storage->Alloc(sz);                                   \
@@ -68,7 +68,7 @@
 
 namespace Weed {
 static void cpu_sum_real(const Tensor &a, Tensor &out) {
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];
+  const tcapint I_a = a.stride[0U];
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
   CAST_STORAGE(po, out, real1, CpuRealStorage);
   size_t sz = a.get_size();
@@ -81,7 +81,7 @@ static void cpu_mean_real(const Tensor &a, Tensor &out) {
   po[0U] /= a.get_size();
 }
 static void cpu_sum_complex(const Tensor &a, Tensor &out) {
-  const vecCapIntGpu I_a = (vecCapIntGpu)(a.stride[0U]);
+  const tcapint I_a = a.stride[0U];
   CAST_STORAGE(pa, a, complex, CpuComplexStorage);
   CAST_STORAGE(po, out, complex, CpuComplexStorage);
   size_t sz = a.get_size();

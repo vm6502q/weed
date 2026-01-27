@@ -47,18 +47,14 @@
   }
 
 #define GPU_ARGS()                                                             \
-  const vecCapIntGpu args[10U] {                                               \
-    (vecCapIntGpu)(a.offset), (vecCapIntGpu)(a.stride[0U]),                    \
-        (vecCapIntGpu)(out.offset), (vecCapIntGpu)(out.stride[0U]), 0U, 0U,    \
-        0U, 0U, 0U, 0U                                                         \
+  const tcapint args[10U] {                                                    \
+    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U \
   }
 
 #define GPU_GRAD_ARGS()                                                        \
-  const vecCapIntGpu args[10U] {                                               \
-    (vecCapIntGpu)(dy.offset), (vecCapIntGpu)(dy.stride[0U]),                  \
-        (vecCapIntGpu)(x.offset), (vecCapIntGpu)(x.stride[0U]),                \
-        (vecCapIntGpu)(dx.offset), (vecCapIntGpu)(dx.stride[0U]), 0U, 0U, 0U,  \
-        0U                                                                     \
+  const tcapint args[10U] {                                                    \
+    dy.offset, dy.stride[0U], x.offset, x.stride[0U], dx.offset,               \
+        dx.stride[0U], 0U, 0U, 0U, 0U                                          \
   }
 
 #define CPU_GRAD(type, storage)                                                \
@@ -66,12 +62,12 @@
   CAST_STORAGE(px, x, real1, CpuRealStorage);                                  \
   CAST_STORAGE(pdy, dy, type, storage);                                        \
                                                                                \
-  const vecCapIntGpu I_dx = dx.stride[0];                                      \
-  const vecCapIntGpu I_x = x.stride[0];                                        \
-  const vecCapIntGpu I_dy = dy.stride[0];                                      \
+  const tcapint I_dx = dx.stride[0];                                           \
+  const tcapint I_x = x.stride[0];                                             \
+  const tcapint I_dy = dy.stride[0];                                           \
   const size_t n = x.get_size();                                               \
                                                                                \
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &) {       \
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &) {            \
     real1 xi = px[i * I_x];                                                    \
     if (xi > l && xi < h) {                                                    \
       pdx[i * I_dx] += pdy[i * I_dy];                                          \
@@ -81,12 +77,12 @@
 namespace Weed {
 void ClampKernel::cpu(const Tensor &a, const real1 &l, const real1 &h,
                       Tensor &out) {
-  const vecCapIntGpu I_a = (vecCapIntGpu)a.stride[0U];
-  const vecCapIntGpu I_o = (vecCapIntGpu)out.stride[0U];
+  const tcapint I_a = a.stride[0U];
+  const tcapint I_o = out.stride[0U];
   CAST_STORAGE(pa, a, real1, CpuRealStorage);
   CAST_STORAGE(po, out, real1, CpuRealStorage);
   size_t n = out.storage->size;
-  pfControl.par_for(0, n, [&](const vecCapIntGpu &i, const unsigned &cpu) {
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     po[i * I_o] = std::min(std::max(pa[i * I_a], l), h);
   });
 }
@@ -128,8 +124,8 @@ void ClampKernel::clamp(const Tensor &a, const real1 &l, const real1 &h,
     throw std::invalid_argument(
         "In Weed::clamp(a, l, h, out), arguments must all be real-number!");
   }
-  const vecCapInt aSize = a.get_broadcast_size();
-  const vecCapInt outSize = out.get_broadcast_size();
+  const tcapint aSize = a.get_broadcast_size();
+  const tcapint outSize = out.get_broadcast_size();
   if (aSize != outSize) {
     throw std::invalid_argument(
         "In Weed::clamp(a, l, h, out), out size does not match input size!");

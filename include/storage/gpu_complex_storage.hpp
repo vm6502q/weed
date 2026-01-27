@@ -26,7 +26,7 @@ namespace Weed {
 struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
   ComplexPtr array;
 
-  GpuComplexStorage(vecCapIntGpu n, int64_t did, bool alloc = true)
+  GpuComplexStorage(tcapint n, int64_t did, bool alloc = true)
       : ComplexStorage(DeviceTag::GPU, n), array(nullptr, [](complex *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     if (alloc) {
@@ -59,7 +59,7 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
 
   StoragePtr Upcast(DType dt) { return get_ptr(); };
 
-  BufferPtr MakeBuffer(vecCapIntGpu n) {
+  BufferPtr MakeBuffer(tcapint n) {
     if (dev->device_context->use_host_mem) {
       if (!array) {
         array = Alloc(n);
@@ -77,13 +77,13 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
                            sizeof(complex) * n, array.get());
   }
 
-  complex operator[](vecCapIntGpu idx) {
+  complex operator[](tcapint idx) {
     if (idx >= size) {
       throw std::invalid_argument(
           "GpuComplexStorage::operator[] argument out-of-bounds!");
     }
 
-    vecCapIntGpu i = ((vecCapIntGpu)idx) << 1U;
+    tcapint i = idx << 1U;
 
     return complex(dev->GetReal(buffer, i), dev->GetReal(buffer, i + 1U));
   }
