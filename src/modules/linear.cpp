@@ -52,7 +52,8 @@ Linear::Linear(vecCapIntGpu in_f, vecCapIntGpu out_f, bool use_bias,
           std::make_shared<Parameter>(init, shape, stride, device, device_id);
     }
   } else {
-    weight = std::make_shared<Parameter>(shape, stride, dtype, device, device_id);
+    weight =
+        std::make_shared<Parameter>(shape, stride, dtype, device, device_id);
     weight->storage->FillZeros();
   }
 

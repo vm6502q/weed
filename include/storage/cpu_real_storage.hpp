@@ -52,5 +52,9 @@ struct CpuRealStorage : RealStorage {
 
     return n;
   }
+
+  StoragePtr cpu() override { return get_ptr(); }
+  StoragePtr gpu(int64_t did = -1) override;
 };
+typedef std::shared_ptr<CpuRealStorage> CpuRealStoragePtr;
 } // namespace Weed

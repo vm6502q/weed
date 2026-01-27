@@ -26,7 +26,7 @@
       std::dynamic_pointer_cast<type1>(a.storage);                             \
   std::shared_ptr<type2> o_storage =                                           \
       std::dynamic_pointer_cast<type2>(out.storage);                           \
-  a_storage->gpu->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
+  a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
                                 {a_storage->buffer, o_storage->buffer})
 
 #define CPU_GRAD_INIT(type1, storage1, type2, storage2, type3, storage3)       \
@@ -46,7 +46,7 @@
       std::dynamic_pointer_cast<type2>(in.storage);                            \
   std::shared_ptr<type3> c_storage =                                           \
       std::dynamic_pointer_cast<type3>(dout.storage);                          \
-  a_storage->gpu->RequestKernel(                                               \
+  a_storage->dev->RequestKernel(                                               \
       OCLAPI::api_call, args, din.get_size(),                                  \
       {a_storage->buffer, b_storage->buffer, c_storage->buffer})
 

@@ -22,21 +22,22 @@ namespace Weed {
  * GPU-accessible storage
  */
 struct GpuStorage {
-  GpuDevicePtr gpu;
+  GpuDevicePtr dev;
   BufferPtr buffer;
+  bool is_mapped;
 
-  GpuStorage() : gpu(nullptr), buffer(nullptr) {}
+  GpuStorage() : dev(nullptr), buffer(nullptr), is_mapped(false) {}
 
   void AddAlloc(size_t sz) {
     size_t currentAlloc =
-        OCLEngine::Instance().AddToActiveAllocSize(gpu->deviceID, sz);
-    if (currentAlloc > gpu->device_context->GetGlobalAllocLimit()) {
-      OCLEngine::Instance().SubtractFromActiveAllocSize(gpu->deviceID, sz);
+        OCLEngine::Instance().AddToActiveAllocSize(dev->deviceID, sz);
+    if (currentAlloc > dev->device_context->GetGlobalAllocLimit()) {
+      OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
       throw bad_alloc("VRAM limits exceeded in GpuComplexStorage::AddAlloc()");
     }
   }
   void SubtractAlloc(size_t sz) {
-    OCLEngine::Instance().SubtractFromActiveAllocSize(gpu->deviceID, sz);
+    OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
   }
 };
 typedef std::shared_ptr<GpuStorage> GpuStoragePtr;

@@ -41,7 +41,7 @@
   lstorage a_storage = std::dynamic_pointer_cast<ltype>(a.storage);            \
   rstorage b_storage = std::dynamic_pointer_cast<rtype>(b.storage);            \
   ostorage o_storage = std::dynamic_pointer_cast<otype>(out.storage);          \
-  a_storage->gpu->RequestKernel(                                               \
+  a_storage->dev->RequestKernel(                                               \
       OCLAPI::call, args, d.M,                                                 \
       {a_storage->buffer, b_storage->buffer, o_storage->buffer}, d.N)
 

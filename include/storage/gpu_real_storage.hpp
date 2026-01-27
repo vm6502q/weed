@@ -20,8 +20,6 @@
 #error GPU files were included without either OpenCL and CUDA enabled.
 #endif
 
-#include <list>
-
 namespace Weed {
 /**
  * GPU-accessible storage for real data type elements
@@ -29,41 +27,48 @@ namespace Weed {
 struct GpuRealStorage : public RealStorage, public GpuStorage {
   RealPtr array;
 
-  GpuRealStorage(vecCapIntGpu n, int64_t did)
+  GpuRealStorage(vecCapIntGpu n, int64_t did, bool alloc = true)
       : RealStorage(DeviceTag::GPU, n), array(nullptr, [](real1 *) {}) {
-    gpu = OCLEngine::Instance().GetWeedDevice(did);
-    AddAlloc(sizeof(real1) * size);
-    buffer = MakeBuffer(n);
+    dev = OCLEngine::Instance().GetWeedDevice(did);
+    if (alloc) {
+      AddAlloc(sizeof(real1) * size);
+      buffer = MakeBuffer(n);
+    }
   }
 
   GpuRealStorage(std::vector<real1> val, int64_t did)
       : RealStorage(DeviceTag::GPU, val.size()), array(Alloc(val.size())) {
-    gpu = OCLEngine::Instance().GetWeedDevice(did);
+    dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(real1) * size);
     std::copy(val.begin(), val.end(), array.get());
     buffer = MakeBuffer(val.size());
     array.reset();
   }
 
-  virtual ~GpuRealStorage() { SubtractAlloc(sizeof(real1) * size); }
+  virtual ~GpuRealStorage() {
+    if (is_mapped) {
+      dev->UnlockSync(buffer, array.get());
+    }
+    SubtractAlloc(sizeof(real1) * size);
+  }
 
   void AddAlloc(size_t sz) {
     size_t currentAlloc =
-        OCLEngine::Instance().AddToActiveAllocSize(gpu->deviceID, sz);
-    if (currentAlloc > gpu->device_context->GetGlobalAllocLimit()) {
-      OCLEngine::Instance().SubtractFromActiveAllocSize(gpu->deviceID, sz);
+        OCLEngine::Instance().AddToActiveAllocSize(dev->deviceID, sz);
+    if (currentAlloc > dev->device_context->GetGlobalAllocLimit()) {
+      OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
       throw bad_alloc("VRAM limits exceeded in GpuComplexStorage::AddAlloc()");
     }
   }
   void SubtractAlloc(size_t sz) {
-    OCLEngine::Instance().SubtractFromActiveAllocSize(gpu->deviceID, sz);
+    OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
   }
 
-  int64_t get_device_id() override { return gpu->deviceID; }
+  int64_t get_device_id() override { return dev->deviceID; }
 
-  void FillZeros() override { gpu->ClearRealBuffer(buffer, size); }
-  void FillOnes() override { gpu->FillOnesReal(buffer, size); }
-  void FillValue(real1 v) override { gpu->FillValueReal(buffer, size, v); }
+  void FillZeros() override { dev->ClearRealBuffer(buffer, size); }
+  void FillOnes() override { dev->FillOnesReal(buffer, size); }
+  void FillValue(real1 v) override { dev->FillValueReal(buffer, size, v); }
 
   StoragePtr Upcast(DType dt) override {
     if (dt == DType::REAL) {
@@ -71,27 +76,27 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     }
 
     GpuComplexStoragePtr n =
-        std::make_shared<GpuComplexStorage>(size, gpu->deviceID);
-    gpu->UpcastRealBuffer(buffer, n->buffer, size);
+        std::make_shared<GpuComplexStorage>(size, dev->deviceID);
+    dev->UpcastRealBuffer(buffer, n->buffer, size);
 
     return n;
   };
 
   BufferPtr MakeBuffer(vecCapIntGpu n) {
-    if (gpu->device_context->use_host_mem) {
+    if (dev->device_context->use_host_mem) {
       if (!array) {
         array = Alloc(n);
       }
 
-      return gpu->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
                              sizeof(real1) * n, array.get());
     }
 
     if (!array) {
-      return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
+      return dev->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
     }
 
-    return gpu->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
+    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
                            sizeof(real1) * n, array.get());
   }
 
@@ -101,8 +106,11 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
           "GpuRealStorage::operator[] argument out-of-bounds!");
     }
 
-    return gpu->GetReal(buffer, (vecCapIntGpu)idx);
+    return dev->GetReal(buffer, (vecCapIntGpu)idx);
   }
+
+  StoragePtr cpu() override;
+  StoragePtr gpu(int64_t did = -1) override { return get_ptr(); };
 };
 typedef std::shared_ptr<GpuRealStorage> GpuRealStoragePtr;
 } // namespace Weed

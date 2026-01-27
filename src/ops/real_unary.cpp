@@ -37,7 +37,7 @@
       std::dynamic_pointer_cast<type2>(in.storage);                            \
   std::shared_ptr<type3> c_storage =                                           \
       std::dynamic_pointer_cast<type3>(dout.storage);                          \
-  a_storage->gpu->RequestKernel(                                               \
+  a_storage->dev->RequestKernel(                                               \
       OCLAPI::api_call, args, din.get_size(),                                  \
       {a_storage->buffer, b_storage->buffer, c_storage->buffer})
 
@@ -114,7 +114,7 @@ static void gpu_relu(const Tensor &a, Tensor &out) {
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->gpu->RequestKernel(OCLAPI::OCL_API_RELU, args, a.get_size(),
+  a_storage->dev->RequestKernel(OCLAPI::OCL_API_RELU, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer});
 }
 
@@ -186,7 +186,7 @@ static void gpu_sigmoid(const Tensor &a, Tensor &out) {
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->gpu->RequestKernel(OCLAPI::OCL_API_SIGMOID, args, a.get_size(),
+  a_storage->dev->RequestKernel(OCLAPI::OCL_API_SIGMOID, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer});
 }
 

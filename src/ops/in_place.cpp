@@ -54,7 +54,7 @@
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \
       std::dynamic_pointer_cast<type2>(b.storage);                             \
-  a_storage->gpu->RequestKernel(api_call, args, a.get_size(),                  \
+  a_storage->dev->RequestKernel(api_call, args, a.get_size(),                  \
                                 {a_storage->buffer, b_storage->buffer})
 
 namespace Weed {

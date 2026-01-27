@@ -22,7 +22,7 @@
   std::shared_ptr<type3> x_storage =                                           \
       std::dynamic_pointer_cast<type3>(x.storage);                             \
   const complex v = complex(l, h);                                             \
-  x_storage->gpu->RequestKernel(                                               \
+  x_storage->dev->RequestKernel(                                               \
       OCLAPI::api_call, args, x.get_size(),                                    \
       {dy_storage->buffer, x_storage->buffer, dx_storage->buffer}, 0U, &v)
 
@@ -107,7 +107,7 @@ void ClampKernel::gpu(const Tensor &a, const real1 &l, const real1 &h,
   GpuRealStoragePtr o_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
   const complex v = complex(l, h);
-  a_storage->gpu->RequestKernel(OCLAPI::OCL_API_CLAMP, args, a.get_size(),
+  a_storage->dev->RequestKernel(OCLAPI::OCL_API_CLAMP, args, a.get_size(),
                                 {a_storage->buffer, o_storage->buffer}, 0U, &v);
 }
 void ClampKernel::gpu_grad_real(const Tensor &dy, const Tensor &x,

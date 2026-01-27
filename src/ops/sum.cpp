@@ -55,13 +55,13 @@
   }                                                                            \
   type *pa = a_storage->array.get();                                           \
   const bool isMapped =                                                        \
-      a_storage->gpu->LockSync(a_storage->buffer, sizeof(type) * sz, pa);      \
+      a_storage->dev->LockSync(a_storage->buffer, sizeof(type) * sz, pa);      \
   CPU_SUM(type);
 
 #define GPU_WRITE(SetType)                                                     \
-  o_storage->gpu->SetType(t, o_storage->buffer, 0U);                           \
+  o_storage->dev->SetType(t, o_storage->buffer, 0U);                           \
   if (isMapped) {                                                              \
-    a_storage->gpu->UnlockSync(a_storage->buffer, a_storage->array.get());     \
+    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->array.get());     \
   } else {                                                                     \
     a_storage->array = nullptr;                                                \
   }

@@ -68,5 +68,15 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    * doubling stride)
    */
   virtual StoragePtr Upcast(DType dt) = 0;
+
+  /**
+   * Migrate storage to CPU
+   */
+  virtual StoragePtr cpu() = 0;
+
+  /**
+   * Migrate storage to GPU
+   */
+  virtual StoragePtr gpu(int64_t did = -1) = 0;
 };
 } // namespace Weed

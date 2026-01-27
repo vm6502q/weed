@@ -39,7 +39,7 @@
       std::dynamic_pointer_cast<type2>(b.storage);                             \
   std::shared_ptr<type3> o_storage =                                           \
       std::dynamic_pointer_cast<type3>(out.storage);                           \
-  a_storage->gpu->RequestKernel(                                               \
+  a_storage->dev->RequestKernel(                                               \
       api_call, args, out.get_size(),                                          \
       {a_storage->buffer, b_storage->buffer, o_storage->buffer})
 

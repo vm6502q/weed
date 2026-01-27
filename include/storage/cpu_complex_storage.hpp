@@ -13,6 +13,8 @@
 
 #include "storage/complex_storage.hpp"
 
+#include <vector>
+
 namespace Weed {
 /**
  * CPU-accessible storage for complex data type elements
@@ -41,6 +43,9 @@ struct CpuComplexStorage : ComplexStorage {
   }
 
   StoragePtr Upcast(DType dt) override { return get_ptr(); };
+
+  StoragePtr cpu() override { return get_ptr(); }
+  StoragePtr gpu(int64_t did = -1) override;
 };
 typedef std::shared_ptr<CpuComplexStorage> CpuComplexStoragePtr;
 } // namespace Weed

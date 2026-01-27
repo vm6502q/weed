@@ -19,8 +19,6 @@
 #error GPU files were included without either OpenCL and CUDA enabled.
 #endif
 
-#include <list>
-
 namespace Weed {
 /**
  * GPU-accessible storage for complex data type elements
@@ -28,45 +26,52 @@ namespace Weed {
 struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
   ComplexPtr array;
 
-  GpuComplexStorage(vecCapIntGpu n, int64_t did)
+  GpuComplexStorage(vecCapIntGpu n, int64_t did, bool alloc = true)
       : ComplexStorage(DeviceTag::GPU, n), array(nullptr, [](complex *) {}) {
-    gpu = OCLEngine::Instance().GetWeedDevice(did);
-    AddAlloc(sizeof(complex) * size);
-    buffer = MakeBuffer(n);
+    dev = OCLEngine::Instance().GetWeedDevice(did);
+    if (alloc) {
+      AddAlloc(sizeof(complex) * size);
+      buffer = MakeBuffer(n);
+    }
   }
 
   GpuComplexStorage(std::vector<complex> val, int64_t did)
       : ComplexStorage(DeviceTag::GPU, val.size()), array(Alloc(val.size())) {
-    gpu = OCLEngine::Instance().GetWeedDevice(did);
+    dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(complex) * size);
     std::copy(val.begin(), val.end(), array.get());
     buffer = MakeBuffer(val.size());
     array.reset();
   }
 
-  virtual ~GpuComplexStorage() { SubtractAlloc(sizeof(complex) * size); }
+  virtual ~GpuComplexStorage() {
+    if (is_mapped) {
+      dev->UnlockSync(buffer, array.get());
+    }
+    SubtractAlloc(sizeof(complex) * size);
+  }
 
-  void FillZeros() override { gpu->ClearRealBuffer(buffer, size << 1U); }
-  void FillOnes() override { gpu->FillOnesComplex(buffer, size); }
-  void FillValue(complex v) override { gpu->FillValueComplex(buffer, size, v); }
+  void FillZeros() override { dev->ClearRealBuffer(buffer, size << 1U); }
+  void FillOnes() override { dev->FillOnesComplex(buffer, size); }
+  void FillValue(complex v) override { dev->FillValueComplex(buffer, size, v); }
 
   StoragePtr Upcast(DType dt) { return get_ptr(); };
 
   BufferPtr MakeBuffer(vecCapIntGpu n) {
-    if (gpu->device_context->use_host_mem) {
+    if (dev->device_context->use_host_mem) {
       if (!array) {
         array = Alloc(n);
       }
 
-      return gpu->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
                              sizeof(complex) * n, array.get());
     }
 
     if (!array) {
-      return gpu->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
+      return dev->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
     }
 
-    return gpu->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
+    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
                            sizeof(complex) * n, array.get());
   }
 
@@ -78,8 +83,11 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
 
     vecCapIntGpu i = ((vecCapIntGpu)idx) << 1U;
 
-    return complex(gpu->GetReal(buffer, i), gpu->GetReal(buffer, i + 1U));
+    return complex(dev->GetReal(buffer, i), dev->GetReal(buffer, i + 1U));
   }
+
+  StoragePtr cpu() override;
+  StoragePtr gpu(int64_t did = -1) override { return get_ptr(); };
 };
 typedef std::shared_ptr<GpuComplexStorage> GpuComplexStoragePtr;
 } // namespace Weed

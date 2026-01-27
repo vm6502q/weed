@@ -56,11 +56,11 @@
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
   const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
-  BufferPtr shapeBuffer = a_storage->gpu->MakeBuffer(                          \
+  BufferPtr shapeBuffer = a_storage->dev->MakeBuffer(                          \
       flags, sizeof(vecCapIntGpu) * a.shape.size(), (void *)&(a.shape[0U]));   \
-  BufferPtr strideBuffer = a_storage->gpu->MakeBuffer(                         \
+  BufferPtr strideBuffer = a_storage->dev->MakeBuffer(                         \
       flags, sizeof(vecCapIntGpu) * a.stride.size(), (void *)&(a.stride[0U])); \
-  a_storage->gpu->RequestKernel(                                               \
+  a_storage->dev->RequestKernel(                                               \
       api_call, args, out.get_size(),                                          \
       {a_storage->buffer, o_storage->buffer, shapeBuffer, strideBuffer})
 

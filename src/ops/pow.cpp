@@ -27,7 +27,7 @@
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
   const complex v = complex(p);                                                \
-  a_storage->gpu->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
+  a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
                                 {a_storage->buffer, o_storage->buffer}, 0U,    \
                                 &v)
 

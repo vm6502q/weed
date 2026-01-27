@@ -112,6 +112,8 @@ if (ENABLE_OPENCL)
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
         src/devices/gpu_device.cpp
+        src/storage/gpu_complex_storage.cpp
+        src/storage/gpu_real_storage.cpp
         )
 
     if (APPLE OR CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc")

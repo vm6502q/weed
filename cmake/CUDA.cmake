@@ -57,6 +57,8 @@ if (ENABLE_CUDA)
         src/common/cudaengine.cu
         src/common/qengine.cu
         src/devices/gpu_device.cpp
+        src/storage/gpu_complex_storage.cpp
+        src/storage/gpu_real_storage.cpp
         )
 
 endif(ENABLE_CUDA)
