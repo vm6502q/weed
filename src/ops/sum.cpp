@@ -18,6 +18,11 @@
 #include "storage/gpu_real_storage.hpp"
 #endif
 
+#define GPU_INIT(strg)                                                         \
+  std::shared_ptr<strg> a_storage =                                            \
+      std::dynamic_pointer_cast<strg>(a.storage);                              \
+  std::shared_ptr<strg> o_storage = std::dynamic_pointer_cast<strg>(out.storage)
+
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
 
@@ -90,35 +95,23 @@ static void cpu_mean_complex(const Tensor &a, Tensor &out) {
 }
 #if ENABLE_GPU
 static void gpu_sum_real(const Tensor &a, Tensor &out) {
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
+  GPU_INIT(GpuRealStorage);
   GPU_SUM(real1);
   GPU_WRITE(SetReal);
 }
 static void gpu_mean_real(const Tensor &a, Tensor &out) {
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
+  GPU_INIT(GpuRealStorage);
   GPU_SUM(real1);
   t /= sz;
   GPU_WRITE(SetReal);
 }
 static void gpu_sum_complex(const Tensor &a, Tensor &out) {
-  GpuComplexStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuComplexStorage>(a.storage);
-  GpuComplexStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuComplexStorage>(out.storage);
+  GPU_INIT(GpuComplexStorage);
   GPU_SUM(complex);
   GPU_WRITE(SetComplex);
 }
 static void gpu_mean_complex(const Tensor &a, Tensor &out) {
-  GpuComplexStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuComplexStorage>(a.storage);
-  GpuComplexStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuComplexStorage>(out.storage);
+  GPU_INIT(GpuComplexStorage);
   GPU_SUM(complex);
   t /= (real1)sz;
   GPU_WRITE(SetComplex);
