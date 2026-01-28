@@ -20,13 +20,14 @@ namespace Weed {
 /**
  * CPU-accessible storage for real data type elements
  */
-struct SparseCpuRealStorage : Storage {
+struct SparseCpuRealStorage : RealStorage {
   RealSparseVector data;
   real1 default_value;
 
-  SparseCpuRealStorage(tcapint n) : Storage(DeviceTag::CPU, DType::Real, n), default_value(ZERO_R1) {}
+  SparseCpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, DType::Real, n), default_value(ZERO_R1) {}
 
-  SparseCpuRealStorage(std::vector<real1> v, real1 dv = ZERO_R1) : default_value(dv) {
+  SparseCpuRealStorage(std::vector<real1> v, real1 dv = ZERO_R1)
+    : RealStorage(DeviceTag::CPU, i.size()), default_value(dv) {
     for (size_t i = 0U; i < v.size(); ++i) {
       if (v != ev) {
         data[i] == v;
