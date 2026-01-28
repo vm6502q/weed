@@ -13,12 +13,12 @@
 #include "common/parallel_for.hpp"
 #include "storage/all_storage.hpp"
 
-#define CPU_HEADER(lstorage, rstorage, ostorage) \
+#define CPU_HEADER(lstorage, rstorage, ostorage)                               \
   MatrixDim d = get_dim(a, b, out);                                            \
                                                                                \
   GET_STORAGE(lstorage, a, pa);                                                \
   GET_STORAGE(rstorage, b, pb);                                                \
-  GET_STORAGE(ostorage, out, po);                                              \
+  GET_STORAGE(ostorage, out, po);
 
 #define CPU_BY_TYPE(stype)                                                     \
   pfControl.par_for(0, (d.M) * (d.N),                                          \
@@ -35,6 +35,7 @@
                       po->write(o_idx, sum);                                   \
                     })
 
+#if 0
 #define SPARSE_CPU_BY_TYPE(stype, storage1, storage2)                          \
   GET_STORAGE(storage1, a, sa);                                                \
   GET_STORAGE(storage2, b, sb);                                                \
@@ -60,6 +61,7 @@
                       const auto o_idx = d.O_o + i * d.O_s0 + j * d.O_s1;      \
                       po->write(o_idx, sum);                                   \
                     })
+#endif
 
 #define GPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, call)   \
   MatrixDim d = get_dim(a, b, out);                                            \
@@ -122,37 +124,49 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
 
 void MatMulKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   CPU_HEADER(RealStorage, RealStorage, RealStorage);
+#if 0
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
     SPARSE_CPU_BY_TYPE(real1, SparseCpuRealStorage, SparseCpuRealStorage);
   } else {
     CPU_BY_TYPE(real1);
   }
+#endif
+  CPU_BY_TYPE(real1);
 }
 void MatMulKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
   CPU_HEADER(ComplexStorage, ComplexStorage, ComplexStorage);
+#if 0
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
     SPARSE_CPU_BY_TYPE(complex, SparseCpuComplexStorage, SparseCpuComplexStorage);
   } else {
     CPU_BY_TYPE(complex);
   }
+#endif
+  CPU_BY_TYPE(complex);
 }
 void MatMulKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                     Tensor &out) {
   CPU_HEADER(ComplexStorage, RealStorage, ComplexStorage);
+#if 0
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
     SPARSE_CPU_BY_TYPE(complex, SparseCpuComplexStorage, SparseCpuRealStorage);
   } else {
     CPU_BY_TYPE(complex);
   }
+#endif
+  CPU_BY_TYPE(complex);
 }
 void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                      Tensor &out) {
   CPU_HEADER(RealStorage, ComplexStorage, ComplexStorage);
+#if 0
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
     SPARSE_CPU_BY_TYPE(complex, SparseCpuRealStorage, SparseCpuComplexStorage);
   } else {
     CPU_BY_TYPE(complex);
   }
+#endif
+  CPU_BY_TYPE(complex);
 }
 
 #if ENABLE_GPU
