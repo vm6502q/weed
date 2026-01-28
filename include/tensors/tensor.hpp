@@ -41,7 +41,7 @@ struct Tensor {
         grad_node(nullptr), grad(nullptr) {}
   Tensor(std::vector<tcapint> shp, std::vector<tcapint> strd, bool rg = false,
          DType dtype = DType::REAL, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
-         int64_t did = -1);
+         int64_t did = -1, bool s = false);
   Tensor(std::vector<real1> val, std::vector<tcapint> shp,
          std::vector<tcapint> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);

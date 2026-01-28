@@ -27,7 +27,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
   /**
    * Get the complex element at the position
    */
-  complex operator[](tcapint idx) {
+  complex operator[](tcapint idx) override {
     const auto it = data.find(idx);
     if (it == data.end()) {
       return default_value;
@@ -35,7 +35,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
     return it->second;
   }
 
-  void write(tcapint idx, complex val) {
+  void write(tcapint idx, complex val) override {
     if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
@@ -43,7 +43,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
     }
   }
 
-  void add(tcapint idx, complex val) {
+  void add(tcapint idx, complex val) override {
     if (std::abs(val) > FP_NORM_EPSILON) {
       data[idx] += val;
     }
@@ -65,7 +65,9 @@ struct SparseCpuComplexStorage : ComplexStorage {
   StoragePtr Upcast(DType dt) override { return get_ptr(); }
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(int64_t did = -1) override;
+  StoragePtr gpu(int64_t did = -1) override {
+    throw std::domain_error("Don't use sparse Storage::gpu() (for now)!");
+  }
 };
 typedef std::shared_ptr<SparseCpuComplexStorage> SparseCpuComplexStoragePtr;
 } // namespace Weed

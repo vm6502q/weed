@@ -30,7 +30,7 @@ struct SparseCpuRealStorage : RealStorage {
   /**
    * Get the real element at the position
    */
-  real1 operator[](tcapint idx) {
+  real1 operator[](tcapint idx) override {
     const auto it = data.find(idx);
     if (it == data.end()) {
       return default_value;
@@ -38,7 +38,7 @@ struct SparseCpuRealStorage : RealStorage {
     return it->second;
   }
 
-  void write(tcapint idx, real1 val) {
+  void write(tcapint idx, real1 val) override {
     if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
@@ -46,7 +46,7 @@ struct SparseCpuRealStorage : RealStorage {
     }
   }
 
-  void add(tcapint idx, real1 val) {
+  void add(tcapint idx, real1 val) override {
     if (std::abs(val) > FP_NORM_EPSILON) {
       data[idx] += val;
     }
@@ -80,7 +80,9 @@ struct SparseCpuRealStorage : RealStorage {
   }
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(int64_t did = -1) override;
+  StoragePtr gpu(int64_t did = -1) override {
+    throw std::domain_error("Don't use sparse Storage::gpu() (for now)!");
+  }
 };
 typedef std::shared_ptr<SparseCpuRealStorage> SparseCpuRealStoragePtr;
 } // namespace Weed
