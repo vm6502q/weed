@@ -93,7 +93,8 @@
   }
 
 #define SPARSE_CPU_3_RUN(storage1, storage2)                                   \
-  if (a.storage->is_sparse() && b.storage->is_sparse()) {                      \
+  if (out.storage->is_sparse() && a.storage->is_sparse() &&                    \
+      b.storage->is_sparse()) {                                                \
     GET_STORAGE(storage1, a, sa);                                              \
     GET_STORAGE(storage2, b, sb);                                              \
     std::set<tcapint> keys;                                                    \
