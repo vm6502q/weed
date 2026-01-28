@@ -42,10 +42,10 @@ struct Tensor {
   Tensor(std::vector<tcapint> shp, std::vector<tcapint> strd, bool rg = false,
          DType dtype = DType::REAL, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
          int64_t did = -1, bool s = true, bool gs = true);
-  Tensor(const std::vector<real1>& val, std::vector<tcapint> shp,
+  Tensor(const std::vector<real1> &val, std::vector<tcapint> shp,
          std::vector<tcapint> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
-  Tensor(const std::vector<complex>& val, std::vector<tcapint> shp,
+  Tensor(const std::vector<complex> &val, std::vector<tcapint> shp,
          std::vector<tcapint> strd, bool rg = false,
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1);
   Tensor(real1 val, bool rg = false, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
