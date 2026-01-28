@@ -406,7 +406,7 @@ TEST_CASE("test_real_scalar_log") {
   TensorPtr y = Tensor::log(x, R(2));
   Tensor::backward(y);
 
-  REQUIRE(GET_REAL(y) == R(3));
+  REQUIRE_FLOAT(GET_REAL(y), R(3));
   REQUIRE_FLOAT(GET_REAL(x->grad), R(1 / (3 * std::log(2))));
 }
 
