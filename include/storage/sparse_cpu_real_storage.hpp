@@ -30,6 +30,11 @@ struct SparseCpuRealStorage : RealStorage {
   bool is_sparse() override { return true; }
 
   /**
+   * Return the sparse element count
+   */
+  tcapint get_sparse_size() override { return data.size(); }
+
+  /**
    * Get the real element at the position
    */
   real1 operator[](tcapint idx) override {

@@ -45,6 +45,11 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   }
 
   /**
+   * If sparse, return the sparse element count (or otherwise the dense size)
+   */
+  virtual tcapint get_sparse_size() { return size; }
+
+  /**
    * Is this Storage sparse?
    */
   virtual bool is_sparse() { return false; }

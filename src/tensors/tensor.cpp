@@ -28,7 +28,9 @@
 #include <unordered_set>
 
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
-#define IS_SPARSE(a) (a && a->storage->is_sparse())
+#define IS_SPARSE(a)                                                           \
+  (a && a->storage->is_sparse() &&                                             \
+   (a->storage->get_sparse_size() <= (a->storage->size >> 1U)))
 
 #define INIT_DEVICE_STORAGE(val, GpuType, CpuType)                             \
   switch (dtag) {                                                              \

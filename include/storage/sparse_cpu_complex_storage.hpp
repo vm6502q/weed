@@ -27,6 +27,11 @@ struct SparseCpuComplexStorage : ComplexStorage {
   bool is_sparse() override { return true; }
 
   /**
+   * Return the sparse element count
+   */
+  tcapint get_sparse_size() override { return data.size(); }
+
+  /**
    * Get the complex element at the position
    */
   complex operator[](tcapint idx) override {
