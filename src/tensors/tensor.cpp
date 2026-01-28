@@ -640,12 +640,12 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
         "Cannot mix Tensor devices in Tensor::matmul(a, b)!");
   }
 
-  if ((a->shape.size() != 2U) || (b->shape.size() != 2U)) {
+  if (a->shape.size() != 2U) {
     throw std::invalid_argument(
         "Tensor::matmul is only for matrices with 2 indices!");
   }
 
-  const std::vector<tcapint> shp = {a->shape[0U], b->shape[1U]};
+  const std::vector<tcapint> shp = {a->shape[0U], b->shape.size() > 1U ? b->shape[1U] : 1U};
   const std::vector<tcapint> str = {1U, a->shape[0U]};
   const bool rg = a->requires_grad() || b->requires_grad();
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
