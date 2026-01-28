@@ -13,13 +13,14 @@
 #include "common/parallel_for.hpp"
 #include "storage/all_storage.hpp"
 
-#define CPU_BY_TYPE(lstorage, rstorage, ostorage, stype)                       \
+#define CPU_HEADER(lstorage, rstorage, ostorage) \
   MatrixDim d = get_dim(a, b, out);                                            \
                                                                                \
   GET_STORAGE(lstorage, a, pa);                                                \
   GET_STORAGE(rstorage, b, pb);                                                \
   GET_STORAGE(ostorage, out, po);                                              \
-                                                                               \
+
+#define CPU_BY_TYPE(stype)                                                     \
   pfControl.par_for(0, (d.M) * (d.N),                                          \
                     [&](const tcapint &l, const unsigned &cpu) {               \
                       const tcapint i = l / d.N;                               \
@@ -34,14 +35,7 @@
                       po->write(o_idx, sum);                                   \
                     })
 
-#define SPARSE_CPU_BY_TYPE(lstorage, rstorage, ostorage, stype, storage1,      \
-                           storage2)                                           \
-  MatrixDim d = get_dim(a, b, out);                                            \
-                                                                               \
-  GET_STORAGE(lstorage, a, pa);                                                \
-  GET_STORAGE(rstorage, b, pb);                                                \
-  GET_STORAGE(ostorage, out, po);                                              \
-                                                                               \
+#define SPARSE_CPU_BY_TYPE(stype, storage1, storage2)                          \
   GET_STORAGE(storage1, a, sa);                                                \
   GET_STORAGE(storage2, b, sb);                                                \
   std::set<tcapint> keys;                                                      \
@@ -127,37 +121,37 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
 }
 
 void MatMulKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
+  CPU_HEADER(RealStorage, RealStorage, RealStorage);
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
-    SPARSE_CPU_BY_TYPE(RealStorage, RealStorage, RealStorage, real1,
-                       SparseCpuRealStorage, SparseCpuRealStorage);
+    SPARSE_CPU_BY_TYPE(real1, SparseCpuRealStorage, SparseCpuRealStorage);
   } else {
-    CPU_BY_TYPE(RealStorage, RealStorage, RealStorage, real1);
+    CPU_BY_TYPE(real1);
   }
 }
 void MatMulKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
+  CPU_HEADER(ComplexStorage, ComplexStorage, ComplexStorage);
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
-    SPARSE_CPU_BY_TYPE(ComplexStorage, ComplexStorage, ComplexStorage, complex,
-                       SparseCpuComplexStorage, SparseCpuComplexStorage);
+    SPARSE_CPU_BY_TYPE(complex, SparseCpuComplexStorage, SparseCpuComplexStorage);
   } else {
-    CPU_BY_TYPE(ComplexStorage, ComplexStorage, ComplexStorage, complex);
+    CPU_BY_TYPE(complex);
   }
 }
 void MatMulKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                     Tensor &out) {
+  CPU_HEADER(ComplexStorage, RealStorage, ComplexStorage);
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
-    SPARSE_CPU_BY_TYPE(ComplexStorage, RealStorage, ComplexStorage, complex,
-                       SparseCpuComplexStorage, SparseCpuRealStorage);
+    SPARSE_CPU_BY_TYPE(complex, SparseCpuComplexStorage, SparseCpuRealStorage);
   } else {
-    CPU_BY_TYPE(ComplexStorage, RealStorage, ComplexStorage, complex);
+    CPU_BY_TYPE(complex);
   }
 }
 void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                      Tensor &out) {
+  CPU_HEADER(RealStorage, ComplexStorage, ComplexStorage);
   if (a.storage->is_sparse() && b.storage->is_sparse()) {
-    SPARSE_CPU_BY_TYPE(RealStorage, ComplexStorage, ComplexStorage, complex,
-                       SparseCpuRealStorage, SparseCpuComplexStorage);
+    SPARSE_CPU_BY_TYPE(complex, SparseCpuRealStorage, SparseCpuComplexStorage);
   } else {
-    CPU_BY_TYPE(RealStorage, ComplexStorage, ComplexStorage, complex);
+    CPU_BY_TYPE(complex);
   }
 }
 
