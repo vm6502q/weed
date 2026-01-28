@@ -25,12 +25,12 @@
 
 #define ADD_KERNEL()                                                           \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    po.write(i *I_o, pa[O_a + i * I_a] + pb[O_b + i * I_b]);                   \
+    po->write(i *I_o, (*pa)[O_a + i * I_a] + (*pb)[O_b + i * I_b]);            \
   })
 
 #define MUL_KERNEL()                                                           \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    po.write(i *I_o, pa[O_a + i * I_a] * pb[O_b + i * I_b]);                   \
+    po->write(i *I_o, (*pa)[O_a + i * I_a] * (*pb)[O_b + i * I_b]);            \
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, api_call)                             \

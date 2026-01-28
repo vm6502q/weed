@@ -48,44 +48,46 @@
 
 namespace Weed {
 static void cpu_real_pow(const Tensor &a, const real1 &p, Tensor &out) {
-  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, (real1)std::pow((real1_s)pa[O_a + i * I_a], (real1_s)p));
+    po->write(i * I_o,
+              (real1)std::pow((real1_s)(*pa)[O_a + i * I_a], (real1_s)p));
   });
 }
 static void cpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(RealStorage, RealStorage);
   const real1 log_b = (real1)std::log((real1_s)b);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, (real1)std::exp((real1_s)(pa[O_a + i * I_a] * log_b)));
+    po->write(i * I_o,
+              (real1)std::exp((real1_s)((*pa)[O_a + i * I_a] * log_b)));
   });
 }
 static void cpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(RealStorage, RealStorage);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o,
-             (real1)(std::log((real1_s)pa[O_a + i * I_a])) * inv_log_b);
+    po->write(i * I_o,
+              (real1)(std::log((real1_s)(*pa)[O_a + i * I_a])) * inv_log_b);
   });
 }
 static void cpu_complex_pow(const Tensor &a, const real1 &p, Tensor &out) {
-  CPU_INIT_2(CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_2(ComplexStorage, ComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, std::pow(pa[O_a + i * I_a], p));
+    po->write(i * I_o, std::pow((*pa)[O_a + i * I_a], p));
   });
 }
 static void cpu_complex_exp(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_2(ComplexStorage, ComplexStorage);
   const real1 log_b = (real1)std::log((real1_s)b);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, std::exp(pa[O_a + i * I_a] * log_b));
+    po->write(i * I_o, std::exp((*pa)[O_a + i * I_a] * log_b));
   });
 }
 static void cpu_complex_log(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_2(ComplexStorage, ComplexStorage);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, std::log(pa[O_a + i * I_a]) * inv_log_b);
+    po->write(i * I_o, std::log((*pa)[O_a + i * I_a]) * inv_log_b);
   });
 }
 #if ENABLE_GPU

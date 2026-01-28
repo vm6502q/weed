@@ -13,7 +13,7 @@
 #include "common/parallel_for.hpp"
 #include "storage/all_storage.hpp"
 
-#define CPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, stype)  \
+#define CPU_BY_TYPE(lstorage, rstorage, ostorage, stype)                       \
   MatrixDim d = get_dim(a, b, out);                                            \
                                                                                \
   GET_STORAGE(lstorage, a, pa);                                                \
@@ -28,10 +28,10 @@
                       for (tcapint k = 0; k < d.K; ++k) {                      \
                         const auto a_idx = d.A_o + i * d.A_s0 + k * d.A_s1;    \
                         const auto b_idx = d.B_o + k * d.B_s0 + j * d.B_s1;    \
-                        sum += pa[a_idx] * pb[b_idx];                          \
+                        sum += (*pa)[a_idx] * (*pb)[b_idx];                    \
                       }                                                        \
                       const auto o_idx = d.O_o + i * d.O_s0 + j * d.O_s1;      \
-                      po.write(o_idx, sum);                                    \
+                      po->write(o_idx, sum);                                   \
                     })
 
 #define GPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, call)   \
@@ -94,22 +94,18 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
 }
 
 void MatMulKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_BY_TYPE(real1, CpuRealStorage, real1, CpuRealStorage, real1,
-              CpuRealStorage, real1);
+  CPU_BY_TYPE(RealStorage, RealStorage, RealStorage, real1);
 }
 void MatMulKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_BY_TYPE(complex, CpuComplexStorage, complex, CpuComplexStorage, complex,
-              CpuComplexStorage, complex);
+  CPU_BY_TYPE(ComplexStorage, ComplexStorage, ComplexStorage, complex);
 }
 void MatMulKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                     Tensor &out) {
-  CPU_BY_TYPE(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
-              CpuComplexStorage, complex);
+  CPU_BY_TYPE(ComplexStorage, RealStorage, ComplexStorage, complex);
 }
 void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                      Tensor &out) {
-  CPU_BY_TYPE(real1, CpuRealStorage, complex, CpuComplexStorage, complex,
-              CpuComplexStorage, complex);
+  CPU_BY_TYPE(RealStorage, ComplexStorage, ComplexStorage, complex);
 }
 
 #if ENABLE_GPU

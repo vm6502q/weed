@@ -15,7 +15,7 @@
 
 #define SUB_KERNEL()                                                           \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    po.write(i *I_o, pa[O_a + i * I_a] - pb[O_b + i * I_b]);                   \
+    po->write(i *I_o, (*pa)[O_a + i * I_a] - (*pb)[O_b + i * I_b]);            \
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, type3, api_call)                      \
@@ -44,21 +44,21 @@
 
 namespace Weed {
 void SubKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
+  CPU_INIT_3(RealStorage, RealStorage, RealStorage);
   SUB_KERNEL();
 }
 void SubKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_3(ComplexStorage, ComplexStorage, ComplexStorage);
   SUB_KERNEL();
 }
 void SubKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                  Tensor &out) {
-  CPU_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
+  CPU_INIT_3(ComplexStorage, RealStorage, ComplexStorage);
   SUB_KERNEL();
 }
 void SubKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                   Tensor &out) {
-  CPU_INIT_3(CpuRealStorage, CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_3(RealStorage, ComplexStorage, ComplexStorage);
   SUB_KERNEL();
 }
 

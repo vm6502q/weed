@@ -81,4 +81,5 @@ struct ComplexStorage : Storage {
 #endif
   }
 };
+typedef std::shared_ptr<ComplexStorage> ComplexStoragePtr;
 } // namespace Weed

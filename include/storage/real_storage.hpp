@@ -80,4 +80,5 @@ struct RealStorage : Storage {
 #endif
   }
 };
+typedef std::shared_ptr<RealStorage> RealStoragePtr;
 } // namespace Weed

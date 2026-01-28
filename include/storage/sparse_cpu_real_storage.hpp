@@ -72,6 +72,7 @@ struct SparseCpuRealStorage : RealStorage {
 
     SparseCpuComplexStoragePtr n =
         std::make_shared<SparseCpuComplexStorage>(size);
+    n->default_value = default_value;
     for (auto it = data.begin(); it != data.end(); ++it) {
       n->data[it->first] = (complex)it->second;
     }

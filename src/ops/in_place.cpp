@@ -25,12 +25,12 @@
 
 #define ADD_KERNEL()                                                           \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    pa.add(O_a + i * I_a, pb[O_b + i * I_b]);                                  \
+    pa->add(O_a + i * I_a, (*pb)[O_b + i * I_b]);                              \
   })
 
 #define SUB_KERNEL()                                                           \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    pa.add(O_a + i * I_a, -pb[O_b + i * I_b]);                                 \
+    pa->add(O_a + i * I_a, -(*pb)[O_b + i * I_b]);                             \
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, api_call)                             \
@@ -45,15 +45,15 @@
 
 namespace Weed {
 static void cpu_real_add(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2_IN_PLACE(RealStorage, RealStorage);
   ADD_KERNEL();
 }
 static void cpu_complex_add(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_2_IN_PLACE(ComplexStorage, ComplexStorage);
   ADD_KERNEL();
 }
 static void cpu_mixed_add(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(CpuComplexStorage, CpuRealStorage);
+  CPU_INIT_2_IN_PLACE(ComplexStorage, RealStorage);
   ADD_KERNEL();
 }
 #if ENABLE_GPU
@@ -72,15 +72,15 @@ static void gpu_mixed_add(Tensor &a, const Tensor &b) {
 #endif
 
 static void cpu_real_sub(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2_IN_PLACE(RealStorage, RealStorage);
   SUB_KERNEL();
 }
 static void cpu_complex_sub(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_2_IN_PLACE(ComplexStorage, ComplexStorage);
   SUB_KERNEL();
 }
 static void cpu_mixed_sub(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(CpuComplexStorage, CpuRealStorage);
+  CPU_INIT_2_IN_PLACE(ComplexStorage, RealStorage);
   SUB_KERNEL();
 }
 

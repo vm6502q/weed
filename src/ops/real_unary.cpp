@@ -43,36 +43,36 @@
 
 namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, std::max(pa[O_a + i * I_a], ZERO_R1));
+    po->write(i * I_o, std::max((*pa)[O_a + i * I_a], ZERO_R1));
   });
 }
 
 static void cpu_relu_grad_real(Tensor &din, const Tensor &in,
                                const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(RealStorage, RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    if (pi[O_i + i * I_i] > 0) {
-      pdi.write(O_d + i * I_d, po[O_o + i * I_o]);
+    if ((*pi)[O_i + i * I_i] > 0) {
+      pdi->write(O_d + i * I_d, (*po)[O_o + i * I_o]);
     }
   });
 }
 static void cpu_relu_grad_complex(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, RealStorage, ComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    if (pi[O_i + i * I_i] > 0) {
-      pdi.write(O_d + i * I_d, po[O_o + i * I_o]);
+    if ((*pi)[O_i + i * I_i] > 0) {
+      pdi->write(O_d + i * I_d, (*po)[O_o + i * I_o]);
     }
   });
 }
 static void cpu_relu_grad_mixed(Tensor &din, const Tensor &in,
                                 const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    if (pi[O_i + i * I_i] > 0) {
-      pdi.write(O_d + i * I_d, po[O_o + i * I_o]);
+    if ((*pi)[O_i + i * I_i] > 0) {
+      pdi->write(O_d + i * I_d, (*po)[O_o + i * I_o]);
     }
   });
 }
@@ -108,34 +108,34 @@ static void gpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 #endif
 
 static void cpu_sigmoid(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, ONE_R1 / (ONE_R1 + exp(-pa[O_a + i * I_a])));
+    po->write(i * I_o, ONE_R1 / (ONE_R1 + exp(-(*pa)[O_a + i * I_a])));
   });
 }
 
 static void cpu_sigmoid_grad_real(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(RealStorage, RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 yi = pi[O_i + i * I_i];
-    pdi.write(O_d + i * I_d, yi * (ONE_R1 - yi) * po[O_o + i * I_o]);
+    const real1 yi = (*pi)[O_i + i * I_i];
+    pdi->write(O_d + i * I_d, yi * (ONE_R1 - yi) * (*po)[O_o + i * I_o]);
   });
 }
 static void cpu_sigmoid_grad_complex(Tensor &din, const Tensor &in,
                                      const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, RealStorage, ComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 yi = pi[O_i + i * I_i];
-    pdi.write(O_d + i * I_d, yi * (ONE_R1 - yi) * po[O_o + i * I_o]);
+    const real1 yi = (*pi)[O_i + i * I_i];
+    pdi->write(O_d + i * I_d, yi * (ONE_R1 - yi) * (*po)[O_o + i * I_o]);
   });
 }
 static void cpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 yi = pi[O_i + i * I_i];
-    pdi.write(O_d + i * I_d, yi * (ONE_R1 - yi) * po[O_o + i * I_o]);
+    const real1 yi = (*pi)[O_i + i * I_i];
+    pdi->write(O_d + i * I_d, yi * (ONE_R1 - yi) * (*po)[O_o + i * I_o]);
   });
 }
 

@@ -27,7 +27,7 @@
   unsigned cpuCount = (unsigned)std::min(n, (size_t)pfControl.GetNumCores());  \
   std::vector<type> total(cpuCount, ZERO_R1);                                  \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    total[cpu] += pa[O_a + i * I_a];                                           \
+    total[cpu] += (*pa)[O_a + i * I_a];                                        \
   });                                                                          \
   type &t = total[0U];                                                         \
   for (size_t i = 1U; i < cpuCount; ++i) {                                     \
@@ -53,35 +53,35 @@
 
 namespace Weed {
 static void cpu_sum_real(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2_SCALAR(RealStorage, RealStorage);
   CPU_SUM(real1);
-  po.write(0U, t);
+  po->write(0U, t);
 }
 static void cpu_mean_real(const Tensor &a, Tensor &out) {
   cpu_sum_real(a, out);
-  GET_STORAGE(CpuRealStorage, out, po);
-  po.write(0U, po[0U] / (real1)a.get_size());
+  GET_STORAGE(RealStorage, out, po);
+  po->write(0U, (*po)[0U] / (real1)a.get_size());
 }
 static void cpu_sum_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(CpuComplexStorage, CpuComplexStorage);
+  CPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
   CPU_SUM(complex);
-  po.write(0U, t);
+  po->write(0U, t);
 }
 static void cpu_mean_complex(const Tensor &a, Tensor &out) {
   cpu_sum_complex(a, out);
-  GET_STORAGE(CpuComplexStorage, out, po);
-  po.write(0U, po[0U] / (real1)a.get_size());
+  GET_STORAGE(ComplexStorage, out, po);
+  po->write(0U, (*po)[0U] / (real1)a.get_size());
 }
 #if ENABLE_GPU
 static void gpu_sum_real(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(GpuRealStorage, GpuRealStorage);
+  GPU_INIT_2_SCALAR(RealStorage, RealStorage);
   GpuRealStorage a_storage = *static_cast<GpuRealStorage *>(a.storage.get());
   GpuRealStorage o_storage = *static_cast<GpuRealStorage *>(out.storage.get());
   GPU_SUM(real1);
   GPU_WRITE(SetReal);
 }
 static void gpu_mean_real(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(GpuRealStorage, GpuRealStorage);
+  GPU_INIT_2_SCALAR(RealStorage, RealStorage);
   GpuRealStorage a_storage = *static_cast<GpuRealStorage *>(a.storage.get());
   GpuRealStorage o_storage = *static_cast<GpuRealStorage *>(out.storage.get());
   GPU_SUM(real1);
@@ -89,7 +89,7 @@ static void gpu_mean_real(const Tensor &a, Tensor &out) {
   GPU_WRITE(SetReal);
 }
 static void gpu_sum_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(GpuComplexStorage, GpuComplexStorage);
+  GPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
   GpuComplexStorage a_storage =
       *static_cast<GpuComplexStorage *>(a.storage.get());
   GpuComplexStorage o_storage =
@@ -98,7 +98,7 @@ static void gpu_sum_complex(const Tensor &a, Tensor &out) {
   GPU_WRITE(SetComplex);
 }
 static void gpu_mean_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(GpuComplexStorage, GpuComplexStorage);
+  GPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
   GpuComplexStorage a_storage =
       *static_cast<GpuComplexStorage *>(a.storage.get());
   GpuComplexStorage o_storage =

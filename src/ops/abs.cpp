@@ -66,16 +66,16 @@
   }
 namespace Weed {
 void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    real1 tmp = pa[O_a + i * I_a];
-    po.write(i * I_o, (tmp < ZERO_R1) ? -tmp : tmp);
+    real1 tmp = (*pa)[O_a + i * I_a];
+    po->write(i * I_o, (tmp < ZERO_R1) ? -tmp : tmp);
   });
 }
 void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(CpuComplexStorage, CpuRealStorage);
+  CPU_INIT_2(ComplexStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(i * I_o, (real1)std::abs(pa[O_a + i * I_a]));
+    po->write(i * I_o, (real1)std::abs((*pa)[O_a + i * I_a]));
   });
 }
 #if ENABLE_GPU
@@ -111,64 +111,64 @@ void AbsKernel::abs(const Tensor &a, Tensor &out) {
 
 void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(RealStorage, RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 tmp = pi[O_i + i * I_i];
+    const real1 tmp = (*pi)[O_i + i * I_i];
     if (tmp != ZERO_R1) {
-      const real1 tmp_o = po[O_o + i * I_o];
-      pdi.add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
+      const real1 tmp_o = (*po)[O_o + i * I_o];
+      pdi->add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
     }
   });
 }
 void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, RealStorage, ComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 tmp = pi[O_i + i * I_i];
+    const real1 tmp = (*pi)[O_i + i * I_i];
     if (tmp != ZERO_R1) {
-      const complex tmp_o = po[O_o + i * I_o];
-      pdi.add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
+      const complex tmp_o = (*po)[O_o + i * I_o];
+      pdi->add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
     }
   });
 }
 void AbsKernel::cpu_real_grad_mixed(Tensor &din, const Tensor &in,
                                     const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, RealStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 tmp = pi[O_i + i * I_i];
+    const real1 tmp = (*pi)[O_i + i * I_i];
     if (tmp != ZERO_R1) {
-      const real1 tmp_o = po[O_o + i * I_o];
-      pdi.add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
+      const real1 tmp_o = (*po)[O_o + i * I_o];
+      pdi->add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
     }
   });
 }
 void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, ComplexStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const complex tmp = pi[O_i + i * I_i];
+    const complex tmp = (*pi)[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
-      pdi.add(O_d + i * I_d, tmp * (po[O_o + i * I_o] / std::abs(tmp)));
+      pdi->add(O_d + i * I_d, tmp * ((*po)[O_o + i * I_o] / std::abs(tmp)));
     }
   });
 }
 void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuComplexStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, ComplexStorage, ComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const complex tmp = pi[O_i + i * I_i];
+    const complex tmp = (*pi)[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
-      pdi.add(O_d + i * I_d, po[O_o + i * I_o] * tmp / std::abs(tmp));
+      pdi->add(O_d + i * I_d, (*po)[O_o + i * I_o] * tmp / std::abs(tmp));
     }
   });
 }
 void AbsKernel::cpu_complex_grad_mixed(Tensor &din, const Tensor &in,
                                        const Tensor &dout) {
-  CPU_GRAD_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(ComplexStorage, ComplexStorage, RealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const complex tmp = pi[O_i + i * I_i];
+    const complex tmp = (*pi)[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
-      pdi.add(O_d + i * I_d, po[O_o + i * I_o] * tmp / std::abs(tmp));
+      pdi->add(O_d + i * I_d, (*po)[O_o + i * I_o] * tmp / std::abs(tmp));
     }
   });
 }

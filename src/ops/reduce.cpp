@@ -35,9 +35,9 @@
                                                                                \
     type sum = ZERO_R1;                                                        \
     for (tcapint j = 0U; j < a.shape[id]; ++j) {                               \
-      sum += pa[base + j * a.stride[id]];                                      \
+      sum += (*pa)[base + j * a.stride[id]];                                   \
     }                                                                          \
-    po.write(o *I_o, sum);                                                     \
+    po->write(o *I_o, sum);                                                    \
   });
 
 #define DISPATCH_GPU_KERNEL(type, api_call)                                    \
@@ -71,15 +71,15 @@
 
 namespace Weed {
 void ReduceKernel::cpu_real(const size_t &index, const Tensor &a, Tensor &out) {
-  GET_STORAGE(CpuRealStorage, a, pa);
-  GET_STORAGE(CpuRealStorage, out, po);
+  GET_STORAGE(RealStorage, a, pa);
+  GET_STORAGE(RealStorage, out, po);
 
   REDUCE_KERNEL(real1);
 }
 void ReduceKernel::cpu_complex(const size_t &index, const Tensor &a,
                                Tensor &out) {
-  GET_STORAGE(CpuComplexStorage, a, pa);
-  GET_STORAGE(CpuComplexStorage, out, po);
+  GET_STORAGE(ComplexStorage, a, pa);
+  GET_STORAGE(ComplexStorage, out, po);
 
   REDUCE_KERNEL(complex);
 }
