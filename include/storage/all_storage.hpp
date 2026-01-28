@@ -75,3 +75,27 @@
   GET_STORAGE(storage2, in, pi);                                               \
   GET_STORAGE(storage3, dout, po);                                             \
   size_t n = dout.storage->size
+
+#define SPARSE_CPU_RUN(strg)                                                   \
+  if (out.storage->is_sparse() && a.storage->is_sparse()) {                    \
+    GET_STORAGE(strg, a, sa);                                                  \
+    pfControl.par_for(sa->data, fn);                                           \
+  } else {                                                                     \
+    pfControl.par_for(0, n, fn);                                               \
+  }
+
+#define SPARSE_CPU_GRAD_RUN(storage1, storage2)                                \
+  if (din.storage->is_sparse() && dout.storage->is_sparse()) {                 \
+    GET_STORAGE(storage1, din, si);                                            \
+    GET_STORAGE(storage2, dout, so);                                           \
+    std::set<tcapint> keys;                                                    \
+    for (auto it = si->data.begin(); it != si->data.end(); ++it) {             \
+      keys.insert(it->first);                                                  \
+    }                                                                          \
+    for (auto it = so->data.begin(); it != so->data.end(); ++it) {             \
+      keys.insert(it->first);                                                  \
+    }                                                                          \
+    pfControl.par_for(keys, fn);                                               \
+  } else {                                                                     \
+    pfControl.par_for(0, n, fn);                                               \
+  }
