@@ -14,12 +14,6 @@
 #include "storage/all_storage.hpp"
 
 #define SUB_KERNEL()                                                           \
-  const tcapint I_a = a.stride[0U];                                            \
-  const tcapint O_a = a.offset;                                                \
-  const tcapint I_b = b.stride[0U];                                            \
-  const tcapint O_b = b.offset;                                                \
-  const tcapint I_o = out.stride[0U];                                          \
-  const size_t n = out.get_size();                                             \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
     po.write(i *I_o, pa[O_a + i * I_a] - pb[O_b + i * I_b]);                   \
   })
@@ -50,33 +44,21 @@
 
 namespace Weed {
 void SubKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-  GET_STORAGE(CpuRealStorage, a, pa);
-  GET_STORAGE(CpuRealStorage, b, pb);
-  GET_STORAGE(CpuRealStorage, out, po);
-
+  CPU_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
   SUB_KERNEL();
 }
 void SubKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-  GET_STORAGE(CpuComplexStorage, a, pa);
-  GET_STORAGE(CpuComplexStorage, b, pb);
-  GET_STORAGE(CpuComplexStorage, out, po);
-
+  CPU_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuComplexStorage);
   SUB_KERNEL();
 }
 void SubKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                  Tensor &out) {
-  GET_STORAGE(CpuComplexStorage, a, pa);
-  GET_STORAGE(CpuRealStorage, b, pb);
-  GET_STORAGE(CpuComplexStorage, out, po);
-
+  CPU_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
   SUB_KERNEL();
 }
 void SubKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                   Tensor &out) {
-  GET_STORAGE(CpuRealStorage, a, pa);
-  GET_STORAGE(CpuComplexStorage, b, pb);
-  GET_STORAGE(CpuComplexStorage, out, po);
-
+  CPU_INIT_3(CpuRealStorage, CpuComplexStorage, CpuComplexStorage);
   SUB_KERNEL();
 }
 
