@@ -59,8 +59,20 @@ public:
   void par_for_inc(const tcapint begin, const tcapint itemCount, IncrementFunc,
                    ParallelFunc fn);
 
-  /** Call fn once for every numerical value between begin and end. */
+  /**
+   * Call fn once for every numerical value between begin and end.
+   */
   void par_for(const tcapint begin, const tcapint end, ParallelFunc fn);
+
+  /**
+   * Call fn once for every value in a sparse map.
+   */
+  void par_for_map(const std::map<tcapint, real1> &sparseMap, ParallelFunc fn);
+  /**
+   * Call fn once for every value in a sparse map.
+   */
+  void par_for_map(const std::map<tcapint, complex> &sparseMap,
+                   ParallelFunc fn);
 };
 
 extern ParallelFor pfControl;

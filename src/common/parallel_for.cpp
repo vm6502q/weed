@@ -57,6 +57,30 @@ void ParallelFor::par_for(const tcapint begin, const tcapint end,
       begin, end - begin, [](const tcapint &i) { return i; }, fn);
 }
 
+void ParallelFor::par_for_map(const std::map<tcapint, real1> &sparseMap,
+                              ParallelFunc fn) {
+  par_for_inc(
+      0U, sparseMap.size(),
+      [&sparseMap](const tcapint &i) {
+        auto it = sparseMap.begin();
+        std::advance(it, i);
+        return it->first;
+      },
+      fn);
+}
+
+void ParallelFor::par_for_map(const std::map<tcapint, complex> &sparseMap,
+                              ParallelFunc fn) {
+  par_for_inc(
+      0U, sparseMap.size(),
+      [&sparseMap](const tcapint &i) {
+        auto it = sparseMap.begin();
+        std::advance(it, i);
+        return it->first;
+      },
+      fn);
+}
+
 #if ENABLE_PTHREAD
 /*
  * Iterate through the permutations a maximum of end-begin times, allowing the

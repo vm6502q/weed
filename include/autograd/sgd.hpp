@@ -33,7 +33,8 @@ inline void sgd_step(const std::vector<ParameterPtr> &params, real1 lr) {
     p->upcast(dt);
     alpha->match_shape(p->grad);
 
-    TensorPtr tmp = Tensor::allocate_like(p->grad, dt, false);
+    TensorPtr tmp = Tensor::allocate_like(p->grad, dt, false,
+                                          p->grad->storage->is_sparse());
     Weed::mul(*(alpha.get()), *(p->grad.get()), *(tmp.get()));
     Weed::add_in_place(*(p.get()), *(tmp.get()));
   }
