@@ -14,9 +14,9 @@
 #include "storage/all_storage.hpp"
 
 #define DIV_KERNEL()                                                           \
-  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
     po->write(i *I_o, (*pa)[O_a + i * I_a] / (*pb)[O_b + i * I_b]);            \
-  })
+  }
 
 #define DISPATCH_GPU_KERNEL(type, type2, type3, api_call)                      \
   const tcapint args[10U]{                                                     \
@@ -46,20 +46,24 @@ namespace Weed {
 void DivKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   CPU_INIT_3(RealStorage, RealStorage, RealStorage);
   DIV_KERNEL();
+  SPARSE_CPU_3_RUN(SparseCpuRealStorage, SparseCpuRealStorage);
 }
 void DivKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
   CPU_INIT_3(ComplexStorage, ComplexStorage, ComplexStorage);
   DIV_KERNEL();
+  SPARSE_CPU_3_RUN(SparseCpuComplexStorage, SparseCpuComplexStorage);
 }
 void DivKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                  Tensor &out) {
   CPU_INIT_3(ComplexStorage, RealStorage, ComplexStorage);
   DIV_KERNEL();
+  SPARSE_CPU_3_RUN(SparseCpuComplexStorage, SparseCpuRealStorage);
 }
 void DivKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                   Tensor &out) {
   CPU_INIT_3(RealStorage, ComplexStorage, ComplexStorage);
   DIV_KERNEL();
+  SPARSE_CPU_3_RUN(SparseCpuRealStorage, SparseCpuComplexStorage);
 }
 
 #if ENABLE_GPU
