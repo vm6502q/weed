@@ -32,7 +32,9 @@ struct CpuComplexStorage : ComplexStorage {
 
   complex operator[](tcapint idx) override { return data.get()[(size_t)idx]; }
 
-  virtual void write(tcapint idx, complex val) { data.get()[(size_t)idx] = val; }
+  virtual void write(tcapint idx, complex val) {
+    data.get()[(size_t)idx] = val;
+  }
 
   virtual void add(tcapint idx, complex val) { data.get()[(size_t)idx] += val; }
 
