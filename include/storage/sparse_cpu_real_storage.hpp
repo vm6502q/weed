@@ -25,16 +25,7 @@ struct SparseCpuRealStorage : RealStorage {
   real1 default_value;
 
   SparseCpuRealStorage(tcapint n)
-      : RealStorage(DeviceTag::CPU, DType::Real, n), default_value(ZERO_R1) {}
-
-  SparseCpuRealStorage(std::vector<real1> v, real1 dv = ZERO_R1)
-      : RealStorage(DeviceTag::CPU, i.size()), default_value(dv) {
-    for (size_t i = 0U; i < v.size(); ++i) {
-      if (v != ev) {
-        data[i] == v;
-      }
-    }
-  }
+      : RealStorage(DeviceTag::CPU, n, true), default_value(ZERO_R1) {}
 
   /**
    * Get the real element at the position
@@ -51,13 +42,13 @@ struct SparseCpuRealStorage : RealStorage {
     if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
-      data.get()[idx] = val;
+      data[idx] = val;
     }
   }
 
   void add(tcapint idx, real1 val) {
     if (std::abs(val) > FP_NORM_EPSILON) {
-      data.get()[idx] += val;
+      data[idx] += val;
     }
   }
 
@@ -81,8 +72,9 @@ struct SparseCpuRealStorage : RealStorage {
 
     SparseCpuComplexStoragePtr n =
         std::make_shared<SparseCpuComplexStorage>(size);
-    std::transform(data.get(), data.get() + size, n->data.get(),
-                   [](real1 v) { return complex(v, ZERO_R1); });
+    for (auto it = data.begin(); it != data.end(); ++it) {
+      n->data[it->first] = (complex)it->second;
+    }
 
     return n;
   }

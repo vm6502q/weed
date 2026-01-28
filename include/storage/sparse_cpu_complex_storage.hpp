@@ -17,21 +17,12 @@ namespace Weed {
 /**
  * CPU-accessible storage for real data type elements
  */
-struct SparseCpuRealStorage : ComplexStorage {
+struct SparseCpuComplexStorage : ComplexStorage {
   ComplexSparseVector data;
   complex default_value;
 
-  SparseCpuRealStorage(tcapint n)
-      : ComplexStorage(DeviceTag::CPU, n), default_value(ZERO_R1) {}
-
-  SparseCpuRealStorage(std::vector<complex> v, complex dv = ZERO_CMPLX)
-      : ComplexStorage(DeviceTag::CPU, i.size()), default_value(dv) {
-    for (size_t i = 0U; i < v.size(); ++i) {
-      if (v != ev) {
-        data[i] == v;
-      }
-    }
-  }
+  SparseCpuComplexStorage(tcapint n)
+      : ComplexStorage(DeviceTag::CPU, n, true), default_value(ZERO_R1) {}
 
   /**
    * Get the complex element at the position
@@ -48,13 +39,13 @@ struct SparseCpuRealStorage : ComplexStorage {
     if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
-      data.get()[idx] = val;
+      data[idx] = val;
     }
   }
 
   void add(tcapint idx, complex val) {
     if (std::abs(val) > FP_NORM_EPSILON) {
-      data.get()[idx] += val;
+      data[idx] += val;
     }
   }
 

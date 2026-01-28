@@ -23,10 +23,10 @@ struct CpuComplexStorage : ComplexStorage {
   ComplexPtr data;
 
   CpuComplexStorage(tcapint n)
-      : ComplexStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
+      : ComplexStorage(DeviceTag::CPU, n, false), data(Alloc(n)) {}
 
   CpuComplexStorage(std::vector<complex> i)
-      : ComplexStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
+      : ComplexStorage(DeviceTag::CPU, i.size(), false), data(Alloc(i.size())) {
     std::copy(i.begin(), i.end(), data.get());
   }
 

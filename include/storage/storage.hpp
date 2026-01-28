@@ -33,12 +33,16 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    */
   DType dtype;
   /**
+   * Is this storage spares?
+   */
+  bool sparse;
+  /**
    * Number of elements (of data type) in this storage
    */
   tcapint size;
 
-  Storage(DeviceTag dtg, DType dtp, tcapint n)
-      : device(dtg), dtype(dtp), size(n) {
+  Storage(DeviceTag dtg, DType dtp, tcapint n, bool s)
+      : device(dtg), dtype(dtp), sparse(s), size(n) {
     if (!size) {
       throw std::invalid_argument("Storage must have size of at least 1!");
     }

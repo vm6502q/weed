@@ -18,7 +18,8 @@ namespace Weed {
  * Storage for real data type elements
  */
 struct RealStorage : Storage {
-  RealStorage(DeviceTag dtg, tcapint n) : Storage(dtg, DType::REAL, n) {}
+  RealStorage(DeviceTag dtg, tcapint n, bool s)
+      : Storage(dtg, DType::REAL, n, s) {}
 
   /**
    * Get the real element at the position

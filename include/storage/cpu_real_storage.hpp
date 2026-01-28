@@ -23,10 +23,11 @@ namespace Weed {
 struct CpuRealStorage : RealStorage {
   RealPtr data;
 
-  CpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
+  CpuRealStorage(tcapint n)
+      : RealStorage(DeviceTag::CPU, n, false), data(Alloc(n)) {}
 
   CpuRealStorage(std::vector<real1> i)
-      : RealStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
+      : RealStorage(DeviceTag::CPU, i.size(), false), data(Alloc(i.size())) {
     std::copy(i.begin(), i.end(), data.get());
   }
 

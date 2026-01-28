@@ -28,7 +28,7 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
   RealPtr array;
 
   GpuRealStorage(tcapint n, int64_t did, bool alloc = true)
-      : RealStorage(DeviceTag::GPU, n), array(nullptr, [](real1 *) {}) {
+      : RealStorage(DeviceTag::GPU, n, false), array(nullptr, [](real1 *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     if (alloc) {
       AddAlloc(sizeof(real1) * size);
@@ -37,7 +37,8 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
   }
 
   GpuRealStorage(std::vector<real1> val, int64_t did)
-      : RealStorage(DeviceTag::GPU, val.size()), array(Alloc(val.size())) {
+      : RealStorage(DeviceTag::GPU, val.size(), false),
+        array(Alloc(val.size())) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(real1) * size);
     std::copy(val.begin(), val.end(), array.get());
