@@ -15,11 +15,13 @@
 
 #define SUB_KERNEL()                                                           \
   const tcapint I_a = a.stride[0U];                                            \
+  const tcapint O_a = a.offset;                                                \
   const tcapint I_b = b.stride[0U];                                            \
+  const tcapint O_b = b.offset;                                                \
   const tcapint I_o = out.stride[0U];                                          \
   const size_t n = out.get_size();                                             \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    po[i * I_o] = pa[i * I_a] - pb[i * I_b];                                   \
+    po.write(i *I_o, pa[O_a + i * I_a] - pb[O_b + i * I_b]);                   \
   })
 
 #define DISPATCH_GPU_KERNEL(type, type2, type3, api_call)                      \
@@ -48,32 +50,32 @@
 
 namespace Weed {
 void SubKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-  CAST_STORAGE(pa, a, real1, CpuRealStorage);
-  CAST_STORAGE(pb, b, real1, CpuRealStorage);
-  CAST_STORAGE(po, out, real1, CpuRealStorage);
+  GET_STORAGE(CpuRealStorage, a, pa);
+  GET_STORAGE(CpuRealStorage, b, pb);
+  GET_STORAGE(CpuRealStorage, out, po);
 
   SUB_KERNEL();
 }
 void SubKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-  CAST_STORAGE(pa, a, complex, CpuComplexStorage);
-  CAST_STORAGE(pb, b, complex, CpuComplexStorage);
-  CAST_STORAGE(po, out, complex, CpuComplexStorage);
+  GET_STORAGE(CpuComplexStorage, a, pa);
+  GET_STORAGE(CpuComplexStorage, b, pb);
+  GET_STORAGE(CpuComplexStorage, out, po);
 
   SUB_KERNEL();
 }
 void SubKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                  Tensor &out) {
-  CAST_STORAGE(pa, a, complex, CpuComplexStorage);
-  CAST_STORAGE(pb, b, real1, CpuRealStorage);
-  CAST_STORAGE(po, out, complex, CpuComplexStorage);
+  GET_STORAGE(CpuComplexStorage, a, pa);
+  GET_STORAGE(CpuRealStorage, b, pb);
+  GET_STORAGE(CpuComplexStorage, out, po);
 
   SUB_KERNEL();
 }
 void SubKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                   Tensor &out) {
-  CAST_STORAGE(pa, a, real1, CpuRealStorage);
-  CAST_STORAGE(pb, b, complex, CpuComplexStorage);
-  CAST_STORAGE(po, out, complex, CpuComplexStorage);
+  GET_STORAGE(CpuRealStorage, a, pa);
+  GET_STORAGE(CpuComplexStorage, b, pb);
+  GET_STORAGE(CpuComplexStorage, out, po);
 
   SUB_KERNEL();
 }
