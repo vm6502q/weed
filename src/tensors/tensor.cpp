@@ -645,7 +645,8 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
         "Tensor::matmul is only for matrices with 2 indices!");
   }
 
-  const std::vector<tcapint> shp = {a->shape[0U], b->shape.size() > 1U ? b->shape[1U] : 1U};
+  const std::vector<tcapint> shp = {a->shape[0U],
+                                    b->shape.size() > 1U ? b->shape[1U] : 1U};
   const std::vector<tcapint> str = {1U, a->shape[0U]};
   const bool rg = a->requires_grad() || b->requires_grad();
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
@@ -670,8 +671,11 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           TensorPtr a_grad = a->grad;
           const DType &dt = get_dtype_by_presidence({b, out_grad});
           TensorPtr bt = transpose(b);
+          const std::vector<tcapint> shp = {
+              out->grad->shape[0U], bt->shape.size() > 1U ? bt->shape[1U] : 1U};
+          const std::vector<tcapint> str = {1U, out->grad->shape[0U]};
           TensorPtr tmp =
-              Tensor::allocate_like(a_grad, dt, false, IS_SPARSE(a));
+              Tensor::allocate_like(shp, str, a_grad, dt, false, IS_SPARSE(a));
           Weed::matmul(*(out->grad.get()), *(bt.get()), *(tmp.get()));
           a_grad->upcast(dt);
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -680,8 +684,12 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           TensorPtr b_grad = b->grad;
           const DType &dt = get_dtype_by_presidence({a, out_grad});
           TensorPtr at = transpose(a);
+          const std::vector<tcapint> shp = {
+              at->shape[0U],
+              out->grad->shape.size() > 1U ? out->grad->shape[1U] : 1U};
+          const std::vector<tcapint> str = {1U, at->shape[0U]};
           TensorPtr tmp =
-              Tensor::allocate_like(b_grad, dt, false, IS_SPARSE(a));
+              Tensor::allocate_like(shp, str, b_grad, dt, false, IS_SPARSE(a));
           Weed::matmul(*(at.get()), *(out->grad.get()), *(tmp.get()));
           b_grad->upcast(dt);
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));

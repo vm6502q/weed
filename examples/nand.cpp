@@ -33,8 +33,8 @@ int main() {
       std::vector<real1>{R(1), R(1), R(1), R(0)}, std::vector<tcapint>{4, 1},
       std::vector<tcapint>{1, 4}, false, DeviceTag::CPU);
 
-  Linear l1(2, 1, true, DType::REAL, DeviceTag::CPU);
-  Linear l2(1, 1, true, DType::REAL, DeviceTag::CPU);
+  Linear l1(2, 4, true, DType::REAL, DeviceTag::CPU);
+  Linear l2(4, 1, true, DType::REAL, DeviceTag::CPU);
 
   std::vector<ParameterPtr> params = l1.parameters();
   std::vector<ParameterPtr> params2 = l2.parameters();
@@ -47,8 +47,7 @@ int main() {
   real1 loss_r = ONE_R1;
 
   while ((epoch <= 1000) && (loss_r > 0.1)) {
-    TensorPtr y_pred =
-        Tensor::sigmoid(l2.forward(Tensor::sigmoid(l1.forward(x))));
+    TensorPtr y_pred = Tensor::sigmoid(l2.forward(l1.forward(x)));
     TensorPtr loss = mse_loss(y_pred, y);
 
     Tensor::backward(loss);
