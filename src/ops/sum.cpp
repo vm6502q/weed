@@ -23,6 +23,18 @@
     cpu(a, out);                                                               \
   }
 
+#define CPU_KERNEL(type, storage)                                              \
+  unsigned cpuCount = (unsigned)std::min(n, (size_t)pfControl.GetNumCores());  \
+  std::vector<type> total(cpuCount, ZERO_R1);                                  \
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
+    total[cpu] += (*pa)[O_a + i * I_a];                                        \
+  };                                                                           \
+  SPARSE_CPU_2_RUN(storage);                                                   \
+  type &t = total[0U];                                                         \
+  for (size_t i = 1U; i < cpuCount; ++i) {                                     \
+    t += total[i];                                                             \
+  }
+
 #define CPU_SUM(type)                                                          \
   unsigned cpuCount = (unsigned)std::min(n, (size_t)pfControl.GetNumCores());  \
   std::vector<type> total(cpuCount, ZERO_R1);                                  \
@@ -41,7 +53,7 @@
   type *gpa = a_storage.array.get();                                           \
   const bool isMapped =                                                        \
       a_storage.dev->LockSync(a_storage.buffer, sizeof(type) * n, gpa);        \
-  CPU_SUM(type);
+  CPU_SUM(type)
 
 #define GPU_WRITE(SetType)                                                     \
   o_storage.dev->SetType(t, o_storage.buffer, 0U);                             \
@@ -54,7 +66,7 @@
 namespace Weed {
 static void cpu_sum_real(const Tensor &a, Tensor &out) {
   CPU_INIT_2_SCALAR(RealStorage, RealStorage);
-  CPU_SUM(real1);
+  CPU_KERNEL(real1, SparseCpuRealStorage);
   po->write(0U, t);
 }
 static void cpu_mean_real(const Tensor &a, Tensor &out) {
@@ -64,7 +76,7 @@ static void cpu_mean_real(const Tensor &a, Tensor &out) {
 }
 static void cpu_sum_complex(const Tensor &a, Tensor &out) {
   CPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
-  CPU_SUM(complex);
+  CPU_KERNEL(complex, SparseCpuComplexStorage);
   po->write(0U, t);
 }
 static void cpu_mean_complex(const Tensor &a, Tensor &out) {
