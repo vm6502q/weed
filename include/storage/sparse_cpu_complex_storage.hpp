@@ -21,7 +21,8 @@ struct SparseCpuRealStorage : ComplexStorage {
   ComplexSparseVector data;
   complex default_value;
 
-  SparseCpuRealStorage(tcapint n) : ComplexStorage(DeviceTag::CPU, n), default_value(ZERO_R1) {}
+  SparseCpuRealStorage(tcapint n)
+      : ComplexStorage(DeviceTag::CPU, n), default_value(ZERO_R1) {}
 
   SparseCpuRealStorage(std::vector<complex> v, complex dv = ZERO_CMPLX)
       : ComplexStorage(DeviceTag::CPU, i.size()), default_value(dv) {

@@ -18,8 +18,8 @@
   const tcapint I_a = a.stride[0U];                                            \
   const tcapint O_o = out.offset;                                              \
   const tcapint I_o = out.stride[0U];                                          \
-  storage1 pa = *static_cast<storage1 *>(a.storage.get());                     \
-  storage2 po = *static_cast<storage2 *>(out.storage.get());                   \
+  GET_STORAGE(storage1, a, pa);                                                \
+  GET_STORAGE(storage2, out, po);                                              \
   size_t n = out.storage->size
 
 #define GPU(type1, type2, api_call)                                            \
@@ -31,13 +31,16 @@
   a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
                                 {a_storage->buffer, o_storage->buffer})
 
-#define CPU_GRAD_INIT(type1, storage1, type2, storage2, type3, storage3)       \
+#define CPU_GRAD_INIT(storage1, storage2, storage3)                            \
+  const tcapint O_d = din.offset;                                              \
   const tcapint I_d = din.stride[0U];                                          \
+  const tcapint O_i = in.offset;                                               \
   const tcapint I_i = in.stride[0U];                                           \
+  const tcapint O_o = dout.offset;                                             \
   const tcapint I_o = dout.stride[0U];                                         \
-  CAST_STORAGE(pdi, din, type1, storage1);                                     \
-  CAST_STORAGE(pi, in, type2, storage2);                                       \
-  CAST_STORAGE(po, dout, type3, storage3);                                     \
+  GET_STORAGE(storage1, din, pdi);                                             \
+  GET_STORAGE(storage2, in, pi);                                               \
+  GET_STORAGE(storage3, dout, po);                                             \
   size_t n = dout.storage->size
 
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
@@ -129,70 +132,64 @@ void AbsKernel::abs(const Tensor &a, Tensor &out) {
 
 void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
-  CPU_GRAD_INIT(real1, CpuRealStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT(CpuRealStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 tmp = pi[i * I_i];
+    const real1 tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_R1) {
-      const real1 tmp_o = po[i * I_o];
-      pdi[i * I_d] += (tmp > ZERO_R1) ? tmp_o : -tmp_o;
+      const real1 tmp_o = po[O_o + i * I_o];
+      pdi.add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
     }
   });
 }
 void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
-                CpuComplexStorage);
+  CPU_GRAD_INIT(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 tmp = pi[i * I_i];
+    const real1 tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_R1) {
-      const complex tmp_o = po[i * I_o];
-      pdi[i * I_d] += (tmp > ZERO_R1) ? tmp_o : -tmp_o;
+      const complex tmp_o = po[O_o + i * I_o];
+      pdi.add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
     }
   });
 }
 void AbsKernel::cpu_real_grad_mixed(Tensor &din, const Tensor &in,
                                     const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 tmp = pi[i * I_i];
+    const real1 tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_R1) {
-      const real1 tmp_o = po[i * I_o];
-      pdi[i * I_d] += (tmp > ZERO_R1) ? tmp_o : -tmp_o;
+      const real1 tmp_o = po[O_o + i * I_o];
+      pdi.add(O_d + i * I_d, (tmp > ZERO_R1) ? tmp_o : -tmp_o);
     }
   });
 }
 void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, complex, CpuComplexStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const complex tmp = pi[i * I_i];
+    const complex tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
-      pdi[i * I_d] += tmp * (po[i * I_o] / std::abs(tmp));
+      pdi.add(O_d + i * I_d, tmp * (po[O_o + i * I_o] / std::abs(tmp)));
     }
   });
 }
 void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, complex, CpuComplexStorage, complex,
-                CpuComplexStorage);
+  CPU_GRAD_INIT(CpuComplexStorage, CpuComplexStorage, CpuComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const complex tmp = pi[i * I_i];
+    const complex tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
-      pdi[i * I_d] += po[i * I_o] * tmp / std::abs(tmp);
+      pdi.add(O_d + i * I_d, po[O_o + i * I_o] * tmp / std::abs(tmp));
     }
   });
 }
 void AbsKernel::cpu_complex_grad_mixed(Tensor &din, const Tensor &in,
                                        const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, complex, CpuComplexStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const complex tmp = pi[i * I_i];
+    const complex tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
-      pdi[i * I_d] += po[i * I_o] * tmp / std::abs(tmp);
+      pdi.add(O_d + i * I_d, po[O_o + i * I_o] * tmp / std::abs(tmp));
     }
   });
 }

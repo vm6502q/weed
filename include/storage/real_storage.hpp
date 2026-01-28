@@ -31,6 +31,11 @@ struct RealStorage : Storage {
   virtual void write(tcapint idx, real1 val) = 0;
 
   /**
+   * Add to the real element at the position
+   */
+  virtual void add(tcapint idx, real1 val) = 0;
+
+  /**
    * Fill the entire Storage with specified real value
    */
   virtual void FillValue(real1 v) = 0;

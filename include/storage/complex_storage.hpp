@@ -31,6 +31,11 @@ struct ComplexStorage : Storage {
   virtual void write(tcapint idx, complex val) = 0;
 
   /**
+   * Add to the real element at the position
+   */
+  virtual void add(tcapint idx, complex val) = 0;
+
+  /**
    * Fill the entire Storage with specified complex value
    */
   virtual void FillValue(complex v) = 0;

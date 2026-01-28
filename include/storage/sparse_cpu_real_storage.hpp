@@ -24,10 +24,11 @@ struct SparseCpuRealStorage : RealStorage {
   RealSparseVector data;
   real1 default_value;
 
-  SparseCpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, DType::Real, n), default_value(ZERO_R1) {}
+  SparseCpuRealStorage(tcapint n)
+      : RealStorage(DeviceTag::CPU, DType::Real, n), default_value(ZERO_R1) {}
 
   SparseCpuRealStorage(std::vector<real1> v, real1 dv = ZERO_R1)
-    : RealStorage(DeviceTag::CPU, i.size()), default_value(dv) {
+      : RealStorage(DeviceTag::CPU, i.size()), default_value(dv) {
     for (size_t i = 0U; i < v.size(); ++i) {
       if (v != ev) {
         data[i] == v;
@@ -64,7 +65,8 @@ struct SparseCpuRealStorage : RealStorage {
       return get_ptr();
     }
 
-    SparseCpuComplexStoragePtr n = std::make_shared<SparseCpuComplexStorage>(size);
+    SparseCpuComplexStoragePtr n =
+        std::make_shared<SparseCpuComplexStorage>(size);
     std::transform(data.get(), data.get() + size, n->data.get(),
                    [](real1 v) { return complex(v, ZERO_R1); });
 

@@ -34,6 +34,8 @@ struct CpuRealStorage : RealStorage {
 
   void write(tcapint idx, real1 val) { data.get()[(size_t)idx] = val; }
 
+  void add(tcapint idx, real1 val) { data.get()[(size_t)idx] += val; }
+
   void FillZeros() override {
     std::fill(data.get(), data.get() + size, ZERO_R1);
   }
