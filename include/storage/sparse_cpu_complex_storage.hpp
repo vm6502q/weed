@@ -44,6 +44,20 @@ struct SparseCpuRealStorage : ComplexStorage {
     return it->second;
   }
 
+  void write(tcapint idx, complex val) {
+    if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
+      data.erase(idx);
+    } else {
+      data.get()[idx] = val;
+    }
+  }
+
+  void add(tcapint idx, complex val) {
+    if (std::abs(val) > FP_NORM_EPSILON) {
+      data.get()[idx] += val;
+    }
+  }
+
   void FillZeros() override {
     data.clear();
     default_value = ZERO_CMPLX;

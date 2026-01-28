@@ -16,9 +16,9 @@
 #define CPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, stype)  \
   MatrixDim d = get_dim(a, b, out);                                            \
                                                                                \
-  CAST_STORAGE(pa, a, ltype, lstorage);                                        \
-  CAST_STORAGE(pb, b, rtype, rstorage);                                        \
-  CAST_STORAGE(po, out, otype, ostorage);                                      \
+  GET_STORAGE(lstorage, a, pa);                                                \
+  GET_STORAGE(rstorage, b, pb);                                                \
+  GET_STORAGE(ostorage, out, po);                                              \
                                                                                \
   pfControl.par_for(0, (d.M) * (d.N),                                          \
                     [&](const tcapint &l, const unsigned &cpu) {               \
@@ -31,7 +31,7 @@
                         sum += pa[a_idx] * pb[b_idx];                          \
                       }                                                        \
                       const auto o_idx = d.O_o + i * d.O_s0 + j * d.O_s1;      \
-                      po[o_idx] = sum;                                         \
+                      po.write(o_idx, sum);                                    \
                     })
 
 #define GPU_BY_TYPE(ltype, lstorage, rtype, rstorage, otype, ostorage, call)   \

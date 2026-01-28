@@ -47,6 +47,20 @@ struct SparseCpuRealStorage : RealStorage {
     return it->second;
   }
 
+  void write(tcapint idx, real1 val) {
+    if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
+      data.erase(idx);
+    } else {
+      data.get()[idx] = val;
+    }
+  }
+
+  void add(tcapint idx, real1 val) {
+    if (std::abs(val) > FP_NORM_EPSILON) {
+      data.get()[idx] += val;
+    }
+  }
+
   void FillZeros() override {
     data.clear();
     default_value = ZERO_R1;
