@@ -56,6 +56,10 @@ struct Tensor {
          DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
       : Tensor(std::vector<complex>{val}, std::vector<tcapint>{1},
                std::vector<tcapint>{0}, rg, dtag, did) {}
+  Tensor(RealSparseVector val, std::vector<tcapint> shp,
+         std::vector<tcapint> strd, bool rg = false);
+  Tensor(ComplexSparseVector val, std::vector<tcapint> shp,
+         std::vector<tcapint> strd, bool rg = false);
 
   bool validate_shape(const std::vector<tcapint> &shp,
                       const std::vector<tcapint> &s) {

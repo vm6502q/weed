@@ -189,6 +189,49 @@ Tensor::Tensor(std::vector<complex> val, std::vector<tcapint> shp,
   }
 }
 
+Tensor::Tensor(RealSparseVector val, std::vector<tcapint> shp,
+               std::vector<tcapint> strd, bool rg)
+    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+      grad(rg ? std::make_shared<Tensor>(shp, strd, false, DType::REAL,
+                                         DeviceTag::CPU)
+              : nullptr) {
+  if (shape.size() != stride.size()) {
+    throw std::invalid_argument(
+        "Tensor shape vector must have same length as stride vector!");
+  }
+  if (!validate_shape(shape, stride)) {
+    throw std::invalid_argument(
+        "Initial tensor shape and stride must be contiguous!");
+  }
+
+  storage = std::make_shared<SparseCpuRealStorage>(val, get_size());
+
+  if (rg) {
+    grad->storage->FillZeros();
+  }
+}
+Tensor::Tensor(ComplexSparseVector val, std::vector<tcapint> shp,
+               std::vector<tcapint> strd, bool rg)
+    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+      grad(rg ? std::make_shared<Tensor>(shp, strd, false, DType::COMPLEX,
+                                         DeviceTag::CPU)
+              : nullptr) {
+  if (shape.size() != stride.size()) {
+    throw std::invalid_argument(
+        "Tensor shape vector must have same length as stride vector!");
+  }
+  if (!validate_shape(shape, stride)) {
+    throw std::invalid_argument(
+        "Initial tensor shape and stride must be contiguous!");
+  }
+
+  storage = std::make_shared<SparseCpuComplexStorage>(val, get_size());
+
+  if (rg) {
+    grad->storage->FillZeros();
+  }
+}
+
 TensorPtr Tensor::operator[](tcapint idx) {
   if (idx > shape.back()) {
     throw std::invalid_argument("Tensor index out-of-range!");

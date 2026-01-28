@@ -23,6 +23,8 @@ namespace Weed {
 struct SparseCpuRealStorage : RealStorage {
   RealSparseVector data;
 
+  SparseCpuRealStorage(RealSparseVector v, tcapint n)
+      : RealStorage(DeviceTag::CPU, n), data(v) {}
   SparseCpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, n), data() {}
 
   bool is_sparse() override { return true; }
