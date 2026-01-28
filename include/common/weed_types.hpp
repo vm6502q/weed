@@ -18,6 +18,7 @@
 #include <complex>
 #include <cstddef>
 #include <limits>
+#include <map>
 #include <math.h>
 #include <memory>
 
@@ -237,6 +238,9 @@ WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
 #define PI_R1_CUDA PI_R1
 #endif
 #endif
+
+typedef std::map<tcapint, real1> RealSparseVector;
+typedef std::map<tcapint, complex> ComplexSparseVector;
 
 constexpr size_t SPARSE_KEY_BYTES = sizeof(tcapint) + sizeof(complex);
 

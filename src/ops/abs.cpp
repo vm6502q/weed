@@ -13,11 +13,13 @@
 #include "common/parallel_for.hpp"
 #include "storage/all_storage.hpp"
 
-#define CPU_INIT(type1, storage1, type2, storage2)                             \
+#define CPU_INIT(storage1, storage2)                                           \
+  const tcapint O_a = a.offset;                                                \
   const tcapint I_a = a.stride[0U];                                            \
+  const tcapint O_o = out.offset;                                              \
   const tcapint I_o = out.stride[0U];                                          \
-  CAST_STORAGE(pa, a, type1, storage1);                                        \
-  CAST_STORAGE(po, out, type2, storage2);                                      \
+  storage1 pa = *static_cast<storage1 *>(a.storage.get());                     \
+  storage2 po = *static_cast<storage2 *>(out.storage.get());                   \
   size_t n = out.storage->size
 
 #define GPU(type1, type2, api_call)                                            \
@@ -82,15 +84,16 @@
   }
 namespace Weed {
 void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
-  CPU_INIT(real1, CpuRealStorage, real1, CpuRealStorage);
+  CPU_INIT(CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po[i * I_o] = (pa[i * I_a] < ZERO_R1) ? -pa[i * I_a] : pa[i * I_a];
+    real1 tmp = pa[O_a + i * I_a];
+    po.write(O_o + i * I_o, (tmp < ZERO_R1) ? -tmp : tmp);
   });
 }
 void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT(complex, CpuComplexStorage, real1, CpuRealStorage);
+  CPU_INIT(CpuComplexStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po[i * I_o] = (real1)std::abs(pa[i * I_a]);
+    po.write(O_o + i * I_o, (real1)std::abs(pa[O_a + i * I_a]));
   });
 }
 #if ENABLE_GPU

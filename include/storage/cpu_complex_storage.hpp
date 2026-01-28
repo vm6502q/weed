@@ -32,6 +32,8 @@ struct CpuComplexStorage : ComplexStorage {
 
   complex operator[](tcapint idx) override { return data.get()[(size_t)idx]; }
 
+  void write(tcapint idx, complex val) { data.get()[(size_t)idx] = val; }
+
   void FillZeros() override {
     std::fill(data.get(), data.get() + size, ZERO_CMPLX);
   }

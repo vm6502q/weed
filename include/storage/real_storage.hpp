@@ -21,9 +21,14 @@ struct RealStorage : Storage {
   RealStorage(DeviceTag dtg, tcapint n) : Storage(dtg, DType::REAL, n) {}
 
   /**
-   * Get the complex element at the position
+   * Get the real element at the position
    */
   virtual real1 operator[](tcapint idx) = 0;
+
+  /**
+   * Set the real element at the position
+   */
+  virtual void write(tcapint idx, real1 val) = 0;
 
   /**
    * Fill the entire Storage with specified real value
