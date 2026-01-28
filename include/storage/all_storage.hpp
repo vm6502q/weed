@@ -97,15 +97,15 @@
   pfControl.par_for(keys, fn);
 
 #define SPARSE_CPU_2_SWITCH(storage1, storage2)                                \
-  if (a.storage->is_sparse() && b.storage->is_sparse()) {                      \
-    SPARSE_RUN(storage1, storage2);                                            \
+  if (b.storage->is_sparse()) {                                                \
+    GET_STORAGE(storage2, b, sb);                                              \
+    pfControl.par_for(sb->data, fn);                                           \
   } else {                                                                     \
     pfControl.par_for(0, n, fn);                                               \
   }
 
 #define SPARSE_CPU_3_RUN(storage1, storage2)                                   \
-  if (out.storage->is_sparse() && a.storage->is_sparse() &&                    \
-      b.storage->is_sparse()) {                                                \
+  if (a.storage->is_sparse() && b.storage->is_sparse()) {                      \
     GET_STORAGE(storage1, a, sa);                                              \
     GET_STORAGE(storage2, b, sb);                                              \
     std::set<tcapint> keys;                                                    \
