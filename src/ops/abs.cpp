@@ -13,15 +13,6 @@
 #include "common/parallel_for.hpp"
 #include "storage/all_storage.hpp"
 
-#define CPU_INIT(storage1, storage2)                                           \
-  const tcapint O_a = a.offset;                                                \
-  const tcapint I_a = a.stride[0U];                                            \
-  const tcapint O_o = out.offset;                                              \
-  const tcapint I_o = out.stride[0U];                                          \
-  GET_STORAGE(storage1, a, pa);                                                \
-  GET_STORAGE(storage2, out, po);                                              \
-  size_t n = out.storage->size
-
 #define GPU(type1, type2, api_call)                                            \
   GPU_ARGS();                                                                  \
   std::shared_ptr<type1> a_storage =                                           \
@@ -30,18 +21,6 @@
       std::dynamic_pointer_cast<type2>(out.storage);                           \
   a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
                                 {a_storage->buffer, o_storage->buffer})
-
-#define CPU_GRAD_INIT(storage1, storage2, storage3)                            \
-  const tcapint O_d = din.offset;                                              \
-  const tcapint I_d = din.stride[0U];                                          \
-  const tcapint O_i = in.offset;                                               \
-  const tcapint I_i = in.stride[0U];                                           \
-  const tcapint O_o = dout.offset;                                             \
-  const tcapint I_o = dout.stride[0U];                                         \
-  GET_STORAGE(storage1, din, pdi);                                             \
-  GET_STORAGE(storage2, in, pi);                                               \
-  GET_STORAGE(storage3, dout, po);                                             \
-  size_t n = dout.storage->size
 
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
   GPU_GRAD_ARGS();                                                             \
@@ -87,16 +66,16 @@
   }
 namespace Weed {
 void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
-  CPU_INIT(CpuRealStorage, CpuRealStorage);
+  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     real1 tmp = pa[O_a + i * I_a];
-    po.write(O_o + i * I_o, (tmp < ZERO_R1) ? -tmp : tmp);
+    po.write(i * I_o, (tmp < ZERO_R1) ? -tmp : tmp);
   });
 }
 void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT(CpuComplexStorage, CpuRealStorage);
+  CPU_INIT_2(CpuComplexStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po.write(O_o + i * I_o, (real1)std::abs(pa[O_a + i * I_a]));
+    po.write(i * I_o, (real1)std::abs(pa[O_a + i * I_a]));
   });
 }
 #if ENABLE_GPU
@@ -132,7 +111,7 @@ void AbsKernel::abs(const Tensor &a, Tensor &out) {
 
 void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
-  CPU_GRAD_INIT(CpuRealStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_R1) {
@@ -143,7 +122,7 @@ void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
 }
 void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_R1) {
@@ -154,7 +133,7 @@ void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
 }
 void AbsKernel::cpu_real_grad_mixed(Tensor &din, const Tensor &in,
                                     const Tensor &dout) {
-  CPU_GRAD_INIT(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const real1 tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_R1) {
@@ -165,7 +144,7 @@ void AbsKernel::cpu_real_grad_mixed(Tensor &din, const Tensor &in,
 }
 void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const complex tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
@@ -175,7 +154,7 @@ void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
 }
 void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
-  CPU_GRAD_INIT(CpuComplexStorage, CpuComplexStorage, CpuComplexStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const complex tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {
@@ -185,7 +164,7 @@ void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
 }
 void AbsKernel::cpu_complex_grad_mixed(Tensor &din, const Tensor &in,
                                        const Tensor &dout) {
-  CPU_GRAD_INIT(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuComplexStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
     const complex tmp = pi[O_i + i * I_i];
     if (tmp != ZERO_CMPLX) {

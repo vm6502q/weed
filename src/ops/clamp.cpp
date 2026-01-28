@@ -77,13 +77,9 @@
 namespace Weed {
 void ClampKernel::cpu(const Tensor &a, const real1 &l, const real1 &h,
                       Tensor &out) {
-  const tcapint I_a = a.stride[0U];
-  const tcapint I_o = out.stride[0U];
-  CAST_STORAGE(pa, a, real1, CpuRealStorage);
-  CAST_STORAGE(po, out, real1, CpuRealStorage);
-  size_t n = out.storage->size;
+  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po[i * I_o] = std::min(std::max(pa[i * I_a], l), h);
+    po.write(i * I_o, std::min(std::max(pa[O_a + i * I_a], l), h));
   });
 }
 void ClampKernel::cpu_grad_real(const Tensor &dy, const Tensor &x,

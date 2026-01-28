@@ -13,22 +13,6 @@
 #include "common/parallel_for.hpp"
 #include "storage/all_storage.hpp"
 
-#define CPU_INIT()                                                             \
-  const tcapint I_a = a.stride[0U];                                            \
-  const tcapint I_o = out.stride[0U];                                          \
-  CAST_STORAGE(pa, a, real1, CpuRealStorage);                                  \
-  CAST_STORAGE(po, out, real1, CpuRealStorage);                                \
-  size_t n = out.storage->size
-
-#define CPU_GRAD_INIT(type1, storage1, type2, storage2, type3, storage3)       \
-  const tcapint I_d = din.stride[0U];                                          \
-  const tcapint I_i = in.stride[0U];                                           \
-  const tcapint I_o = dout.stride[0U];                                         \
-  CAST_STORAGE(pdi, din, type1, storage1);                                     \
-  CAST_STORAGE(pi, in, type2, storage2);                                       \
-  CAST_STORAGE(po, dout, type3, storage3);                                     \
-  size_t n = dout.storage->size
-
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
   GPU_GRAD_ARGS();                                                             \
   std::shared_ptr<type1> a_storage =                                           \
@@ -59,39 +43,36 @@
 
 namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
-  CPU_INIT();
+  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po[i * I_o] = std::max(pa[i * I_a], ZERO_R1);
+    po.write(i * I_o, std::max(pa[O_a + i * I_a], ZERO_R1));
   });
 }
 
 static void cpu_relu_grad_real(Tensor &din, const Tensor &in,
                                const Tensor &dout) {
-  CPU_GRAD_INIT(real1, CpuRealStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    if (pi[i * I_i] > 0) {
-      pdi[i * I_d] += po[i * I_o];
+    if (pi[O_i + i * I_i] > 0) {
+      pdi.write(O_d + i * I_d, po[O_o + i * I_o]);
     }
   });
 }
 static void cpu_relu_grad_complex(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
-                CpuComplexStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    if (pi[i * I_i] > 0) {
-      pdi[i * I_d] += po[i * I_o];
+    if (pi[O_i + i * I_i] > 0) {
+      pdi.write(O_d + i * I_d, po[O_o + i * I_o]);
     }
   });
 }
 static void cpu_relu_grad_mixed(Tensor &din, const Tensor &in,
                                 const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    if (pi[i * I_i] > 0) {
-      pdi[i * I_d] += po[i * I_o];
+    if (pi[O_i + i * I_i] > 0) {
+      pdi.write(O_d + i * I_d, po[O_o + i * I_o]);
     }
   });
 }
@@ -127,37 +108,34 @@ static void gpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 #endif
 
 static void cpu_sigmoid(const Tensor &a, Tensor &out) {
-  CPU_INIT();
+  CPU_INIT_2(CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    po[i * I_o] = ONE_R1 / (ONE_R1 + exp(-pa[i * I_a]));
+    po.write(i * I_o, ONE_R1 / (ONE_R1 + exp(-pa[O_a + i * I_a])));
   });
 }
 
 static void cpu_sigmoid_grad_real(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
-  CPU_GRAD_INIT(real1, CpuRealStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuRealStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 yi = pi[i * I_i];
-    pdi[i * I_d] += yi * (ONE_R1 - yi) * po[i * I_o];
+    const real1 yi = pi[O_i + i * I_i];
+    pdi.write(O_d + i * I_d, yi * (ONE_R1 - yi) * po[O_o + i * I_o]);
   });
 }
 static void cpu_sigmoid_grad_complex(Tensor &din, const Tensor &in,
                                      const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, complex,
-                CpuComplexStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuComplexStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 yi = pi[i * I_i];
-    pdi[i * I_d] += yi * (ONE_R1 - yi) * po[i * I_o];
+    const real1 yi = pi[O_i + i * I_i];
+    pdi.write(O_d + i * I_d, yi * (ONE_R1 - yi) * po[O_o + i * I_o]);
   });
 }
 static void cpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
                                    const Tensor &dout) {
-  CPU_GRAD_INIT(complex, CpuComplexStorage, real1, CpuRealStorage, real1,
-                CpuRealStorage);
+  CPU_GRAD_INIT_3(CpuComplexStorage, CpuRealStorage, CpuRealStorage);
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {
-    const real1 yi = pi[i * I_i];
-    pdi[i * I_d] += yi * (ONE_R1 - yi) * po[i * I_o];
+    const real1 yi = pi[O_i + i * I_i];
+    pdi.write(O_d + i * I_d, yi * (ONE_R1 - yi) * po[O_o + i * I_o]);
   });
 }
 

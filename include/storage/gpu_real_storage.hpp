@@ -112,11 +112,11 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
   }
 
   void write(tcapint idx, real1 val) {
-    throw std::domain_error("Don't use GPU-based ComplexStorage::write()!");
+    throw std::domain_error("Don't use GPU-based RealStorage::write()!");
   }
 
   void add(tcapint idx, real1 val) {
-    throw std::domain_error("Don't use GPU-based ComplexStorage::add()!");
+    throw std::domain_error("Don't use GPU-based RealStorage::add()!");
   }
 
   StoragePtr cpu() override;

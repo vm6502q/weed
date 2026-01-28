@@ -93,7 +93,7 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
   }
 
   void add(tcapint idx, complex val) {
-    throw std::domain_error("Don't use GPU-based ComplexStorage::write()!");
+    throw std::domain_error("Don't use GPU-based ComplexStorage::add()!");
   }
 
   StoragePtr cpu() override;

@@ -11,17 +11,7 @@
 
 #include "ops/sum.hpp"
 #include "common/parallel_for.hpp"
-#include "storage/cpu_complex_storage.hpp"
-#include "storage/cpu_real_storage.hpp"
-#if ENABLE_GPU
-#include "storage/gpu_complex_storage.hpp"
-#include "storage/gpu_real_storage.hpp"
-#endif
-
-#define GPU_INIT(strg)                                                         \
-  std::shared_ptr<strg> a_storage =                                            \
-      std::dynamic_pointer_cast<strg>(a.storage);                              \
-  std::shared_ptr<strg> o_storage = std::dynamic_pointer_cast<strg>(out.storage)
+#include "storage/all_storage.hpp"
 
 #define CAST_STORAGE(out, in, type, ptr)                                       \
   type *out = static_cast<ptr *>(in.storage.get())->data.get() + in.offset
@@ -39,8 +29,8 @@
 #define CPU_SUM(type)                                                          \
   unsigned cpuCount = pfControl.GetNumCores();                                 \
   std::vector<type> total(cpuCount, ZERO_R1);                                  \
-  pfControl.par_for(0, sz, [&](const tcapint &i, const unsigned &cpu) {        \
-    total[cpu] += pa[i * I_a];                                                 \
+  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
+    total[cpu] += pa[O_a + i * I_a];                                           \
   });                                                                          \
   type t = ZERO_R1;                                                            \
   for (size_t i = 0U; i < cpuCount; ++i) {                                     \
@@ -48,32 +38,27 @@
   }
 
 #define GPU_SUM(type)                                                          \
-  const tcapint I_a = a.stride[0U];                                            \
-  size_t sz = a_storage->size;                                                 \
-  if (!(a_storage->array)) {                                                   \
-    a_storage->array = a_storage->Alloc(sz);                                   \
+  if (!(a_storage.array)) {                                                    \
+    a_storage.array = a_storage.Alloc(n);                                      \
   }                                                                            \
-  type *pa = a_storage->array.get();                                           \
+  type *gpa = a_storage.array.get();                                           \
   const bool isMapped =                                                        \
-      a_storage->dev->LockSync(a_storage->buffer, sizeof(type) * sz, pa);      \
+      a_storage.dev->LockSync(a_storage.buffer, sizeof(type) * n, gpa);        \
   CPU_SUM(type);
 
 #define GPU_WRITE(SetType)                                                     \
-  o_storage->dev->SetType(t, o_storage->buffer, 0U);                           \
+  o_storage.dev->SetType(t, o_storage.buffer, 0U);                             \
   if (isMapped) {                                                              \
-    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->array.get());     \
+    a_storage.dev->UnlockSync(a_storage.buffer, a_storage.array.get());        \
   } else {                                                                     \
-    a_storage->array = nullptr;                                                \
+    a_storage.array = nullptr;                                                 \
   }
 
 namespace Weed {
 static void cpu_sum_real(const Tensor &a, Tensor &out) {
-  const tcapint I_a = a.stride[0U];
-  CAST_STORAGE(pa, a, real1, CpuRealStorage);
-  CAST_STORAGE(po, out, real1, CpuRealStorage);
-  size_t sz = a.get_size();
+  CPU_INIT_2_SCALAR(CpuRealStorage, CpuRealStorage);
   CPU_SUM(real1);
-  po[0U] = t;
+  po.write(0U, t);
 }
 static void cpu_mean_real(const Tensor &a, Tensor &out) {
   cpu_sum_real(a, out);
@@ -81,12 +66,9 @@ static void cpu_mean_real(const Tensor &a, Tensor &out) {
   po[0U] /= a.get_size();
 }
 static void cpu_sum_complex(const Tensor &a, Tensor &out) {
-  const tcapint I_a = a.stride[0U];
-  CAST_STORAGE(pa, a, complex, CpuComplexStorage);
-  CAST_STORAGE(po, out, complex, CpuComplexStorage);
-  size_t sz = a.get_size();
+  CPU_INIT_2_SCALAR(CpuComplexStorage, CpuComplexStorage);
   CPU_SUM(complex);
-  po[0U] = t;
+  po.write(0U, t);
 }
 static void cpu_mean_complex(const Tensor &a, Tensor &out) {
   cpu_sum_complex(a, out);
@@ -95,25 +77,37 @@ static void cpu_mean_complex(const Tensor &a, Tensor &out) {
 }
 #if ENABLE_GPU
 static void gpu_sum_real(const Tensor &a, Tensor &out) {
-  GPU_INIT(GpuRealStorage);
+  CPU_INIT_2_SCALAR(GpuRealStorage, GpuRealStorage);
+  GpuRealStorage a_storage = *static_cast<GpuRealStorage *>(a.storage.get());
+  GpuRealStorage o_storage = *static_cast<GpuRealStorage *>(out.storage.get());
   GPU_SUM(real1);
   GPU_WRITE(SetReal);
 }
 static void gpu_mean_real(const Tensor &a, Tensor &out) {
-  GPU_INIT(GpuRealStorage);
+  CPU_INIT_2_SCALAR(GpuRealStorage, GpuRealStorage);
+  GpuRealStorage a_storage = *static_cast<GpuRealStorage *>(a.storage.get());
+  GpuRealStorage o_storage = *static_cast<GpuRealStorage *>(out.storage.get());
   GPU_SUM(real1);
-  t /= sz;
+  t /= n;
   GPU_WRITE(SetReal);
 }
 static void gpu_sum_complex(const Tensor &a, Tensor &out) {
-  GPU_INIT(GpuComplexStorage);
+  CPU_INIT_2_SCALAR(GpuComplexStorage, GpuComplexStorage);
+  GpuComplexStorage a_storage =
+      *static_cast<GpuComplexStorage *>(a.storage.get());
+  GpuComplexStorage o_storage =
+      *static_cast<GpuComplexStorage *>(out.storage.get());
   GPU_SUM(complex);
   GPU_WRITE(SetComplex);
 }
 static void gpu_mean_complex(const Tensor &a, Tensor &out) {
-  GPU_INIT(GpuComplexStorage);
+  CPU_INIT_2_SCALAR(GpuComplexStorage, GpuComplexStorage);
+  GpuComplexStorage a_storage =
+      *static_cast<GpuComplexStorage *>(a.storage.get());
+  GpuComplexStorage o_storage =
+      *static_cast<GpuComplexStorage *>(out.storage.get());
   GPU_SUM(complex);
-  t /= (real1)sz;
+  t /= n;
   GPU_WRITE(SetComplex);
 }
 #endif
