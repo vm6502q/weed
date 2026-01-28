@@ -29,8 +29,8 @@
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
     total[cpu] += pa[O_a + i * I_a];                                           \
   });                                                                          \
-  type t = ZERO_R1;                                                            \
-  for (size_t i = 0U; i < cpuCount; ++i) {                                     \
+  type &t = total[0U];                                                         \
+  for (size_t i = 1U; i < cpuCount; ++i) {                                     \
     t += total[i];                                                             \
   }
 
