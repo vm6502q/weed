@@ -104,7 +104,7 @@ struct Tensor {
     if (shape.empty()) {
       return ZERO_VCI;
     }
-    tcapint max_index = 0U;
+    tcapint max_index = 1U;
     for (size_t i = 0U; i < shape.size(); ++i) {
       max_index *= shape[i];
     }
