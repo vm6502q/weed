@@ -278,19 +278,19 @@ struct Tensor {
    * Element-wise power
    */
   static TensorPtr pow(TensorPtr a, real1 p);
-  static void make_pow_node(TensorPtr a, TensorPtr p, TensorPtr out);
+  static void make_pow_node(TensorPtr a, real1 p, TensorPtr out);
 
   /**
    * Element-wise logarithm
    */
   static TensorPtr exp(TensorPtr a, real1 b = E_R1);
-  static void make_exp_node(TensorPtr a, TensorPtr log_b, TensorPtr out);
+  static void make_exp_node(TensorPtr a, real1 log_b, TensorPtr out);
 
   /**
    * Element-wise logarithm
    */
   static TensorPtr log(TensorPtr a, real1 b = E_R1);
-  static void make_log_node(TensorPtr a, TensorPtr inv_log_b, TensorPtr out);
+  static void make_log_node(TensorPtr a, real1 inv_log_b, TensorPtr out);
 };
 
 inline TensorPtr operator+(TensorPtr left, TensorPtr right) {
