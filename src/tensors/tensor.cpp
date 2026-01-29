@@ -455,6 +455,7 @@ void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
         Weed::abs_grad(a_grad, *(a.get()), out_grad);
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -479,6 +480,7 @@ void Tensor::make_sigmoid_node(TensorPtr a, TensorPtr out) {
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
         Weed::sigmoid_grad(a_grad, *(out.get()), out_grad);
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -503,6 +505,7 @@ void Tensor::make_relu_node(TensorPtr a, TensorPtr out) {
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
         Weed::relu_grad(a_grad, *(a.get()), out_grad);
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -528,6 +531,7 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
         dx->upcast(dy->storage->dtype);
         dy->upcast(dx->storage->dtype);
         Weed::clamp_grad(*(dy.get()), *(a.get()), lo, hi, *(dx.get()));
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -689,6 +693,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           Weed::matmul(*(out_grad.get()), *(bt.get()), *(tmp.get()));
           a_grad->upcast(dt);
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+          a->reduce_grad_broadcast();
         }
         if (b->requires_grad()) {
           TensorPtr b_grad = b->grad;
@@ -707,6 +712,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           Weed::matmul(*(at.get()), *(out_grad.get()), *(tmp.get()));
           b_grad->upcast(dt);
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
+          b->reduce_grad_broadcast();
         }
       });
 }
