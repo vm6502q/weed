@@ -30,10 +30,10 @@ int main() {
       DeviceTag::CPU);
   TensorPtr y = std::make_shared<Tensor>(
       std::vector<real1>{R(1), R(1), R(1), R(0)}, std::vector<tcapint>{4, 1},
-      std::vector<tcapint>{1, 4}, false, DeviceTag::CPU);
+      std::vector<tcapint>{1, 0}, false, DeviceTag::CPU);
 
-  Linear l1(2, 8, true, DType::REAL, DeviceTag::CPU);
-  Linear l2(8, 1, true, DType::REAL, DeviceTag::CPU);
+  Linear l1(2, 4, true, DType::REAL, DeviceTag::CPU);
+  Linear l2(4, 1, true, DType::REAL, DeviceTag::CPU);
 
   std::vector<ParameterPtr> params = l1.parameters();
   std::vector<ParameterPtr> params2 = l2.parameters();
