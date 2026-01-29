@@ -39,13 +39,13 @@ int main() {
   std::vector<ParameterPtr> params2 = l2.parameters();
   params.insert(params.begin(), params2.begin(), params2.end());
 
-  Adam opt(R(0.1));
+  Adam opt(R(0.001));
   opt.register_parameters(params);
 
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 1000) && (loss_r > 0.1)) {
+  while ((epoch <= 100) && (loss_r > 0.1)) {
     TensorPtr y_pred = Tensor::sigmoid(l2.forward(Tensor::relu(l1.forward(x))));
     TensorPtr loss = bci_loss(y_pred, y);
 
@@ -53,7 +53,7 @@ int main() {
     adam_step(opt, params);
 
     loss_r = GET_REAL(loss);
-    if (!(epoch % 100)) {
+    if (!(epoch % 10)) {
       std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
     }
 

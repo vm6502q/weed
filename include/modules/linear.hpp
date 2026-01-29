@@ -19,8 +19,8 @@ namespace Weed {
  * Linear module to train $y = xW^T + b$
  */
 struct Linear : public Module {
-  ParameterPtr weight; // (out_features, in_features)
-  ParameterPtr bias;   // (out_features) or null
+  ParameterPtr weight; // (in_features, out_features)
+  ParameterPtr bias;   // (1, out_features) or null
 
   tcapint in_features;
   tcapint out_features;
