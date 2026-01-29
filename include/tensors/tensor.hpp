@@ -148,13 +148,13 @@ struct Tensor {
   /**
    * Select a sub-tensor from the position in the outermost tensor index
    */
-  TensorPtr operator[](const tcapint& idx) const;
+  TensorPtr operator[](const tcapint &idx) const;
 
   /**
    * Compare the data type of two tensors and return the more-encompassing one
    */
   static DType get_dtype_by_presidence(const std::vector<TensorPtr> &v) {
-    for (const TensorPtr& p : v) {
+    for (const TensorPtr &p : v) {
       if (p->storage->dtype == DType::COMPLEX) {
         return DType::COMPLEX;
       }

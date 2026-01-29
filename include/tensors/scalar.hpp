@@ -31,11 +31,13 @@ typedef std::shared_ptr<Scalar> ScalarPtr;
  * feature.)
  */
 struct Scalar : public Tensor {
-  Scalar(real1 v, bool rg, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
-         int64_t did = -1)
+  Scalar(const real1 &v, const bool &rg,
+         const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+         const int64_t &did = -1)
       : Tensor(v, rg, dtag, did) {}
-  Scalar(complex v, bool rg, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE,
-         int64_t did = -1)
+  Scalar(const complex &v, const bool &rg,
+         const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+         const int64_t &did = -1)
       : Tensor(v, rg, dtag, did) {}
   Scalar(TensorPtr orig) {
     if (orig->get_size() > ONE_VCI) {

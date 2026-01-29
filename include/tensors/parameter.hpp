@@ -19,17 +19,20 @@ namespace Weed {
  * "lives" on a module"
  */
 struct Parameter : Tensor {
-  Parameter(std::vector<tcapint> shp, std::vector<tcapint> strd,
-            DType dtype = DType::REAL,
-            DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
+  Parameter(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
+            const DType &dtype = DType::REAL,
+            const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+            const int64_t &did = -1)
       : Tensor(shp, strd, true, DType::REAL, dtag, did) {}
-  Parameter(std::vector<real1> val, std::vector<tcapint> shp,
-            std::vector<tcapint> strd,
-            DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
+  Parameter(const std::vector<real1> &val, const std::vector<tcapint> &shp,
+            const std::vector<tcapint> &strd,
+            const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+            const int64_t &did = -1)
       : Tensor(val, shp, strd, true, dtag, did) {}
-  Parameter(std::vector<complex> val, std::vector<tcapint> shp,
-            std::vector<tcapint> strd,
-            DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
+  Parameter(const std::vector<complex> &val, const std::vector<tcapint> &shp,
+            const std::vector<tcapint> &strd,
+            const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+            const int64_t &did = -1)
       : Tensor(val, shp, strd, true, dtag, did) {}
 };
 typedef std::shared_ptr<Parameter> ParameterPtr;
