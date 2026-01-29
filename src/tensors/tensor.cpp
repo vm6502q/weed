@@ -844,7 +844,6 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
 
     dx->upcast(r->storage->dtype);
     Weed::add_in_place(*(dx.get()), *(r.get()));
-    x->reduce_grad_broadcast();
   });
 }
 
@@ -876,7 +875,6 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
 
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
-        x->reduce_grad_broadcast();
       });
 }
 
@@ -908,7 +906,6 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
 
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
-        x->reduce_grad_broadcast();
       });
 }
 } // namespace Weed
