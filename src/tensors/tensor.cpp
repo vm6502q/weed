@@ -357,9 +357,10 @@ TensorPtr Tensor::transpose(TensorPtr a) {
   TensorPtr out = a->copy();
 
   if (out->shape.size() == 1U) {
-    out->shape.resize(2);
-    out->stride.resize(2);
-    out->stride[1U] = out->shape[0U];
+    // Treat input as column vector, and transpose to row vector
+    out->shape = {1U, out->shape[0U]};
+    out->stride = {0U, out->stride[0U]};
+    return out;
   } else {
     std::swap(out->shape[0], out->shape[1]);
     std::swap(out->stride[0], out->stride[1]);
