@@ -226,7 +226,7 @@ void kernel sigmoid_grad_complex(global cmplx* din, global real1* in, global cmp
 void kernel sigmoid_grad_mixed(global cmplx* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
-    din[i_X * I_A + O_A] += yi * (ONE_R1 - yi) * dout[i_X * I_C + O_C];
+    din[i_X * I_A + O_A].x += yi * (ONE_R1 - yi) * dout[i_X * I_C + O_C];
 }
 
 void kernel clamp_real(global real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant cmplx* p)
