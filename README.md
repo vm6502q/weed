@@ -16,6 +16,8 @@ With the growing popularity of AI/ML tools and workflows (including LLMs), legac
 
 Rethinking AI/ML library design this way, `Weed` has realized a rather unique and powerful form of _sparsification_ of `Tensor` **storage**. _Sparseness_ should **not** be a **`Tensor` interface concern**, but rather a **`Storage` concern**. Inspired by the design of the [Qrack](https://github.com/unitaryfoundation/qrack) quantum computer simulation framework, the `Tensor` interface treats **sparse and dense** tensors as **functionally equivalent**. Sparse optimization is so "transparently streamlined," this way, that it defaults to enabled for CPU-based tensors, and we recommend you leave it enabled at all times.
 
+Much like `Qrack`, `Weed` is designed to make the correct thing the default—and the expensive thing explicit.
+
 ## Building the API reference
 
 ```sh
