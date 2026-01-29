@@ -13,7 +13,7 @@
 #include "storage/gpu_real_storage.hpp"
 
 namespace Weed {
-StoragePtr CpuRealStorage::gpu(int64_t did) {
+StoragePtr CpuRealStorage::gpu(const int64_t &did) {
   GpuRealStoragePtr cp = std::make_shared<GpuRealStorage>(size, did, false);
   cp->array = cp->Alloc(size);
   std::copy(data.get(), data.get() + size, cp->array.get());

@@ -37,7 +37,7 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    */
   tcapint size;
 
-  Storage(DeviceTag dtg, DType dtp, tcapint n)
+  Storage(const DeviceTag &dtg, const DType &dtp, const tcapint &n)
       : device(dtg), dtype(dtp), size(n) {
     if (!size) {
       throw std::invalid_argument("Storage must have size of at least 1!");
@@ -47,12 +47,12 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   /**
    * If sparse, return the sparse element count (or otherwise the dense size)
    */
-  virtual tcapint get_sparse_size() { return size; }
+  virtual tcapint get_sparse_size() const { return size; }
 
   /**
    * Is this Storage sparse?
    */
-  virtual bool is_sparse() { return false; }
+  virtual bool is_sparse() const { return false; }
 
   /**
    * Get a shared pointer to this Storage
@@ -62,7 +62,7 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   /**
    * Get GPU device ID, if applicable
    */
-  virtual int64_t get_device_id() { return -1; }
+  virtual int64_t get_device_id() const { return -1; }
 
   /**
    * Fill the entire Storage with 0 values
@@ -77,7 +77,7 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    * If this is real-number storage, up-cast to complex-number storage (by
    * doubling stride)
    */
-  virtual StoragePtr Upcast(DType dt) = 0;
+  virtual StoragePtr Upcast(const DType &dt) = 0;
 
   /**
    * Migrate storage to CPU
@@ -87,6 +87,6 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   /**
    * Migrate storage to GPU
    */
-  virtual StoragePtr gpu(int64_t did = -1) = 0;
+  virtual StoragePtr gpu(const int64_t &did = -1) = 0;
 };
 } // namespace Weed

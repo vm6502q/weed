@@ -20,22 +20,22 @@ namespace Weed {
 struct SparseCpuComplexStorage : ComplexStorage {
   ComplexSparseVector data;
 
-  SparseCpuComplexStorage(const ComplexSparseVector &v, tcapint n)
+  SparseCpuComplexStorage(const ComplexSparseVector &v, const tcapint &n)
       : ComplexStorage(DeviceTag::CPU, n), data(v) {}
-  SparseCpuComplexStorage(tcapint n)
+  SparseCpuComplexStorage(const tcapint &n)
       : ComplexStorage(DeviceTag::CPU, n), data() {}
 
-  bool is_sparse() override { return true; }
+  bool is_sparse() const override { return true; }
 
   /**
    * Return the sparse element count
    */
-  tcapint get_sparse_size() override { return data.size(); }
+  tcapint get_sparse_size() const override { return data.size(); }
 
   /**
    * Get the complex element at the position
    */
-  complex operator[](tcapint idx) override {
+  complex operator[](const tcapint &idx) const override {
     const auto it = data.find(idx);
     if (it == data.end()) {
       return ZERO_CMPLX;
@@ -43,7 +43,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
     return it->second;
   }
 
-  void write(tcapint idx, complex val) override {
+  void write(const tcapint &idx, const complex &val) override {
     if (std::abs(val) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
@@ -51,7 +51,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
     }
   }
 
-  void add(tcapint idx, complex val) override {
+  void add(const tcapint &idx, const complex &val) override {
     if (std::abs(val) <= FP_NORM_EPSILON) {
       return;
     }
@@ -73,16 +73,16 @@ struct SparseCpuComplexStorage : ComplexStorage {
 
   void FillZeros() override { data.clear(); }
   void FillOnes() override { FillValue(ONE_CMPLX); }
-  void FillValue(complex v) override {
+  void FillValue(const complex &v) override {
     for (size_t i = 0U; i < size; ++i) {
       data[i] = v;
     }
   }
 
-  StoragePtr Upcast(DType dt) override { return get_ptr(); }
+  StoragePtr Upcast(const DType &dt) override { return get_ptr(); }
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(int64_t did = -1) override {
+  StoragePtr gpu(const int64_t &did = -1) override {
     throw std::domain_error("Don't use sparse Storage::gpu() (for now)!");
   }
 };

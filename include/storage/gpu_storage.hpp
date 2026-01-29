@@ -28,7 +28,7 @@ struct GpuStorage {
 
   GpuStorage() : dev(nullptr), buffer(nullptr), is_mapped(false) {}
 
-  void AddAlloc(size_t sz) {
+  void AddAlloc(const size_t &sz) {
     size_t currentAlloc =
         OCLEngine::Instance().AddToActiveAllocSize(dev->deviceID, sz);
     if (currentAlloc > dev->device_context->GetGlobalAllocLimit()) {
@@ -36,7 +36,7 @@ struct GpuStorage {
       throw bad_alloc("VRAM limits exceeded in GpuComplexStorage::AddAlloc()");
     }
   }
-  void SubtractAlloc(size_t sz) {
+  void SubtractAlloc(const size_t &sz) {
     OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
   }
 };

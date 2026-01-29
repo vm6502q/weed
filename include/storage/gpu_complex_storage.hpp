@@ -26,7 +26,8 @@ namespace Weed {
 struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
   ComplexPtr array;
 
-  GpuComplexStorage(tcapint n, int64_t did, bool alloc = true)
+  GpuComplexStorage(const tcapint &n, const int64_t &did,
+                    const bool &alloc = true)
       : ComplexStorage(DeviceTag::GPU, n), array(nullptr, [](complex *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     if (alloc) {
@@ -35,7 +36,7 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
     }
   }
 
-  GpuComplexStorage(const std::vector<complex> &val, int64_t did)
+  GpuComplexStorage(const std::vector<complex> &val, const int64_t &did)
       : ComplexStorage(DeviceTag::GPU, val.size()), array(Alloc(val.size())) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(complex) * size);
@@ -55,11 +56,13 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
 
   void FillZeros() override { dev->ClearRealBuffer(buffer, size << 1U); }
   void FillOnes() override { dev->FillOnesComplex(buffer, size); }
-  void FillValue(complex v) override { dev->FillValueComplex(buffer, size, v); }
+  void FillValue(const complex &v) override {
+    dev->FillValueComplex(buffer, size, v);
+  }
 
-  StoragePtr Upcast(DType dt) { return get_ptr(); };
+  StoragePtr Upcast(const DType &dt) override { return get_ptr(); };
 
-  BufferPtr MakeBuffer(tcapint n) {
+  BufferPtr MakeBuffer(const tcapint &n) {
     if (dev->device_context->use_host_mem) {
       if (!array) {
         array = Alloc(n);
@@ -77,7 +80,7 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
                            sizeof(complex) * n, array.get());
   }
 
-  complex operator[](tcapint idx) {
+  complex operator[](const tcapint &idx) const override {
     if (idx >= size) {
       throw std::invalid_argument(
           "GpuComplexStorage::operator[] argument out-of-bounds!");
@@ -88,16 +91,16 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
     return complex(dev->GetReal(buffer, i), dev->GetReal(buffer, i + 1U));
   }
 
-  void write(tcapint idx, complex val) {
+  void write(const tcapint &idx, const complex &val) override {
     throw std::domain_error("Don't use GPU-based ComplexStorage::write()!");
   }
 
-  void add(tcapint idx, complex val) {
+  void add(const tcapint &idx, const complex &val) override {
     throw std::domain_error("Don't use GPU-based ComplexStorage::add()!");
   }
 
   StoragePtr cpu() override;
-  StoragePtr gpu(int64_t did = -1) override { return get_ptr(); };
+  StoragePtr gpu(const int64_t &did = -1) override { return get_ptr(); };
 };
 typedef std::shared_ptr<GpuComplexStorage> GpuComplexStoragePtr;
 } // namespace Weed

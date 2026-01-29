@@ -27,7 +27,7 @@ namespace Weed {
 struct GpuRealStorage : public RealStorage, public GpuStorage {
   RealPtr array;
 
-  GpuRealStorage(tcapint n, int64_t did, bool alloc = true)
+  GpuRealStorage(const tcapint &n, int64_t did, const bool &alloc = true)
       : RealStorage(DeviceTag::GPU, n), array(nullptr, [](real1 *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     if (alloc) {
@@ -36,7 +36,7 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     }
   }
 
-  GpuRealStorage(const std::vector<real1> &val, int64_t did)
+  GpuRealStorage(const std::vector<real1> &val, const int64_t &did = -1)
       : RealStorage(DeviceTag::GPU, val.size()), array(Alloc(val.size())) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(real1) * size);
@@ -54,25 +54,15 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     SubtractAlloc(sizeof(real1) * size);
   }
 
-  void AddAlloc(size_t sz) {
-    size_t currentAlloc =
-        OCLEngine::Instance().AddToActiveAllocSize(dev->deviceID, sz);
-    if (currentAlloc > dev->device_context->GetGlobalAllocLimit()) {
-      OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
-      throw bad_alloc("VRAM limits exceeded in GpuComplexStorage::AddAlloc()");
-    }
-  }
-  void SubtractAlloc(size_t sz) {
-    OCLEngine::Instance().SubtractFromActiveAllocSize(dev->deviceID, sz);
-  }
-
-  int64_t get_device_id() override { return dev->deviceID; }
+  int64_t get_device_id() const override { return dev->deviceID; }
 
   void FillZeros() override { dev->ClearRealBuffer(buffer, size); }
   void FillOnes() override { dev->FillOnesReal(buffer, size); }
-  void FillValue(real1 v) override { dev->FillValueReal(buffer, size, v); }
+  void FillValue(const real1 &v) override {
+    dev->FillValueReal(buffer, size, v);
+  }
 
-  StoragePtr Upcast(DType dt) override {
+  StoragePtr Upcast(const DType &dt) override {
     if (dt == DType::REAL) {
       return get_ptr();
     }
@@ -84,7 +74,7 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     return n;
   };
 
-  BufferPtr MakeBuffer(tcapint n) {
+  BufferPtr MakeBuffer(const tcapint &n) {
     if (dev->device_context->use_host_mem) {
       if (!array) {
         array = Alloc(n);
@@ -102,7 +92,7 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
                            sizeof(real1) * n, array.get());
   }
 
-  real1 operator[](tcapint idx) {
+  real1 operator[](const tcapint &idx) const override {
     if (idx >= size) {
       throw std::invalid_argument(
           "GpuRealStorage::operator[] argument out-of-bounds!");
@@ -111,16 +101,16 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
     return dev->GetReal(buffer, idx);
   }
 
-  void write(tcapint idx, real1 val) {
+  void write(const tcapint &idx, const real1 &val) override {
     throw std::domain_error("Don't use GPU-based RealStorage::write()!");
   }
 
-  void add(tcapint idx, real1 val) {
+  void add(const tcapint &idx, const real1 &val) override {
     throw std::domain_error("Don't use GPU-based RealStorage::add()!");
   }
 
   StoragePtr cpu() override;
-  StoragePtr gpu(int64_t did = -1) override { return get_ptr(); };
+  StoragePtr gpu(const int64_t &did = -1) override { return get_ptr(); };
 };
 typedef std::shared_ptr<GpuRealStorage> GpuRealStoragePtr;
 } // namespace Weed

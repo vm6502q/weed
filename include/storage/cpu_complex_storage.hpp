@@ -22,7 +22,7 @@ namespace Weed {
 struct CpuComplexStorage : ComplexStorage {
   ComplexPtr data;
 
-  CpuComplexStorage(tcapint n)
+  CpuComplexStorage(const tcapint &n)
       : ComplexStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
 
   CpuComplexStorage(const std::vector<complex> &i)
@@ -30,13 +30,15 @@ struct CpuComplexStorage : ComplexStorage {
     std::copy(i.begin(), i.end(), data.get());
   }
 
-  complex operator[](tcapint idx) override { return data.get()[(size_t)idx]; }
+  complex operator[](const tcapint &idx) const override {
+    return data.get()[(size_t)idx];
+  }
 
-  void write(tcapint idx, complex val) override {
+  void write(const tcapint &idx, const complex &val) override {
     data.get()[(size_t)idx] = val;
   }
 
-  void add(tcapint idx, complex val) override {
+  void add(const tcapint &idx, const complex &val) override {
     data.get()[(size_t)idx] += val;
   }
 
@@ -46,14 +48,14 @@ struct CpuComplexStorage : ComplexStorage {
   void FillOnes() override {
     std::fill(data.get(), data.get() + size, ONE_CMPLX);
   }
-  void FillValue(complex v) override {
+  void FillValue(const complex &v) override {
     std::fill(data.get(), data.get() + size, v);
   }
 
-  StoragePtr Upcast(DType dt) override { return get_ptr(); };
+  StoragePtr Upcast(const DType &dt) override { return get_ptr(); };
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(int64_t did = -1) override;
+  StoragePtr gpu(const int64_t &did = -1) override;
 };
 typedef std::shared_ptr<CpuComplexStorage> CpuComplexStoragePtr;
 } // namespace Weed

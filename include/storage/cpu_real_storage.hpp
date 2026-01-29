@@ -23,28 +23,35 @@ namespace Weed {
 struct CpuRealStorage : RealStorage {
   RealPtr data;
 
-  CpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
+  CpuRealStorage(const tcapint &n)
+      : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
 
   CpuRealStorage(const std::vector<real1> &i)
       : RealStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
     std::copy(i.begin(), i.end(), data.get());
   }
 
-  real1 operator[](tcapint idx) override { return data.get()[(size_t)idx]; }
+  real1 operator[](const tcapint &idx) const override {
+    return data.get()[(size_t)idx];
+  }
 
-  void write(tcapint idx, real1 val) override { data.get()[(size_t)idx] = val; }
+  void write(const tcapint &idx, const real1 &val) override {
+    data.get()[(size_t)idx] = val;
+  }
 
-  void add(tcapint idx, real1 val) override { data.get()[(size_t)idx] += val; }
+  void add(const tcapint &idx, const real1 &val) override {
+    data.get()[(size_t)idx] += val;
+  }
 
   void FillZeros() override {
     std::fill(data.get(), data.get() + size, ZERO_R1);
   }
   void FillOnes() override { std::fill(data.get(), data.get() + size, ONE_R1); }
-  void FillValue(real1 v) override {
+  void FillValue(const real1 &v) override {
     std::fill(data.get(), data.get() + size, v);
   }
 
-  StoragePtr Upcast(DType dt) override {
+  StoragePtr Upcast(const DType &dt) override {
     if (dt == DType::REAL) {
       return get_ptr();
     }
@@ -57,7 +64,7 @@ struct CpuRealStorage : RealStorage {
   }
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(int64_t did = -1) override;
+  StoragePtr gpu(const int64_t &did = -1) override;
 };
 typedef std::shared_ptr<CpuRealStorage> CpuRealStoragePtr;
 } // namespace Weed

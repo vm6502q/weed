@@ -18,27 +18,28 @@ namespace Weed {
  * Storage for complex data type elements
  */
 struct ComplexStorage : Storage {
-  ComplexStorage(DeviceTag dtg, tcapint n) : Storage(dtg, DType::COMPLEX, n) {}
+  ComplexStorage(const DeviceTag &dtg, const tcapint &n)
+      : Storage(dtg, DType::COMPLEX, n) {}
 
   /**
    * Get the complex element at the position
    */
-  virtual complex operator[](tcapint idx) = 0;
+  virtual complex operator[](const tcapint &idx) const = 0;
 
   /**
    * Set the real element at the position
    */
-  virtual void write(tcapint idx, complex val) = 0;
+  virtual void write(const tcapint &idx, const complex &val) = 0;
 
   /**
    * Add to the real element at the position
    */
-  virtual void add(tcapint idx, complex val) = 0;
+  virtual void add(const tcapint &idx, const complex &val) = 0;
 
   /**
    * Fill the entire Storage with specified complex value
    */
-  virtual void FillValue(complex v) = 0;
+  virtual void FillValue(const complex &v) = 0;
 
 #if defined(__APPLE__)
   static complex *_aligned_state_vec_alloc(tcapint allocSize) {

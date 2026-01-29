@@ -18,27 +18,28 @@ namespace Weed {
  * Storage for real data type elements
  */
 struct RealStorage : Storage {
-  RealStorage(DeviceTag dtg, tcapint n) : Storage(dtg, DType::REAL, n) {}
+  RealStorage(const DeviceTag &dtg, const tcapint &n)
+      : Storage(dtg, DType::REAL, n) {}
 
   /**
    * Get the real element at the position
    */
-  virtual real1 operator[](tcapint idx) = 0;
+  virtual real1 operator[](const tcapint &idx) const = 0;
 
   /**
    * Set the real element at the position
    */
-  virtual void write(tcapint idx, real1 val) = 0;
+  virtual void write(const tcapint &idx, const real1 &val) = 0;
 
   /**
    * Add to the real element at the position
    */
-  virtual void add(tcapint idx, real1 val) = 0;
+  virtual void add(const tcapint &idx, const real1 &val) = 0;
 
   /**
    * Fill the entire Storage with specified real value
    */
-  virtual void FillValue(real1 v) = 0;
+  virtual void FillValue(const real1 &v) = 0;
 
 #if defined(__APPLE__)
   static real1 *_aligned_state_vec_alloc(tcapint allocSize) {

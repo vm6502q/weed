@@ -13,7 +13,7 @@
 #include "storage/gpu_complex_storage.hpp"
 
 namespace Weed {
-StoragePtr CpuComplexStorage::gpu(int64_t did) {
+StoragePtr CpuComplexStorage::gpu(const int64_t &did) {
   GpuComplexStoragePtr cp =
       std::make_shared<GpuComplexStorage>(size, did, false);
   cp->array = cp->Alloc(size);
