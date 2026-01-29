@@ -56,13 +56,13 @@ public:
    * Iterate through the permutations a maximum of end-begin times, allowing
    * the caller to control the incrementation offset through 'inc'.
    */
-  void par_for_inc(const tcapint begin, const tcapint itemCount, IncrementFunc,
-                   ParallelFunc fn);
+  void par_for_inc(const tcapint &begin, const tcapint &itemCount,
+                   IncrementFunc, ParallelFunc fn);
 
   /**
    * Call fn once for every numerical value between begin and end.
    */
-  void par_for(const tcapint begin, const tcapint end, ParallelFunc fn);
+  void par_for(const tcapint &begin, const tcapint &end, ParallelFunc fn);
 
   /**
    * Call fn once for every value in a sparse map.

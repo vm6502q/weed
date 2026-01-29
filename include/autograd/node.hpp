@@ -32,7 +32,7 @@ struct Node {
   /**
    * Used by Weed::Tensor or user code to construct an autograd graph node
    */
-  Node(const std::vector<TensorPtr>& p, const std::function<void()>& b)
+  Node(const std::vector<TensorPtr> &p, const std::function<void()> &b)
       : parents(p), backward(b) {}
 };
 } // namespace Weed

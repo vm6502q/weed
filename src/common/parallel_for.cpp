@@ -51,7 +51,7 @@ ParallelFor::ParallelFor()
       (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 }
 
-void ParallelFor::par_for(const tcapint begin, const tcapint end,
+void ParallelFor::par_for(const tcapint &begin, const tcapint &end,
                           ParallelFunc fn) {
   par_for_inc(
       begin, end - begin, [](const tcapint &i) { return i; }, fn);
@@ -96,7 +96,7 @@ void ParallelFor::par_for(const std::set<tcapint> &sparseSet, ParallelFunc fn) {
  * Iterate through the permutations a maximum of end-begin times, allowing the
  * caller to control the incrementation offset through 'inc'.
  */
-void ParallelFor::par_for_inc(const tcapint begin, const tcapint itemCount,
+void ParallelFor::par_for_inc(const tcapint &begin, const tcapint &itemCount,
                               IncrementFunc inc, ParallelFunc fn) {
   const tcapint Stride = pStride;
   unsigned threads = (unsigned)(itemCount / pStride);
@@ -144,7 +144,7 @@ void ParallelFor::par_for_inc(const tcapint begin, const tcapint itemCount,
  * Iterate through the permutations a maximum of end-begin times, allowing the
  * caller to control the incrementation offset through 'inc'.
  */
-void ParallelFor::par_for_inc(const tcapint begin, const tcapint itemCount,
+void ParallelFor::par_for_inc(const tcapint &begin, const tcapint &itemCount,
                               IncrementFunc inc, ParallelFunc fn) {
   const tcapint maxLcv = begin + itemCount;
   for (tcapint j = begin; j < maxLcv; ++j) {
