@@ -51,7 +51,7 @@
   const tcapint I_b = b.stride[0U];                                            \
   GET_STORAGE(storage1, a, pa);                                                \
   GET_STORAGE(storage2, b, pb);                                                \
-  size_t n = b.storage->size
+  size_t n = a.get_size()
 
 #define CPU_INIT_3(storage1, storage2, storage3)                               \
   const tcapint O_a = a.offset;                                                \
@@ -74,7 +74,7 @@
   GET_STORAGE(storage1, din, pdi);                                             \
   GET_STORAGE(storage2, in, pi);                                               \
   GET_STORAGE(storage3, dout, po);                                             \
-  size_t n = dout.storage->size
+  size_t n = din.get_size()
 
 #define SPARSE_CPU_2_RUN(strg)                                                 \
   if (out.storage->is_sparse() && a.storage->is_sparse()) {                    \

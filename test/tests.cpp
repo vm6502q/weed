@@ -185,12 +185,12 @@ TEST_CASE("test_scalar_relu_mixed_grad") {
 }
 
 TEST_CASE("test_scalar_sigmoid") {
-  TensorPtr x = std::make_shared<RealScalar>(ZERO_R1, true, TEST_DTAG);
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
   TensorPtr y = Tensor::sigmoid(x);
   Tensor::backward(y);
 
   REQUIRE(GET_REAL(y) == R(0.5));
-  REQUIRE(GET_REAL(x->grad) == ZERO_R1);
+  REQUIRE(GET_REAL(x->grad) == R(0.25));
 }
 
 TEST_CASE("test_scalar_sigmoid_complex_grad") {
@@ -201,17 +201,17 @@ TEST_CASE("test_scalar_sigmoid_complex_grad") {
   Tensor::backward(w);
 
   REQUIRE(GET_REAL(y) == R(0.5));
-  REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(0.25));
 }
 
-TEST_CASE("test_scalar_sigmoid_mixed_graf") {
-  TensorPtr x = std::make_shared<RealScalar>(ZERO_R1, true, TEST_DTAG);
+TEST_CASE("test_scalar_sigmoid_mixed_grad") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
   TensorPtr y = Tensor::sigmoid(x);
   x->grad->upcast(DType::COMPLEX);
   Tensor::backward(y);
 
   REQUIRE(GET_REAL(y) == R(0.5));
-  REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(0.25));
 }
 
 TEST_CASE("test_scalar_clamp") {

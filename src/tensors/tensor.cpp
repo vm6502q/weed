@@ -471,7 +471,7 @@ void Tensor::make_sigmoid_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
-        Weed::sigmoid_grad(a_grad, *(a.get()), out_grad);
+        Weed::sigmoid_grad(a_grad, *(out.get()), out_grad);
       });
 }
 
