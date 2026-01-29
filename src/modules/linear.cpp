@@ -58,8 +58,8 @@ Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, DType dtype,
   }
 
   if (use_bias) {
-    bias = std::make_shared<Parameter>(std::vector<tcapint>{out_f},
-                                       std::vector<tcapint>{1U}, dtype, device,
+    bias = std::make_shared<Parameter>(std::vector<tcapint>{out_f, 1},
+                                       std::vector<tcapint>{1U, 0U}, dtype, device,
                                        device_id);
     bias->storage->FillZeros();
   } else {
