@@ -349,29 +349,11 @@ void Tensor::backward(TensorPtr loss) {
 }
 
 TensorPtr Tensor::transpose(TensorPtr a) {
-  if (a->shape.size() > 2U) {
-    throw std::invalid_argument("Tensor::transpose is only for 2D tensors (and "
-                                "vectors and covectors)!");
+  if (a->shape.size() != 2U) {
+    throw std::invalid_argument("Tensor::transpose is only for 2D tensors!");
   }
 
   TensorPtr out = a->copy();
-
-  if (out->shape.size() == 1U) {
-    // Treat input as column vector, and transpose to row vector
-    out->shape = {1U, out->shape[0U]};
-    out->stride = {0U, out->stride[0U]};
-
-    return out;
-  }
-
-  if (out->stride[0U] == 0U) {
-    // Treat input as row vector, and transpose to column vector
-    out->shape = { out->shape[1U] };
-    out->stride = { out->stride[1U] };
-
-    return out;
-  }
-
   std::swap(out->shape[0], out->shape[1]);
   std::swap(out->stride[0], out->stride[1]);
 
