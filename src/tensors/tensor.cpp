@@ -632,8 +632,8 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           const DType &dt = get_dtype_by_presidence({a, out_grad});
           TensorPtr tmp =
               Tensor::allocate_like(b_grad, dt, false, IS_SPARSE(a));
-          b_grad->upcast(dt);
           Weed::mul(*(out_grad.get()), *(a.get()), *(tmp.get()));
+          b_grad->upcast(dt);
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
           b->reduce_grad_broadcast();
         }
@@ -683,6 +683,9 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           const std::vector<tcapint> str = {1U, ogs};
           TensorPtr tmp = Tensor::allocate_like(shp, str, a_grad, dt, false,
                                                 IS_SPARSE(out_grad));
+          if (out_grad->stride[1U] == 0U) {
+            out_grad->shape[1U] = bt->shape[0U];
+          }
           Weed::matmul(*(out_grad.get()), *(bt.get()), *(tmp.get()));
           a_grad->upcast(dt);
           Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
@@ -698,6 +701,9 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
           const std::vector<tcapint> str = {1U, ats};
           TensorPtr tmp = Tensor::allocate_like(shp, str, b_grad, dt, false,
                                                 IS_SPARSE(out_grad));
+          if (out_grad->stride[0U] == 0U) {
+            out_grad->shape[0U] = at->shape[1U];
+          }
           Weed::matmul(*(at.get()), *(out_grad.get()), *(tmp.get()));
           b_grad->upcast(dt);
           Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
