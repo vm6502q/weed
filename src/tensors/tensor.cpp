@@ -349,24 +349,20 @@ void Tensor::backward(TensorPtr loss) {
 }
 
 TensorPtr Tensor::transpose(TensorPtr a) {
-  if ((a->shape.size() == 1U) && (a->stride[0U] != 0U)) {
-    a->shape.resize(2);
-    a->stride.resize(2);
-    a->stride[1U] = a->shape[1U];
-  }
-  if (a->shape.size() != 2U) {
+  if (a->shape.size() > 2U) {
     throw std::invalid_argument(
-        "Tensor::tranpose is (currently) only for matrices with 2 indices!");
+        "Tensor::transpose is only for 2D tensors!");
   }
 
-  // Shallow copy (keeps storage and gradient)
   TensorPtr out = a->copy();
-  // Change tensor view:
-  std::swap(out->shape[0U], out->shape[1U]);
-  std::swap(out->stride[0U], out->stride[1U]);
 
-  if (out->requires_grad()) {
-    out->grad = Tensor::transpose(out->grad);
+  if (out->shape.size() == 1U) {
+    out->shape.resize(2);
+    out->stride.resize(2);
+    out->stride[1U] = out->shape[1U];
+  } else {
+    std::swap(out->shape[0], out->shape[1]);
+    std::swap(out->stride[0], out->stride[1]);
   }
 
   return out;
