@@ -652,7 +652,7 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
   }
 
   const tcapint as0 = a->shape[0U];
-  const tcapint bs1 = (b->shape.size() > 1U) ? b->shape[1U] : 1U;
+  const tcapint bs1 = b->shape[1U];
   const std::vector<tcapint> shp = {as0, bs1};
   const std::vector<tcapint> str = {1U, as0};
   const bool rg = a->requires_grad() || b->requires_grad();

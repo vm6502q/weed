@@ -87,9 +87,9 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
   d.A_s0 = a.stride[0];
   d.A_s1 = a.stride[1];
   d.B_s0 = b.stride[0];
-  d.B_s1 = (b.stride.size() > 1U) ? b.stride[1] : b.shape[0U];
+  d.B_s1 = b.stride[1];
   d.O_s0 = out.stride[0];
-  d.O_s1 = (out.stride.size() > 1U) ? out.stride[1] : out.shape[0U];
+  d.O_s1 = out.stride[1];
 
   return d;
 }
