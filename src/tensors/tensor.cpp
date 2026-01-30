@@ -238,20 +238,25 @@ std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
 
 bool Tensor::match_shape(const TensorPtr a) {
   if (shape.size() > a->shape.size()) {
-    return true;
+    return false;
   }
 
   for (size_t i = 0U; i < shape.size(); ++i) {
     if ((shape[i] != a->shape[i]) && stride[i]) {
-      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                  "alter an index that was not broadcast.)");
+      if (shape.size() == a->shape.size()) {
+        return false;
+      } else {
+        throw std::invalid_argument(
+            "Tensor::match_shape() failed! (You tried to "
+            "alter an index that was not broadcast.)");
+      }
     }
   }
 
   shape = a->shape;
   stride.resize(shape.size());
 
-  return false;
+  return true;
 }
 
 void Tensor::reduce_grad_broadcast() {
@@ -502,10 +507,12 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
   const DType dt = get_dtype_by_presidence({a, b});
   TensorPtr out;
   if (a->match_shape(b)) {
-    b->match_shape(a);
+    out = allocate_like(b, dt, rg, s);
+  } else if (b->match_shape(a)) {
     out = allocate_like(a, dt, rg, s);
   } else {
-    out = allocate_like(b, dt, rg, s);
+    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                "alter an index that was not broadcast.)");
   }
 
   Weed::add(*(a.get()), *(b.get()), *(out.get()));
@@ -547,10 +554,12 @@ TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
   const DType dt = get_dtype_by_presidence({a, b});
   TensorPtr out;
   if (a->match_shape(b)) {
-    b->match_shape(a);
+    out = allocate_like(b, dt, rg, s);
+  } else if (b->match_shape(a)) {
     out = allocate_like(a, dt, rg, s);
   } else {
-    out = allocate_like(b, dt, rg, s);
+    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                "alter an index that was not broadcast.)");
   }
 
   Weed::mul(*(a.get()), *(b.get()), *(out.get()));
@@ -656,10 +665,12 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
   const DType dt = get_dtype_by_presidence({a, b});
   TensorPtr out;
   if (a->match_shape(b)) {
-    b->match_shape(a);
+    out = allocate_like(b, dt, rg, s);
+  } else if (b->match_shape(a)) {
     out = allocate_like(a, dt, rg, s);
   } else {
-    out = allocate_like(b, dt, rg, s);
+    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                "alter an index that was not broadcast.)");
   }
 
   Weed::sub(*(a.get()), *(b.get()), *(out.get()));
@@ -701,10 +712,12 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
   const DType dt = get_dtype_by_presidence({a, b});
   TensorPtr out;
   if (a->match_shape(b)) {
-    b->match_shape(a);
+    out = allocate_like(b, dt, rg, s);
+  } else if (b->match_shape(a)) {
     out = allocate_like(a, dt, rg, s);
   } else {
-    out = allocate_like(b, dt, rg, s);
+    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                "alter an index that was not broadcast.)");
   }
 
   Weed::div(*(a.get()), *(b.get()), *(out.get()));
