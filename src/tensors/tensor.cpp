@@ -243,13 +243,7 @@ bool Tensor::match_shape(const TensorPtr a) {
 
   for (size_t i = 0U; i < shape.size(); ++i) {
     if ((shape[i] != a->shape[i]) && stride[i]) {
-      if (shape.size() == a->shape.size()) {
-        return false;
-      } else {
-        throw std::invalid_argument(
-            "Tensor::match_shape() failed! (You tried to "
-            "alter an index that was not broadcast.)");
-      }
+      return false;
     }
   }
 
