@@ -261,7 +261,7 @@ void Tensor::reduce_grad_broadcast() {
   }
 
   for (int64_t i = stride.size() - 1U; i >= 0; --i) {
-    if (stride[i]) {
+    if (stride[i] || (shape[i] == 1U)) {
       continue;
     }
 

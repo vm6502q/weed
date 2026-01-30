@@ -77,8 +77,6 @@ void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
 
   for (auto &p : params) {
     AdamState &s = opt.state[p];
-    // Tensor& m = *(s.m.get());
-    // Tensor& v = *(s.v.get());
     TensorPtr g = p->grad;
 
     // m = beta1 * m + (1 - beta1) * g

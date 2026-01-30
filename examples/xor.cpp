@@ -9,7 +9,7 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "autograd/adam.hpp"
+#include "autograd/sgd.hpp"
 #include "autograd/bci_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
@@ -39,8 +39,8 @@ int main() {
   std::vector<ParameterPtr> params2 = l2.parameters();
   params.insert(params.begin(), params2.begin(), params2.end());
 
-  Adam opt(R(0.001));
-  opt.register_parameters(params);
+  // Adam opt(R(0.001));
+  // opt.register_parameters(params);
 
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
@@ -50,7 +50,8 @@ int main() {
     TensorPtr loss = bci_loss(y_pred, y);
 
     Tensor::backward(loss);
-    adam_step(opt, params);
+    // adam_step(opt, params);
+    sgd_step(params, 0.01);
 
     loss_r = GET_REAL(loss);
     if (!(epoch % 10)) {
