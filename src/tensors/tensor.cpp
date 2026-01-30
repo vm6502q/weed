@@ -255,11 +255,7 @@ bool Tensor::match_shape(const TensorPtr a) {
 }
 
 void Tensor::reduce_grad_broadcast() {
-  if (!requires_grad) {
-    return;
-  }
-
-  if (!grad) {
+  if (!requires_grad || !grad) {
     throw std::domain_error(
         "Called Tensor::reduce_grad_broadcast() on a node instance without a "
         "gradient Tensor! (This should be called only during autograd.)");
