@@ -32,12 +32,6 @@ struct RealScalar : public Scalar {
   RealScalar(const real1 &v, const bool &rg = false,
              DeviceTag dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
       : Scalar(v, rg, dtag, did) {}
-  RealScalar(const TensorPtr orig) : Scalar(orig) {
-    if (orig->storage->dtype != DType::REAL) {
-      throw std::invalid_argument(
-          "Cannot construct RealScalar from non-real Tensor!");
-    }
-  }
 
   real1 get_item() const {
     return (*static_cast<RealStorage *>(storage.get()))[offset];

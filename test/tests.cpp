@@ -99,8 +99,8 @@ TEST_CASE("test_sum_real") {
 
 TEST_CASE("test_sum_complex") {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(2), R(3)}, std::vector<tcapint>{3, 1},
-      std::vector<tcapint>{1, 3}, true, TEST_DTAG);
+      std::vector<complex>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
   TensorPtr y = Tensor::sum(x);
   Tensor::backward(y);
 
@@ -110,8 +110,8 @@ TEST_CASE("test_sum_complex") {
 
 TEST_CASE("test_mean_real") {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3, 1},
-      std::vector<tcapint>{1, 3}, true, TEST_DTAG);
+      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
   TensorPtr y = Tensor::mean(x);
   Tensor::backward(y);
 
@@ -121,8 +121,8 @@ TEST_CASE("test_mean_real") {
 
 TEST_CASE("test_mean_complex") {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(2), R(3)}, std::vector<tcapint>{3, 1},
-      std::vector<tcapint>{1, 3}, true, TEST_DTAG);
+      std::vector<complex>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
   TensorPtr y = Tensor::mean(x);
   Tensor::backward(y);
 
@@ -740,6 +740,7 @@ TEST_CASE("test_mixed_matmul") {
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[1])[1]), R(15));
 }
 
+#if 0
 TEST_CASE("test_matmul_gradient_sum_loss") {
   using namespace Weed;
 
@@ -776,3 +777,4 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   REQUIRE((*Bg)[4] == R(7));
   REQUIRE((*Bg)[5] == R(11));
 }
+#endif

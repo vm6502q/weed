@@ -36,13 +36,10 @@ struct Tensor {
   NodePtr grad_node;
   TensorPtr grad;
 
-  Tensor()
-      : storage(nullptr), shape(), stride(), offset(ZERO_VCI),
-        grad_node(nullptr), grad(nullptr) {}
   Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
          const bool &rg = false, const DType &dtype = DType::REAL,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-         const int64_t &did = -1, const bool &s = true, const bool &sg = true);
+         const int64_t &did = -1, const bool &s = true);
   Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
          const std::vector<tcapint> &strd, const bool &rg = false,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
@@ -62,14 +59,12 @@ struct Tensor {
       : Tensor(std::vector<complex>{val}, std::vector<tcapint>{1U},
                std::vector<tcapint>{0U}, rg, dtag, did) {}
   Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
-         const std::vector<tcapint> &strd, const bool &rg = false,
-         const bool &sg = true);
+         const std::vector<tcapint> &strd, const bool &rg = false);
   Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
-         const std::vector<tcapint> &strd, const bool &rg = false,
-         const bool &sg = true);
+         const std::vector<tcapint> &strd, const bool &rg = false);
 
   /**
-   * Will we calculate gradients on back-propagation?
+   * Does this Tensor require autograd?
    */
   bool requires_grad() const { return !!grad; }
 
@@ -107,7 +102,7 @@ struct Tensor {
    * Make a shallow copy of this tensor
    */
   TensorPtr copy() const {
-    TensorPtr cp = std::make_shared<Tensor>();
+    TensorPtr cp = std::make_shared<Tensor>(shape, stride, requires_grad(), storage->dtype, storage->device, storage->get_device_id(), storage->is_sparse());
     // A tensor is a view on storage:
     cp->storage = storage;
     cp->shape = shape;
@@ -139,6 +134,18 @@ struct Tensor {
   void upcast(const DType &dt) { storage = storage->Upcast(dt); }
 
   /**
+   *
+   */
+  static TensorPtr make_gradient(const std::vector<tcapint> &shp, const DType &dtype, const DeviceTag &dtag, const int64_t did, const bool& s) {
+    // This must be reduced along broadcast dimensions
+    // during the backward() step.
+    TensorPtr g = std::make_shared<Tensor>(shp, gradient_stride(shp), false, dtype, dtag, did, s);
+    g->storage->FillZeros();
+
+    return g;
+  }
+
+  /**
    * For broadcast, make this scalar match the shape of a target Tensor
    */
   void match_shape(const TensorPtr a);
@@ -162,6 +169,9 @@ struct Tensor {
     return DType::REAL;
   }
 
+  /**
+   * Validate the Tensor shape, for constructors
+   */
   static bool validate_shape(const std::vector<tcapint> &shp,
                              const std::vector<tcapint> &s) {
     tcapint st = 1U;
@@ -179,30 +189,41 @@ struct Tensor {
   }
 
   /**
+   * Find the gradient stride (before reduction), for constructors
+   */
+  static std::vector<tcapint> gradient_stride(const std::vector<tcapint> &shp) {
+    std::vector<tcapint> g_stride(shp.size());
+    tcapint max_index = 1U;
+    for (size_t i = 0U; i < shp.size(); ++i) {
+      g_stride[i] = max_index;
+      max_index *= shp[i];
+    }
+
+    return g_stride;
+  }
+  /**
    * Ensure that all tensors in a list are on the same device
    */
   static bool all_same_device(const std::vector<TensorPtr> &);
-
-  /**
-   * Create a new Tensor like the original, without Storage value initialization
-   */
-  static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
-                                 const bool &rg, const bool &s,
-                                 const bool &sg = false);
-  /**
-   * Create a new Tensor like the original, without Storage value initialization
-   */
-  static TensorPtr allocate_like(const std::vector<tcapint> &shape,
-                                 const std::vector<tcapint> &stride,
-                                 const TensorPtr orig, const DType &dt,
-                                 const bool &rg, const bool &s,
-                                 const bool &sg = false);
 
   /**
    * Create a new Tensor like the original, but a Scalar, and without Storage
    * value initialization
    */
   static TensorPtr allocate_scalar_like(const TensorPtr orig, const bool &rg);
+
+  /**
+   * Create a new Tensor like the original, without Storage value initialization
+   */
+  static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
+                                 const bool &rg, const bool &s);
+  /**
+   * Create a new Tensor like the original, without Storage value initialization
+   */
+  static TensorPtr allocate_like(const std::vector<tcapint> &shape,
+                                 const std::vector<tcapint> &stride,
+                                 const TensorPtr orig, const DType &dt,
+                                 const bool &rg, const bool &s);
 
   /**
    * Use autograd to calculate gradients that are in the same graph as this

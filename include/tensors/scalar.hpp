@@ -39,17 +39,5 @@ struct Scalar : public Tensor {
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
          const int64_t &did = -1)
       : Tensor(v, rg, dtag, did) {}
-  Scalar(TensorPtr orig) {
-    if (orig->get_size() > ONE_VCI) {
-      throw std::invalid_argument(
-          "Cannot construct scalar from Tensor with get_size() > 1!");
-    }
-    shape = std::vector<tcapint>{1U};
-    stride = std::vector<tcapint>{0U};
-    offset = orig->offset;
-    storage = orig->storage;
-    grad_node = orig->grad_node;
-    grad = orig->grad;
-  }
 };
 } // namespace Weed
