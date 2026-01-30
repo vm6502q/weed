@@ -337,78 +337,14 @@ struct Tensor {
 inline TensorPtr operator+(TensorPtr left, TensorPtr right) {
   return Tensor::add(left, right);
 }
-inline TensorPtr operator+(real1 left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::add(l, right);
-}
-inline TensorPtr operator+(TensorPtr left, real1 right) { return right + left; }
-inline TensorPtr operator+(complex left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::add(l, right);
-}
-inline TensorPtr operator+(TensorPtr left, complex right) { return right + left; }
 inline TensorPtr operator-(TensorPtr left, TensorPtr right) {
   return Tensor::sub(left, right);
-}
-inline TensorPtr operator-(real1 left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::sub(l, right);
-}
-inline TensorPtr operator-(TensorPtr left, real1 right) {
-  TensorPtr r = std::make_shared<Tensor>(right, false, left->storage->device,
-                                         left->storage->get_device_id());
-  return Tensor::sub(left, r);
-}
-inline TensorPtr operator-(complex left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::sub(l, right);
-}
-inline TensorPtr operator-(TensorPtr left, complex right) {
-  TensorPtr r = std::make_shared<Tensor>(right, false, left->storage->device,
-                                         left->storage->get_device_id());
-  return Tensor::sub(left, r);
 }
 inline TensorPtr operator*(TensorPtr left, TensorPtr right) {
   return Tensor::mul(left, right);
 }
-inline TensorPtr operator*(real1 left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::mul(l, right);
-}
-inline TensorPtr operator*(TensorPtr left, real1 right) { return right * left; }
-inline TensorPtr operator*(complex left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::mul(l, right);
-}
-inline TensorPtr operator*(TensorPtr left, complex right) { return right * left; }
 inline TensorPtr operator/(TensorPtr left, TensorPtr right) {
   return Tensor::div(left, right);
-}
-inline TensorPtr operator/(real1 left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::div(l, right);
-}
-inline TensorPtr operator/(TensorPtr left, real1 right) {
-  TensorPtr r = std::make_shared<Tensor>(right, false, left->storage->device,
-                                         left->storage->get_device_id());
-  return Tensor::div(left, r);
-}
-inline TensorPtr operator/(complex left, TensorPtr right) {
-  TensorPtr l = std::make_shared<Tensor>(left, false, right->storage->device,
-                                         right->storage->get_device_id());
-  return Tensor::div(l, right);
-}
-inline TensorPtr operator/(TensorPtr left, complex right) {
-  TensorPtr r = std::make_shared<Tensor>(right, false, left->storage->device,
-                                         left->storage->get_device_id());
-  return Tensor::div(left, r);
 }
 inline TensorPtr operator>>(TensorPtr left, TensorPtr right) {
   return Tensor::matmul(left, right);

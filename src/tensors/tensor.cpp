@@ -27,6 +27,9 @@
 
 #include <unordered_set>
 
+#define RSCALAR(v, o)                                                          \
+  std::make_shared<RealScalar>(v, false, o->storage->device,                   \
+                               o->storage->get_device_id())
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 #define IS_SPARSE(a)                                                           \
   (a && a->storage->is_sparse() &&                                             \
@@ -395,7 +398,8 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
             ONE_R1 / (real1)a->get_size(), false, out->storage->device);
         // da += dout / N   (broadcast)
         a_grad->upcast(out_grad->storage->dtype);
-        TensorPtr tmp = ((real1)(ONE_R1 / (real1)a->get_size())) * out_grad;
+        TensorPtr s = RSCALAR((real1)(ONE_R1 / (real1)a->get_size()), out_grad);
+        TensorPtr tmp = s * out_grad;
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         a->reduce_grad_broadcast();
       });
@@ -782,7 +786,8 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
         Tensor::allocate_like(dy, dy->storage->dtype, false, IS_SPARSE(dy));
     Weed::mul(*(dy.get()), *(y.get()), *(dy_y.get()));
 
-    TensorPtr dy_y_p = p * dy_y;
+    TensorPtr s = RSCALAR(p, dy_y);
+    TensorPtr dy_y_p = s * dy_y;
 
     TensorPtr r = Tensor::allocate_like(dy_y_p, dy_y_p->storage->dtype, false,
                                         IS_SPARSE(dy_y_p));
@@ -813,7 +818,8 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
         TensorPtr dx = x->grad;
         TensorPtr dy = y->grad;
 
-        TensorPtr dy_v = log_b * dy;
+        TensorPtr s = RSCALAR(log_b, dy);
+        TensorPtr dy_v = s * dy;
 
         TensorPtr r = Tensor::allocate_like(dy_v, dy_v->storage->dtype, false,
                                             IS_SPARSE(dy_v));
@@ -844,7 +850,8 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
         TensorPtr dx = x->grad;
         TensorPtr dy = y->grad;
 
-        TensorPtr dy_v = inv_log_b * dy;
+        TensorPtr s = RSCALAR(inv_log_b, dy);
+        TensorPtr dy_v = s * dy;
 
         TensorPtr r = Tensor::allocate_like(dy_v, dy_v->storage->dtype, false,
                                             IS_SPARSE(dy_v));

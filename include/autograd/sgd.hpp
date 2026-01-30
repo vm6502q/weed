@@ -25,12 +25,13 @@ inline void sgd_step(const std::vector<ParameterPtr> &params, real1 lr) {
     return;
   }
 
-  for (auto& p : params) {
-    if (!p->grad) {
-      continue;
-    }
+  TensorPtr alpha =
+      std::make_shared<RealScalar>(lr, false, params[0U]->storage->device,
+                                   params[0U]->storage->get_device_id());
+
+  for (auto &p : params) {
     p->upcast(Tensor::get_dtype_by_presidence({p, p->grad}));
-    TensorPtr tmp = lr * p->grad;
+    TensorPtr tmp = alpha * p->grad;
     Weed::sub_in_place(*(p.get()), *(tmp.get()));
   }
 }
