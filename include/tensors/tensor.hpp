@@ -35,6 +35,7 @@ struct Tensor {
 
   NodePtr grad_node;
   TensorPtr grad;
+  bool requires_grad;
 
   Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
          const bool &rg = false, const DType &dtype = DType::REAL,
@@ -62,11 +63,6 @@ struct Tensor {
          const std::vector<tcapint> &strd, const bool &rg = false);
   Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
          const std::vector<tcapint> &strd, const bool &rg = false);
-
-  /**
-   * Does this Tensor require autograd?
-   */
-  bool requires_grad() const { return !!grad; }
 
   /**
    * How many elements are in this tensor?
@@ -102,7 +98,9 @@ struct Tensor {
    * Make a shallow copy of this tensor
    */
   TensorPtr copy() const {
-    TensorPtr cp = std::make_shared<Tensor>(shape, stride, requires_grad(), storage->dtype, storage->device, storage->get_device_id(), storage->is_sparse());
+    TensorPtr cp = std::make_shared<Tensor>(
+        shape, stride, requires_grad, storage->dtype, storage->device,
+        storage->get_device_id(), storage->is_sparse());
     // A tensor is a view on storage:
     cp->storage = storage;
     cp->shape = shape;
@@ -127,6 +125,17 @@ struct Tensor {
     grad = cp->grad;
   }
 
+  void make_gradient() {
+    if (!requires_grad) {
+      throw std::domain_error("Called Tensor::make_gradient() on a node "
+                              "instance that does not require autograd!");
+    }
+
+    grad =
+        Tensor::make_gradient(shape, storage->dtype, storage->device,
+                              storage->get_device_id(), storage->is_sparse());
+  }
+
   /**
    * Internally cast this real-value tensor to a complex-value tensor (if
    * necessary)
@@ -134,12 +143,15 @@ struct Tensor {
   void upcast(const DType &dt) { storage = storage->Upcast(dt); }
 
   /**
-   *
+   * Make a gradient tensor (static)
    */
-  static TensorPtr make_gradient(const std::vector<tcapint> &shp, const DType &dtype, const DeviceTag &dtag, const int64_t did, const bool& s) {
+  static TensorPtr make_gradient(const std::vector<tcapint> &shp,
+                                 const DType &dtype, const DeviceTag &dtag,
+                                 const int64_t did, const bool &s) {
     // This must be reduced along broadcast dimensions
     // during the backward() step.
-    TensorPtr g = std::make_shared<Tensor>(shp, gradient_stride(shp), false, dtype, dtag, did, s);
+    TensorPtr g = std::make_shared<Tensor>(shp, gradient_stride(shp), false,
+                                           dtype, dtag, did, s);
     g->storage->FillZeros();
 
     return g;
