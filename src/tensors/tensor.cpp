@@ -281,6 +281,7 @@ void Tensor::reduce_grad_broadcast() {
 
     if (is_skip) {
       // Already reduced
+      grad = gcp;
       continue;
     }
 
