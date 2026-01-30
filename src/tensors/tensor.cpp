@@ -624,8 +624,8 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad = out->grad;
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad;
-      const DType &dt = get_dtype_by_presidence({b, out_grad});
       TensorPtr bt = transpose(b);
+      const DType &dt = get_dtype_by_presidence({b, out_grad});
       TensorPtr tmp = Tensor::allocate_like(a_grad, dt, false, IS_SPARSE(out_grad));
       Weed::matmul(*(out_grad.get()), *(bt.get()), *(tmp.get()));
       a_grad->upcast(dt);
@@ -634,8 +634,8 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     }
     if (b->requires_grad) {
       TensorPtr b_grad = b->grad;
-      const DType &dt = get_dtype_by_presidence({a, out_grad});
       TensorPtr at = transpose(a);
+      const DType &dt = get_dtype_by_presidence({a, out_grad});
       TensorPtr tmp = Tensor::allocate_like(b_grad, dt, false, IS_SPARSE(out_grad));
       Weed::matmul(*(at.get()), *(out_grad.get()), *(tmp.get()));
       b_grad->upcast(dt);
