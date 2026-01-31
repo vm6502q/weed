@@ -36,9 +36,9 @@
     pfControl.par_for(0, n, fn);                                               \
   }
 
-#define SPARSE_CPU_2_SWITCH(storage1, storage2)                                \
+#define SPARSE_CPU_2_SWITCH(strg)                                              \
   if (b.storage->is_sparse() && b.is_contiguous()) {                           \
-    GET_STORAGE(storage2, b, sb);                                              \
+    GET_STORAGE(strg, b, sb);                                                  \
     pfControl.par_for(sb->data, fn);                                           \
   } else {                                                                     \
     pfControl.par_for(0, n, fn);                                               \
