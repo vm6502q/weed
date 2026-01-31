@@ -105,12 +105,12 @@ struct Tensor {
    */
   tcapint get_size() const {
     if (shape.empty()) {
-      return ZERO_VCI;
+      return 0U;
     }
 
-    tcapint max_index = offset;
+    tcapint max_index = 0U;
     for (size_t i = 0U; i < shape.size(); ++i) {
-      max_index += (shape[i] - ONE_VCI) * stride[i];
+      max_index += (shape[i] - 1U) * stride[i];
     }
 
     return max_index + 1U;
@@ -121,7 +121,7 @@ struct Tensor {
    */
   tcapint get_broadcast_size() const {
     if (shape.empty()) {
-      return ZERO_VCI;
+      return 0U;
     }
 
     tcapint max_index = 1U;
@@ -148,7 +148,7 @@ struct Tensor {
     }
 
     for (size_t i = 0U; i < shape.size(); ++i) {
-      if (((shape[i] - ONE_VCI) * stride[i]) != 0U) {
+      if (((shape[i] - 1U) * stride[i]) != 0U) {
         return false;
       }
     }

@@ -83,7 +83,7 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
                const DType &dtype, const DeviceTag &dtag, const int64_t &did,
                const bool &s)
-    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(
@@ -124,7 +124,7 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
                const DeviceTag &dtag, const int64_t &did)
-    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(
@@ -151,7 +151,7 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
                const DeviceTag &dtag, const int64_t &did)
-    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(
@@ -178,7 +178,7 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
 
 Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
-    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(
@@ -193,7 +193,7 @@ Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
 }
 Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
-    : shape(shp), stride(strd), offset(ZERO_VCI), grad_node(nullptr),
+    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(
@@ -392,10 +392,10 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         TensorPtr a_grad = a->grad;
         TensorPtr out_grad = out->grad;
         TensorPtr scale = std::make_shared<RealScalar>(
-            ONE_R1 / (real1)a->get_size(), false, out->storage->device);
+            ONE_R1 / (real1)a->get_broadcast_size(), false, out->storage->device);
         // da += dout / N   (broadcast)
         a_grad->upcast(out_grad->storage->dtype);
-        TensorPtr s = SCALAR((real1)(ONE_R1 / (real1)a->get_size()), out_grad);
+        TensorPtr s = SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
         TensorPtr tmp = s * out_grad;
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         a->reduce_grad_broadcast();

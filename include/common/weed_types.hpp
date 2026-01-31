@@ -125,8 +125,6 @@ typedef double real1_s;
 #endif
 
 typedef std::complex<real1> complex;
-const tcapint ONE_VCI = 1U;
-const tcapint ZERO_VCI = 0U;
 constexpr tlenint bitsInCap = ((tlenint)1U) << ((tlenint)TCAPPOW);
 
 struct Node;
