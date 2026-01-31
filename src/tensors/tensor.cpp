@@ -68,15 +68,15 @@ TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
   return allocate_like(orig->shape, orig->stride, orig, dt, rg, s);
 }
 
-TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shape,
-                                const std::vector<tcapint> &stride,
+TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
+                                const std::vector<tcapint> &strd,
                                 const TensorPtr orig, const DType &dt,
                                 const bool &rg, const bool &s) {
   const StoragePtr sp = orig->storage;
   const DeviceTag dtag = sp->device;
   int64_t did = sp->get_device_id();
 
-  return std::make_shared<Tensor>(shape, stride, rg, dt, dtag, did, s);
+  return std::make_shared<Tensor>(shp, strd, rg, dt, dtag, did, s);
 }
 
 Tensor::Tensor(const std::vector<tcapint> &shp,
@@ -88,6 +88,11 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
   if (shape.size() != stride.size()) {
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
+  }
+
+  if (!is_contiguous()) {
+    throw std::invalid_argument(
+        "Initial tensor shape and stride must be contiguous!");
   }
 
   const tcapint size = get_size();
@@ -281,6 +286,21 @@ void Tensor::reduce_grad_broadcast() {
     } else {
       sh.erase(sh.begin() + i);
       st.erase(st.begin() + i);
+
+      size_t o_stride = gcp->stride[i];
+      size_t j = i;
+      while (j > 0U) {
+        --j;
+        size_t p_stride = gcp->stride[j];
+        if (p_stride) {
+          o_stride /= p_stride;
+          break;
+        }
+      }
+
+      for (size_t j = i; j < gcp->stride.size(); ++j) {
+        gcp->stride[j] /= o_stride;
+      }
     }
 
     if (is_skip) {
