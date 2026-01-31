@@ -234,7 +234,7 @@ void Tensor::reduce_grad_broadcast() {
         "gradient Tensor! (This should be called only during autograd.)");
   }
 
-  for (int64_t i = stride.size() - 1U; (i >= 0) && (shape.size() > grad->shape.size()); --i) {
+  for (int64_t i = stride.size() - 1U; i >= 0; --i) {
     if (stride[i]) {
       continue;
     }
