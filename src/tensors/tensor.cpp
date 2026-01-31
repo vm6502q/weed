@@ -90,8 +90,6 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
         "Tensor shape vector must have same length as stride vector!");
   }
 
-  clean_broadcast_indices();
-
   const tcapint size = get_size();
 
   if (s && (dtag == DeviceTag::CPU)) {
@@ -133,8 +131,6 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
         "Tensor shape vector must have same length as stride vector!");
   }
 
-  clean_broadcast_indices();
-
   if (!is_contiguous()) {
     throw std::invalid_argument(
         "Initial tensor shape and stride must be contiguous!");
@@ -162,8 +158,6 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-
-  clean_broadcast_indices();
 
   if (!is_contiguous()) {
     throw std::invalid_argument(
@@ -193,8 +187,6 @@ Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
         "Tensor shape vector must have same length as stride vector!");
   }
 
-  clean_broadcast_indices();
-
   if (!is_contiguous()) {
     throw std::invalid_argument(
         "Initial tensor shape and stride must be contiguous!");
@@ -210,8 +202,6 @@ Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-
-  clean_broadcast_indices();
 
   if (!is_contiguous()) {
     throw std::invalid_argument(
@@ -275,7 +265,7 @@ void Tensor::reduce_grad_broadcast() {
   }
 
   for (int64_t i = stride.size() - 1U; i >= 0; --i) {
-    if (stride[i] || !grad->stride[i]) {
+    if (stride[i]) {
       continue;
     }
 
