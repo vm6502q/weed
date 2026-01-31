@@ -14,11 +14,10 @@
 #include "tensors/flat_tensors.hpp"
 
 #define REDUCE_KERNEL(type)                                                    \
-  const tcapint I_o = out.stride[0U];                                          \
-  const size_t n = out.get_size();                                             \
+  const size_t n = out.get_broadcast_size();                                   \
   const int64_t id = index;                                                    \
   pfControl.par_for(0, n, [&](const tcapint &o, const unsigned &cpu) {         \
-    tcapint base = a.offset;                                                   \
+    tcapint base = 0U;                                                         \
     tcapint tmp = o;                                                           \
                                                                                \
     for (int64_t d = a.shape.size() - 1; d >= 0; --d) {                        \
@@ -37,7 +36,7 @@
     for (tcapint j = 0U; j < a.shape[id]; ++j) {                               \
       sum += (*pa)[base + j * a.stride[id]];                                   \
     }                                                                          \
-    po->write(o *I_o, sum);                                                    \
+    po->write(o, sum);                                                         \
   });
 
 #define DISPATCH_GPU_KERNEL(type, api_call)                                    \
@@ -71,14 +70,14 @@
 
 namespace Weed {
 void ReduceKernel::cpu_real(const size_t &index, const Tensor &a, Tensor &out) {
-  GET_STORAGE(RealStorage, a, pa);
+  GET_CONST_FLAT_TENSOR(RealTensor, a, pa);
   GET_STORAGE(RealStorage, out, po);
 
   REDUCE_KERNEL(real1);
 }
 void ReduceKernel::cpu_complex(const size_t &index, const Tensor &a,
                                Tensor &out) {
-  GET_STORAGE(ComplexStorage, a, pa);
+  GET_CONST_FLAT_TENSOR(ComplexTensor, a, pa);
   GET_STORAGE(ComplexStorage, out, po);
 
   REDUCE_KERNEL(complex);

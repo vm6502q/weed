@@ -387,19 +387,20 @@ TensorPtr Tensor::mean(TensorPtr a) {
 
 void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
-  out->grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        TensorPtr a_grad = a->grad;
-        TensorPtr out_grad = out->grad;
-        TensorPtr scale = std::make_shared<RealScalar>(
-            ONE_R1 / (real1)a->get_broadcast_size(), false, out->storage->device);
-        // da += dout / N   (broadcast)
-        a_grad->upcast(out_grad->storage->dtype);
-        TensorPtr s = SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
-        TensorPtr tmp = s * out_grad;
-        Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
-        a->reduce_grad_broadcast();
-      });
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a}, [a,
+                                                                      out]() {
+    TensorPtr a_grad = a->grad;
+    TensorPtr out_grad = out->grad;
+    TensorPtr scale = std::make_shared<RealScalar>(
+        ONE_R1 / (real1)a->get_broadcast_size(), false, out->storage->device);
+    // da += dout / N   (broadcast)
+    a_grad->upcast(out_grad->storage->dtype);
+    TensorPtr s =
+        SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
+    TensorPtr tmp = s * out_grad;
+    Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+    a->reduce_grad_broadcast();
+  });
 }
 
 TensorPtr Tensor::abs(TensorPtr a) {
