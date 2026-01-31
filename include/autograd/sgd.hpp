@@ -28,6 +28,7 @@ inline void sgd_step(const std::vector<ParameterPtr> &params, real1 lr) {
   for (auto &p : params) {
     TensorPtr pg = p->grad;
     TensorPtr tmp = lr * pg;
+    tmp->match_shape(p);
     Weed::sub_in_place(*(p.get()), *(tmp.get()));
   }
 }
