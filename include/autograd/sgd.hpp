@@ -16,8 +16,6 @@
 #include "tensors/parameter.hpp"
 #include "tensors/real_scalar.hpp"
 
-#include <iostream>
-
 namespace Weed {
 /**
  * Stochastic gradient descent (SGD) optimization step
@@ -29,8 +27,6 @@ inline void sgd_step(const std::vector<ParameterPtr> &params, real1 lr) {
 
   for (auto &p : params) {
     TensorPtr pg = p->grad;
-    std::cout << pg->get_size() << ", " << pg->get_broadcast_size()
-              << std::endl;
     TensorPtr tmp = lr * pg;
     Weed::sub_in_place(*(p.get()), *(tmp.get()));
   }
