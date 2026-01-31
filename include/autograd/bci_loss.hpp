@@ -22,7 +22,7 @@ namespace Weed {
  * Binary cross-entropy loss
  */
 inline TensorPtr bci_loss(TensorPtr y_pred, TensorPtr y_true) {
-  WEED_CONST real1 eps(32 * FP_NORM_EPSILON);
+  WEED_CONST real1 eps(2 * FP_NORM_EPSILON);
   y_pred = Tensor::clamp(y_pred, eps, ONE_R1 - eps);
 
   return Tensor::mean((y_true - ONE_R1) * Tensor::log(ONE_R1 - y_pred) -
