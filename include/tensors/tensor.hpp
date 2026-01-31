@@ -70,6 +70,25 @@ struct Tensor {
   Tensor(TensorPtr orig) { copy(orig); }
 
   /**
+   * Validate the constructor parameters
+   */
+  void validate_constructor() {
+    if (shape.size() != stride.size()) {
+      throw std::invalid_argument(
+          "Tensor shape vector must have same length as stride vector!");
+    }
+
+    if ((shape.size() == 1U) && (shape[0U] == 1U)) {
+      stride[0U] = 0U;
+    }
+
+    if (!is_contiguous()) {
+      throw std::invalid_argument(
+          "Initial tensor shape and stride must be contiguous!");
+    }
+  }
+
+  /**
    * Make a shallow copy of this tensor
    */
   TensorPtr copy() const {

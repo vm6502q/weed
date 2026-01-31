@@ -85,15 +85,8 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
                const bool &s)
     : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
-  if (shape.size() != stride.size()) {
-    throw std::invalid_argument(
-        "Tensor shape vector must have same length as stride vector!");
-  }
 
-  if (!is_contiguous()) {
-    throw std::invalid_argument(
-        "Initial tensor shape and stride must be contiguous!");
-  }
+  validate_constructor();
 
   const tcapint size = get_size();
 
@@ -131,15 +124,8 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
                const DeviceTag &dtag, const int64_t &did)
     : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
-  if (shape.size() != stride.size()) {
-    throw std::invalid_argument(
-        "Tensor shape vector must have same length as stride vector!");
-  }
 
-  if (!is_contiguous()) {
-    throw std::invalid_argument(
-        "Initial tensor shape and stride must be contiguous!");
-  }
+  validate_constructor();
 
   const tcapint size = get_size();
 
@@ -159,15 +145,8 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
                const DeviceTag &dtag, const int64_t &did)
     : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
-  if (shape.size() != stride.size()) {
-    throw std::invalid_argument(
-        "Tensor shape vector must have same length as stride vector!");
-  }
 
-  if (!is_contiguous()) {
-    throw std::invalid_argument(
-        "Initial tensor shape and stride must be contiguous!");
-  }
+  validate_constructor();
 
   const tcapint size = get_size();
 
@@ -187,15 +166,8 @@ Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
     : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
-  if (shape.size() != stride.size()) {
-    throw std::invalid_argument(
-        "Tensor shape vector must have same length as stride vector!");
-  }
 
-  if (!is_contiguous()) {
-    throw std::invalid_argument(
-        "Initial tensor shape and stride must be contiguous!");
-  }
+  validate_constructor();
 
   storage = std::make_shared<SparseCpuRealStorage>(val, get_size());
 }
@@ -203,15 +175,8 @@ Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
     : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
       requires_grad(rg) {
-  if (shape.size() != stride.size()) {
-    throw std::invalid_argument(
-        "Tensor shape vector must have same length as stride vector!");
-  }
 
-  if (!is_contiguous()) {
-    throw std::invalid_argument(
-        "Initial tensor shape and stride must be contiguous!");
-  }
+  validate_constructor();
 
   storage = std::make_shared<SparseCpuComplexStorage>(val, get_size());
 }
