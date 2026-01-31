@@ -377,15 +377,15 @@ TensorPtr Tensor::sum(TensorPtr a) {
 }
 
 void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
-  out->grad = Tensor::make_gradient(
-      a->shape, a->storage->dtype, a->storage->device,
-      a->storage->get_device_id(), a->storage->is_sparse());
+  out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         TensorPtr a_grad = a->grad;
         TensorPtr out_grad = out->grad;
         // da += dout  (broadcast)
         a_grad->upcast(out_grad->storage->dtype);
+        out_grad->shape = a_grad->shape;
+        out_grad->stride = std::vector<tcapint>(a_grad->stride.size(), 0);
         Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
         a->reduce_grad_broadcast();
       });
@@ -405,9 +405,7 @@ TensorPtr Tensor::mean(TensorPtr a) {
 }
 
 void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
-  out->grad = Tensor::make_gradient(
-      a->shape, a->storage->dtype, a->storage->device,
-      a->storage->get_device_id(), a->storage->is_sparse());
+  out->make_gradient();
   out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a}, [a,
                                                                       out]() {
     TensorPtr a_grad = a->grad;
@@ -419,6 +417,8 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
     TensorPtr s =
         SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
     TensorPtr tmp = s * out_grad;
+    tmp->shape = a_grad->shape;
+    tmp->stride = std::vector<tcapint>(a_grad->stride.size(), 0);
     Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
     a->reduce_grad_broadcast();
   });

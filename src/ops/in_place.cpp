@@ -109,8 +109,8 @@ void InPlaceKernel::in_place(Tensor &a, const Tensor &b) {
   const tcapint aSize = a.get_broadcast_size();
   const tcapint bSize = b.get_broadcast_size();
   if (aSize != bSize) {
-    throw std::invalid_argument(
-        "In InPlaceKernel::in_place(a, b, out), 'a' size does not match 'b' size!");
+    throw std::invalid_argument("In InPlaceKernel::in_place(a, b, out), 'a' "
+                                "size does not match 'b' size!");
   }
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
   const bool isBComplex = b.storage->dtype == DType::COMPLEX;

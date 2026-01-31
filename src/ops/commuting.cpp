@@ -121,12 +121,12 @@ void CommutingKernel::commuting(const Tensor &a, const Tensor &b, Tensor &out) {
   const tcapint bSize = b.get_broadcast_size();
   const tcapint outSize = out.get_broadcast_size();
   if (aSize != bSize) {
-    throw std::invalid_argument(
-        "In CommutingKernel::commuting(a, b, out), 'a' size does not match 'b' size!");
+    throw std::invalid_argument("In CommutingKernel::commuting(a, b, out), 'a' "
+                                "size does not match 'b' size!");
   }
   if (aSize != outSize) {
-    throw std::invalid_argument(
-        "In CommutingKernel::commuting(a, b, out), out size does not match input size!");
+    throw std::invalid_argument("In CommutingKernel::commuting(a, b, out), out "
+                                "size does not match input size!");
   }
   if (isAComplex && isBComplex) {
 #if ENABLE_GPU
