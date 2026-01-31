@@ -65,7 +65,10 @@ TensorPtr Tensor::allocate_scalar_like(const TensorPtr orig, const bool &rg) {
 
 TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
                                 const bool &rg, const bool &s) {
-  return allocate_like(orig->shape, orig->stride, orig, dt, rg, s);
+  TensorPtr n = allocate_like(orig->shape, orig->stride, orig, dt, rg, s);
+  n->freeze = orig->freeze;
+
+  return n;
 }
 
 TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
@@ -83,8 +86,8 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
                const DType &dtype, const DeviceTag &dtag, const int64_t &did,
                const bool &s)
-    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
-      requires_grad(rg) {
+    : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
+      grad_node(nullptr), requires_grad(rg) {
 
   validate_constructor();
 
@@ -122,8 +125,8 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
                const DeviceTag &dtag, const int64_t &did)
-    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
-      requires_grad(rg) {
+    : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
+      grad_node(nullptr), requires_grad(rg) {
 
   validate_constructor();
 
@@ -143,8 +146,8 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
                const DeviceTag &dtag, const int64_t &did)
-    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
-      requires_grad(rg) {
+    : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
+      grad_node(nullptr), requires_grad(rg) {
 
   validate_constructor();
 
@@ -164,8 +167,8 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
 
 Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
-    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
-      requires_grad(rg) {
+    : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
+      grad_node(nullptr), requires_grad(rg) {
 
   validate_constructor();
 
@@ -173,8 +176,8 @@ Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
 }
 Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
-    : shape(shp), stride(strd), offset(0U), grad_node(nullptr),
-      requires_grad(rg) {
+    : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
+      grad_node(nullptr), requires_grad(rg) {
 
   validate_constructor();
 
@@ -223,6 +226,7 @@ bool Tensor::match_shape(const TensorPtr a) {
 
   shape = a->shape;
   stride.resize(shape.size());
+  freeze.resize(shape.size());
 
   return true;
 }
@@ -235,7 +239,7 @@ void Tensor::reduce_grad_broadcast() {
   }
 
   for (int64_t i = stride.size() - 1U; i >= 0; --i) {
-    if (stride[i]) {
+    if (freeze[i] || stride[i]) {
       continue;
     }
 

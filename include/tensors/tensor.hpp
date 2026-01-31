@@ -35,6 +35,7 @@ struct Tensor {
 
   std::vector<tcapint> shape;
   std::vector<tcapint> stride;
+  std::vector<bool> freeze;
   tcapint offset;
 
   NodePtr grad_node;
@@ -80,11 +81,14 @@ struct Tensor {
 
     if ((shape.size() == 1U) && (shape[0U] == 1U)) {
       stride[0U] = 0U;
-    }
-
-    if (!is_contiguous()) {
-      throw std::invalid_argument(
-          "Initial tensor shape and stride must be contiguous!");
+    } else {
+      if (!is_contiguous()) {
+        throw std::invalid_argument(
+            "Initial tensor shape and stride must be contiguous!");
+      }
+      for (size_t i = 0U; i < stride.size(); ++i) {
+        freeze[i] = stride[i] == 0U;
+      }
     }
   }
 
