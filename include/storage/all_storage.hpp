@@ -25,7 +25,7 @@
 
 #define GPU_INIT_2_SCALAR(storage1, storage2)                                  \
   GET_STORAGE(storage1, a, pa);                                                \
-  size_t n = a.get_size()
+  size_t n = a.get_broadcast_size()
 
 #define SPARSE_CPU_2_RUN(strg)                                                 \
   if (out.storage->is_sparse() && a.storage->is_sparse() &&                    \

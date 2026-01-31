@@ -43,4 +43,4 @@
   GET_FLAT_TENSOR(ft1, din, pdi);                                              \
   GET_CONST_FLAT_TENSOR(ft2, in, pi);                                          \
   GET_CONST_FLAT_TENSOR(ft3, dout, po);                                        \
-  size_t n = din.get_size()
+  size_t n = din.get_broadcast_size()
