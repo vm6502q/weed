@@ -106,12 +106,6 @@ static void gpu_mixed_sub(Tensor &a, const Tensor &b) {
 #endif
 
 void InPlaceKernel::in_place(Tensor &a, const Tensor &b) {
-  const tcapint aSize = a.get_broadcast_size();
-  const tcapint bSize = b.get_broadcast_size();
-  if (aSize != bSize) {
-    throw std::invalid_argument(
-        "In Weed::in_place(a, b), 'a' size does not match 'b' size!");
-  }
   const bool isAComplex = a.storage->dtype == DType::COMPLEX;
   const bool isBComplex = b.storage->dtype == DType::COMPLEX;
   if (isBComplex && !isAComplex) {
