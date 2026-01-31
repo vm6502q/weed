@@ -130,7 +130,7 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-  if (!validate_shape(shape, stride)) {
+  if (!is_contiguous()) {
     throw std::invalid_argument(
         "Initial tensor shape and stride must be contiguous!");
   }
@@ -157,7 +157,7 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-  if (!validate_shape(shape, stride)) {
+  if (!is_contiguous()) {
     throw std::invalid_argument(
         "Initial tensor shape and stride must be contiguous!");
   }
@@ -184,7 +184,7 @@ Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-  if (!validate_shape(shape, stride)) {
+  if (!is_contiguous()) {
     throw std::invalid_argument(
         "Initial tensor shape and stride must be contiguous!");
   }
@@ -199,7 +199,7 @@ Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument(
         "Tensor shape vector must have same length as stride vector!");
   }
-  if (!validate_shape(shape, stride)) {
+  if (!is_contiguous()) {
     throw std::invalid_argument(
         "Initial tensor shape and stride must be contiguous!");
   }

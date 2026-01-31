@@ -70,37 +70,6 @@ struct Tensor {
   Tensor(TensorPtr orig) { copy(orig); }
 
   /**
-   * How many elements are in this tensor?
-   */
-  virtual tcapint get_size() const {
-    if (shape.empty()) {
-      return ZERO_VCI;
-    }
-    tcapint max_index = offset;
-    for (size_t i = 0U; i < shape.size(); ++i) {
-      max_index += (shape[i] - ONE_VCI) * stride[i];
-    }
-
-    return max_index + 1U;
-  }
-
-  /**
-   * How many elements are broadcast in this tensor?
-   */
-  virtual tcapint get_broadcast_size() const {
-    if (shape.empty()) {
-      return ZERO_VCI;
-    }
-
-    tcapint max_index = 1U;
-    for (size_t i = 0U; i < shape.size(); ++i) {
-      max_index *= shape[i];
-    }
-
-    return max_index;
-  }
-
-  /**
    * Make a shallow copy of this tensor
    */
   TensorPtr copy() const {
@@ -131,32 +100,43 @@ struct Tensor {
     grad = cp->grad;
   }
 
-  void make_gradient() {
-    if (!requires_grad) {
-      throw std::domain_error("Called Tensor::make_gradient() on a node "
-                              "instance that does not require autograd!");
+  /**
+   * How many elements are in this tensor?
+   */
+  tcapint get_size() const {
+    if (shape.empty()) {
+      return ZERO_VCI;
     }
 
-    grad =
-        Tensor::make_gradient(shape, storage->dtype, storage->device,
-                              storage->get_device_id(), storage->is_sparse());
+    tcapint max_index = offset;
+    for (size_t i = 0U; i < shape.size(); ++i) {
+      max_index += (shape[i] - ONE_VCI) * stride[i];
+    }
+
+    return max_index + 1U;
   }
 
   /**
-   * For broadcast, make this scalar match the shape of a target Tensor
+   * How many elements are broadcast in this tensor?
    */
-  bool match_shape(const TensorPtr a);
+  tcapint get_broadcast_size() const {
+    if (shape.empty()) {
+      return ZERO_VCI;
+    }
 
-  /**
-   * For internal use, sum the gradient over all broadcast indices
-   */
-  void reduce_grad_broadcast();
+    tcapint max_index = 1U;
+    for (size_t i = 0U; i < shape.size(); ++i) {
+      max_index *= shape[i];
+    }
+
+    return max_index;
+  }
 
   /**
    * Is the Tensor Storage contiguous (i.e., densely packed in a traversable
    * order)?
    */
-  bool is_contiguous() const { return validate_shape(shape, stride); }
+  bool is_contiguous() const { return is_contiguous(shape, stride); }
 
   /**
    * Is this Tensor a Scalar (i.e., has only a single storage element that's
@@ -177,7 +157,7 @@ struct Tensor {
   }
 
   /**
-   *  Lookup an index in Storage based on shape and stride
+   *  Look up an index in Storage based on shape and stride
    */
   tcapint get_storage_index(const tcapint &idx) const {
     if (is_scalar()) {
@@ -200,6 +180,27 @@ struct Tensor {
     return stor;
   }
 
+  void make_gradient() {
+    if (!requires_grad) {
+      throw std::domain_error("Called Tensor::make_gradient() on a node "
+                              "instance that does not require autograd!");
+    }
+
+    grad =
+        Tensor::make_gradient(shape, storage->dtype, storage->device,
+                              storage->get_device_id(), storage->is_sparse());
+  }
+
+  /**
+   * For broadcast, make this scalar match the shape of a target Tensor
+   */
+  bool match_shape(const TensorPtr a);
+
+  /**
+   * For internal use, sum the gradient over all broadcast indices
+   */
+  void reduce_grad_broadcast();
+
   /**
    * Select a sub-tensor from the position in the outermost tensor index
    */
@@ -220,7 +221,7 @@ struct Tensor {
   /**
    * Validate the Tensor shape, for constructors
    */
-  static bool validate_shape(const std::vector<tcapint> &shp,
+  static bool is_contiguous(const std::vector<tcapint> &shp,
                              const std::vector<tcapint> &s) {
     tcapint st = 1U;
     for (size_t i = 0U; i < s.size(); ++i) {
