@@ -122,11 +122,11 @@ void CommutingKernel::commuting(const Tensor &a, const Tensor &b, Tensor &out) {
   const tcapint outSize = out.get_broadcast_size();
   if (aSize != bSize) {
     throw std::invalid_argument(
-        "In Weed::commuting(a, b, out), 'a' size does not match 'b' size!");
+        "In CommutingKernel::commuting(a, b, out), 'a' size does not match 'b' size!");
   }
   if (aSize != outSize) {
     throw std::invalid_argument(
-        "In Weed::commuting(a, b, out), out size does not match input size!");
+        "In CommutingKernel::commuting(a, b, out), out size does not match input size!");
   }
   if (isAComplex && isBComplex) {
 #if ENABLE_GPU
