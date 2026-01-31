@@ -1,8 +1,8 @@
-add_executable (xor
-    examples/xor.cpp
+add_executable (nor
+    examples/nor.cpp
     )
-set_target_properties(xor PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
-target_link_libraries (xor ${WEED_LIBS})
+set_target_properties(nor PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
+target_link_libraries (nor ${WEED_LIBS})
 
 set(EXAMPLE_COMPILE_OPTS ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (xor PUBLIC ${EXAMPLE_COMPILE_OPTS})
+target_compile_options (nor PUBLIC ${EXAMPLE_COMPILE_OPTS})
