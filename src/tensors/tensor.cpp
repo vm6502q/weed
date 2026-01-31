@@ -284,10 +284,11 @@ void Tensor::reduce_grad_broadcast() {
       sh[0U] = 1U;
       st[0U] = 0U;
     } else {
+      size_t o_stride = gcp->stride[i];
+
       sh.erase(sh.begin() + i);
       st.erase(st.begin() + i);
 
-      size_t o_stride = gcp->stride[i];
       size_t j = i;
       while (j > 0U) {
         --j;
