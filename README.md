@@ -29,7 +29,7 @@ Much like `Qrack`, `Weed` is designed to make the correct thing the default—an
 ```sh
     $ cd _build
     $ cmake -DENABLE_CODECOVERAGE=ON ..
-    $ make -j 8 unittest
+    $ make unittest
     $ ./unittest
     $ make coverage
     $ cd coverage_results
