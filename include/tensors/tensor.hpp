@@ -42,6 +42,7 @@ struct Tensor {
   TensorPtr grad;
   bool requires_grad;
 
+  Tensor() {}
   Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
          const bool &rg = false, const DType &dtype = DType::REAL,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
@@ -96,9 +97,7 @@ struct Tensor {
    * Make a shallow copy of this tensor
    */
   TensorPtr copy() const {
-    TensorPtr cp = std::make_shared<Tensor>(
-        shape, stride, requires_grad, storage->dtype, storage->device,
-        storage->get_device_id(), storage->is_sparse());
+    TensorPtr cp = std::make_shared<Tensor>();
     // A tensor is a view on storage:
     cp->storage = storage;
     cp->shape = shape;
@@ -308,7 +307,7 @@ struct Tensor {
    * Cast this CPU-based tensor to a GPU-based one tensor or vice-versa (if
    * necessary)
    */
-  TensorPtr cast(const DeviceTag &dt) {
+  TensorPtr cast(const DeviceTag &dt) const {
     TensorPtr cp = copy();
     if (dt == DeviceTag::CPU) {
       cp->storage = cp->storage->cpu();
