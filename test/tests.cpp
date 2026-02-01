@@ -266,6 +266,32 @@ TEST_CASE("test_scalar_clamp_complex_grad") {
   REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
 }
 
+TEST_CASE("test_scalar_clamp_mixed_grad") {
+  TensorPtr x = std::make_shared<RealScalar>(R(2), true, TEST_DTAG);
+  TensorPtr y = Tensor::clamp(x, R(1), R(3));
+  x->grad->upcast(DType::COMPLEX);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(2));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(1));
+
+  x = std::make_shared<RealScalar>(ZERO_R1, true, TEST_DTAG);
+  y = Tensor::clamp(x, R(1), R(3));
+  x->grad->upcast(DType::COMPLEX);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(1));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
+
+  x = std::make_shared<RealScalar>(R(4), true, TEST_DTAG);
+  y = Tensor::clamp(x, R(1), R(3));
+  x->grad->upcast(DType::COMPLEX);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(3));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), ZERO_R1);
+}
+
 TEST_CASE("test_real_scalar_abs") {
   TensorPtr x = std::make_shared<RealScalar>(R(2), true, TEST_DTAG);
   TensorPtr y = Tensor::abs(x);
