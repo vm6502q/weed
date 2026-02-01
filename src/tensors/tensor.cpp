@@ -484,7 +484,7 @@ void Tensor::make_max_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
-        Weed::max_grad(a_grad, *(a.get()), *(out.get()), out_grad);
+        Weed::max_grad(a_grad, *(a.get()), out_grad, *(out.get()));
       });
 }
 
@@ -508,7 +508,7 @@ void Tensor::make_min_node(TensorPtr a, TensorPtr out) {
         Tensor &out_grad = *(out->grad.get());
         Tensor &a_grad = *(a->grad.get());
         a_grad.upcast(out_grad.storage->dtype);
-        Weed::min_grad(a_grad, *(a.get()), *(out.get()), out_grad);
+        Weed::min_grad(a_grad, *(a.get()), out_grad, *(out.get()));
       });
 }
 

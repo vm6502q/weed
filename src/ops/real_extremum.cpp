@@ -74,7 +74,7 @@
 #define CPU_MAX()                                                              \
   const unsigned cpuCount =                                                    \
       (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
-  std::vector<real1> m(cpuCount, (*pa)[0U]);                                   \
+  std::vector<real1> m(cpuCount, (*pa)[O_a]);                                  \
   pfControl.par_for(1U, n, [&](const tcapint &i, const unsigned &cpu) {        \
     const real1 v = (*pa)[O_a + i * I_a];                                      \
     if (v > m[cpu]) {                                                          \
@@ -86,7 +86,7 @@
 #define CPU_MIN()                                                              \
   const unsigned cpuCount =                                                    \
       (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
-  std::vector<real1> m(cpuCount, (*pa)[0U]);                                   \
+  std::vector<real1> m(cpuCount, (*pa)[O_a]);                                  \
   pfControl.par_for(1U, n, [&](const tcapint &i, const unsigned &cpu) {        \
     const real1 v = (*pa)[O_a + i * I_a];                                      \
     if (v < m[cpu]) {                                                          \
