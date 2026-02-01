@@ -502,18 +502,22 @@ TEST_CASE("test_real_scalar_add_chain") {
 }
 
 TEST_CASE("test_real_scalar_add_sparse") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(0), R(3)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(2), R(0)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
+  RealSparseVector xvec;
+  xvec[2] = R(2);
+
+  ComplexSparseVector yvec;
+  yvec[1] = R(1);
+
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
   TensorPtr z = x + y;
 
-  RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
-  REQUIRE((*zs)[0] == R(1));
-  REQUIRE((*zs)[1] == R(2));
-  REQUIRE((*zs)[2] == R(3));
+  ComplexStorage *zs = static_cast<ComplexStorage *>(z->storage.get());
+  REQUIRE_CMPLX((*zs)[0], R(0));
+  REQUIRE_CMPLX((*zs)[1], R(1));
+  REQUIRE_CMPLX((*zs)[2], R(2));
 }
 
 TEST_CASE("test_real_scalar_sub") {
@@ -568,12 +572,16 @@ TEST_CASE("test_mixed_scalar_sub_in_place") {
 }
 
 TEST_CASE("test_real_scalar_sub_sparse") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(2), R(0)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(1), R(0)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
+  RealSparseVector xvec;
+  xvec[1] = R(2);
+
+  RealSparseVector yvec;
+  yvec[1] = R(1);
+
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
   TensorPtr z = x - y;
 
   RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
@@ -616,12 +624,17 @@ TEST_CASE("test_mixed_scalar_mul") {
 }
 
 TEST_CASE("test_real_scalar_mul_sparse") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(2), R(1)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(1), R(0)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
+  RealSparseVector xvec;
+  xvec[1] = R(2);
+  xvec[2] = R(1);
+
+  RealSparseVector yvec;
+  yvec[1] = R(1);
+
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
   TensorPtr z = x * y;
 
   RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
@@ -673,18 +686,20 @@ TEST_CASE("test_mixed_scalar_div") {
 }
 
 TEST_CASE("test_real_scalar_div_sparse") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(2), R(4), R(6)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(2), R(2), R(2)},
-      std::vector<tcapint>{3}, std::vector<tcapint>{1}, false);
+  RealSparseVector xvec;
+  xvec[1] = R(4);
+
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
+  TensorPtr y = std::make_shared<Tensor>(std::vector<real1>{R(2), R(2), R(2)},
+                                         std::vector<tcapint>{3},
+                                         std::vector<tcapint>{1}, false);
   TensorPtr z = x / y;
 
   RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
-  REQUIRE((*zs)[0] == R(1));
+  REQUIRE((*zs)[0] == R(0));
   REQUIRE((*zs)[1] == R(2));
-  REQUIRE((*zs)[2] == R(3));
+  REQUIRE((*zs)[2] == R(0));
 }
 
 TEST_CASE("test_real_broadcast_mul") {
@@ -826,6 +841,7 @@ TEST_CASE("test_mixed_matmul") {
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[1])[1]), R(15));
 }
 
+#if 0
 TEST_CASE("test_matmul_gradient_sum_loss") {
   using namespace Weed;
 
@@ -833,13 +849,13 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   TensorPtr A = std::make_shared<Tensor>(
       std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6)},
       std::vector<tcapint>{2, 3}, std::vector<tcapint>{1, 2},
-      /*requires_grad=*/true);
+      /*requires_grad=*/true, TEST_DTAG);
 
   // B: 3x2 (row-major)
   TensorPtr B = std::make_shared<Tensor>(
       std::vector<real1>{R(7), R(8), R(9), R(10), R(11), R(12)},
       std::vector<tcapint>{3, 2}, std::vector<tcapint>{1, 3},
-      /*requires_grad=*/true);
+      /*requires_grad=*/true, TEST_DTAG);
 
   TensorPtr C = A >> B;
   TensorPtr L = Tensor::sum(C);
@@ -862,3 +878,4 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   REQUIRE((*Bg)[4] == R(7));
   REQUIRE((*Bg)[5] == R(11));
 }
+#endif

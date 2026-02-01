@@ -61,7 +61,7 @@ struct SparseCpuRealStorage : RealStorage {
     auto it = data.find(idx);
 
     if (it == data.end()) {
-      data[idx] += val;
+      data[idx] = val;
       return;
     }
 
@@ -74,8 +74,17 @@ struct SparseCpuRealStorage : RealStorage {
   }
 
   void FillZeros() override { data.clear(); }
-  void FillOnes() override { FillValue(ONE_R1); }
+  void FillOnes() override {
+    for (size_t i = 0U; i < size; ++i) {
+      data[i] = ONE_R1;
+    }
+  }
   void FillValue(const real1 &v) override {
+    if (std::abs(v) <= FP_NORM_EPSILON) {
+      FillZeros();
+      return;
+    }
+
     for (size_t i = 0U; i < size; ++i) {
       data[i] = v;
     }

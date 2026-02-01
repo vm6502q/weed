@@ -59,7 +59,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
     auto it = data.find(idx);
 
     if (it == data.end()) {
-      data[idx] += val;
+      data[idx] = val;
       return;
     }
 
@@ -72,8 +72,17 @@ struct SparseCpuComplexStorage : ComplexStorage {
   }
 
   void FillZeros() override { data.clear(); }
-  void FillOnes() override { FillValue(ONE_CMPLX); }
+  void FillOnes() override {
+    for (size_t i = 0U; i < size; ++i) {
+      data[i] = ONE_CMPLX;
+    }
+  }
   void FillValue(const complex &v) override {
+    if (std::abs(v) <= FP_NORM_EPSILON) {
+      FillZeros();
+      return;
+    }
+
     for (size_t i = 0U; i < size; ++i) {
       data[i] = v;
     }
