@@ -86,9 +86,7 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
           "GpuComplexStorage::operator[] argument out-of-bounds!");
     }
 
-    tcapint i = idx << 1U;
-
-    return complex(dev->GetReal(buffer, i), dev->GetReal(buffer, i + 1U));
+    return dev->GetComplex(buffer, idx);
   }
 
   void write(const tcapint &idx, const complex &val) override {
