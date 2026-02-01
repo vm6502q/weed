@@ -11,17 +11,21 @@
 
 #include "ops/real_extremum.hpp"
 #include "common/parallel_for.hpp"
-#include "tensors/flat_tensors.hpp"
+#include "storage/all_storage.hpp"
 #include "tensors/real_scalar.hpp"
 
 #define CPU_STORAGE_INIT()                                                     \
+  const tcapint O_a = a.offset;                                                \
   const tcapint I_a = a.stride[0U];                                            \
   GET_STORAGE(RealStorage, a, pa);                                             \
   const size_t n = a.get_broadcast_size()
 
 #define CPU_GRAD_STORAGE_INIT_3(ft1, ft2, ft3)                                 \
+  const tcapint O_d = din.offset;                                              \
   const tcapint I_d = din.stride[0U];                                          \
+  const tcapint O_i = in.offset;                                               \
   const tcapint I_i = in.stride[0U];                                           \
+  const tcapint O_o = dout.offset;                                             \
   const tcapint I_o = dout.stride[0U];                                         \
   GET_STORAGE(ft1, din, pdi);                                                  \
   GET_STORAGE(ft2, in, pi);                                                    \
@@ -61,8 +65,8 @@
 #define CPU_GRAD()                                                             \
   const real1 m = static_cast<const RealScalar *>(&out)->get_item();           \
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
-    if ((*pi)[i * I_i] == m) {                                                 \
-      pdi->add(i * I_d, (*po)[i * I_o]);                                       \
+    if ((*pi)[O_i + i * I_i] == m) {                                           \
+      pdi->add(O_d + i * I_d, (*po)[O_o + i * I_o]);                           \
     }                                                                          \
   };                                                                           \
   pfControl.par_for(0, n, fn)
@@ -72,7 +76,7 @@
       (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
   std::vector<real1> m(cpuCount, (*pa)[0U]);                                   \
   pfControl.par_for(1U, n, [&](const tcapint &i, const unsigned &cpu) {        \
-    const real1 v = (*pa)[i * I_a];                                            \
+    const real1 v = (*pa)[O_a + i * I_a];                                      \
     if (v > m[cpu]) {                                                          \
       m[cpu] = v;                                                              \
     }                                                                          \
@@ -84,7 +88,7 @@
       (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
   std::vector<real1> m(cpuCount, (*pa)[0U]);                                   \
   pfControl.par_for(1U, n, [&](const tcapint &i, const unsigned &cpu) {        \
-    const real1 v = (*pa)[i * I_a];                                            \
+    const real1 v = (*pa)[O_a + i * I_a];                                      \
     if (v < m[cpu]) {                                                          \
       m[cpu] = v;                                                              \
     }                                                                          \
