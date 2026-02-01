@@ -13,12 +13,12 @@
 #include "common/parallel_for.hpp"
 #include "tensors/flat_tensors.hpp"
 
-#define CPU_HEADER(ft1, ft2, ostorage)                                         \
+#define CPU_HEADER(storage1, storage2, storage3)                               \
   MatrixDim d = get_dim(a, b, out);                                            \
                                                                                \
-  GET_CONST_FLAT_TENSOR(ft1, a, pa);                                           \
-  GET_CONST_FLAT_TENSOR(ft2, b, pb);                                           \
-  GET_STORAGE(ostorage, out, po);
+  GET_STORAGE(storage1, a, pa);                                                \
+  GET_STORAGE(storage2, b, pb);                                                \
+  GET_STORAGE(storage3, out, po);
 
 #define CPU_BY_TYPE(stype)                                                     \
   pfControl.par_for(0, (d.M) * (d.N),                                          \
@@ -27,8 +27,8 @@
                       const tcapint j = l % d.N;                               \
                       stype sum = ZERO_R1;                                     \
                       for (tcapint k = 0; k < d.K; ++k) {                      \
-                        const auto a_idx = i * d.A_s0 + k * d.A_s1;            \
-                        const auto b_idx = k * d.B_s0 + j * d.B_s1;            \
+                        const auto a_idx = d.A_o + i * d.A_s0 + k * d.A_s1;    \
+                        const auto b_idx = d.B_o + k * d.B_s0 + j * d.B_s1;    \
                         sum += (*pa)[a_idx] * (*pb)[b_idx];                    \
                       }                                                        \
                       const auto o_idx = i * d.O_s0 + j * d.O_s1;              \
@@ -95,21 +95,21 @@ MatrixDim MatMulKernel::get_dim(const Tensor &a, const Tensor &b, Tensor &out) {
 }
 
 void MatMulKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_HEADER(RealTensor, RealTensor, RealStorage);
+  CPU_HEADER(RealStorage, RealStorage, RealStorage);
   CPU_BY_TYPE(real1);
 }
 void MatMulKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_HEADER(ComplexTensor, ComplexTensor, ComplexStorage);
+  CPU_HEADER(ComplexStorage, ComplexStorage, ComplexStorage);
   CPU_BY_TYPE(complex);
 }
 void MatMulKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                     Tensor &out) {
-  CPU_HEADER(ComplexTensor, RealTensor, ComplexStorage);
+  CPU_HEADER(ComplexStorage, RealStorage, ComplexStorage);
   CPU_BY_TYPE(complex);
 }
 void MatMulKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                      Tensor &out) {
-  CPU_HEADER(RealTensor, ComplexTensor, ComplexStorage);
+  CPU_HEADER(RealStorage, ComplexStorage, ComplexStorage);
   CPU_BY_TYPE(complex);
 }
 

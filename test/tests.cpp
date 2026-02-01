@@ -841,7 +841,6 @@ TEST_CASE("test_mixed_matmul") {
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[1])[1]), R(15));
 }
 
-#if 0
 TEST_CASE("test_matmul_gradient_sum_loss") {
   using namespace Weed;
 
@@ -878,4 +877,3 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   REQUIRE((*Bg)[4] == R(7));
   REQUIRE((*Bg)[5] == R(11));
 }
-#endif

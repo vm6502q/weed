@@ -24,7 +24,8 @@
   }
 
 #define CPU_KERNEL(type, storage)                                              \
-  unsigned cpuCount = (unsigned)std::min(n, (size_t)pfControl.GetNumCores());  \
+  const unsigned cpuCount =                                                    \
+      (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
   std::vector<type> total(cpuCount, ZERO_R1);                                  \
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
     total[cpu] += (*pa)[i];                                                    \
@@ -36,7 +37,8 @@
   }
 
 #define CPU_SUM(type)                                                          \
-  unsigned cpuCount = (unsigned)std::min(n, (size_t)pfControl.GetNumCores());  \
+  const unsigned cpuCount =                                                    \
+      (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
   std::vector<type> total(cpuCount, ZERO_R1);                                  \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
     total[cpu] += (*pa)[i];                                                    \
@@ -72,7 +74,7 @@ static void cpu_sum_real(const Tensor &a, Tensor &out) {
 static void cpu_mean_real(const Tensor &a, Tensor &out) {
   cpu_sum_real(a, out);
   GET_STORAGE(RealStorage, out, po);
-  po->write(0U, (*po)[0U] / (real1)a.get_size());
+  po->write(0U, (*po)[0U] / (real1)a.get_broadcast_size());
 }
 static void cpu_sum_complex(const Tensor &a, Tensor &out) {
   CPU_INIT_2_SCALAR(ComplexTensor, ComplexStorage);
@@ -82,7 +84,7 @@ static void cpu_sum_complex(const Tensor &a, Tensor &out) {
 static void cpu_mean_complex(const Tensor &a, Tensor &out) {
   cpu_sum_complex(a, out);
   GET_STORAGE(ComplexStorage, out, po);
-  po->write(0U, (*po)[0U] / (real1)a.get_size());
+  po->write(0U, (*po)[0U] / (real1)a.get_broadcast_size());
 }
 #if ENABLE_GPU
 static void gpu_sum_real(const Tensor &a, Tensor &out) {
@@ -121,7 +123,7 @@ static void gpu_mean_complex(const Tensor &a, Tensor &out) {
 }
 #endif
 void SumKernel::sum(const Tensor &a, Tensor &out) {
-  if (out.get_size() != 1U) {
+  if (out.get_broadcast_size() != 1U) {
     throw std::invalid_argument("In Weed::sum(a, out) or Weed::mean(a, out), "
                                 "out parameter is not a scalar!");
   }
