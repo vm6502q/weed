@@ -30,17 +30,11 @@ DeviceTag TEST_DTAG;
 
 #if ENABLE_OPENCL
 #define WEED_GPU_SINGLETON (OCLEngine::Instance())
-#define WEED_GPU_CLASS QEngineOCL
-#define WEED_GPU_ENUM QINTERFACE_OPENCL
 #elif ENABLE_CUDA
 #define WEED_GPU_SINGLETON (CUDAEngine::Instance())
-#define WEED_GPU_CLASS QEngineCUDA
-#define WEED_GPU_ENUM QINTERFACE_CUDA
 #endif
-#define SHOW_OCL_BANNER()                                                      \
-  if (WEED_GPU_SINGLETON.GetDeviceCount()) {                                   \
-    CreateQuantumInterface(WEED_GPU_ENUM, 1, ZERO_BCI).reset();                \
-  }
+
+#define SHOW_OCL_BANNER() WEED_GPU_SINGLETON.GetDeviceCount();
 
 int main(int argc, char *argv[]) {
   Catch::Session session;
@@ -86,16 +80,17 @@ int main(int argc, char *argv[]) {
     return returnCode;
   }
 
-  session.config().stream() << "Random Seed: " << session.configData().rngSeed;
+  session.config().stream()
+      << "Random Seed: " << session.configData().rngSeed << std::endl;
 
   if (!cpu && !gpu) {
     cpu = true;
     gpu = true;
   }
 
-  // #if ENABLE_OPENCL || ENABLE_CUDA
-  //     SHOW_OCL_BANNER();
-  // #endif
+#if ENABLE_OPENCL || ENABLE_CUDA
+  SHOW_OCL_BANNER();
+#endif
 
   int num_failed = 0;
 

@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "common/oclengine.hpp"
 #include "enums/device_tag.hpp"
 #include "tensors/parameter.hpp"
 

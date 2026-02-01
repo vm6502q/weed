@@ -53,13 +53,18 @@ if (ENABLE_PTHREAD)
 endif (ENABLE_PTHREAD)
 
 if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
-    # Declare the unittest executable
     add_executable (unittest
         test/test_main.cpp
         test/tests.cpp
         )
 
+    add_executable (benchmarks
+        test/test_main.cpp
+        test/benchmarks.cpp
+        )
+
     target_link_libraries (unittest ${WEED_LIBS})
+    target_link_libraries (benchmarks ${WEED_LIBS})
 endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 # Included after the library and other modules have been declared
