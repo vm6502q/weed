@@ -22,12 +22,15 @@ namespace Weed {
  */
 struct SparseCpuRealStorage : RealStorage {
   RealSparseVector data;
+  real1 default_value;
 
-  SparseCpuRealStorage(const RealSparseVector &v, const tcapint &n)
-      : RealStorage(DeviceTag::CPU, n), data(v) {}
-  SparseCpuRealStorage(tcapint n) : RealStorage(DeviceTag::CPU, n), data() {}
+  SparseCpuRealStorage(const RealSparseVector &v, const tcapint &n,
+                       const real1 dv = ZERO_R1)
+      : RealStorage(DeviceTag::CPU, n), data(v), default_value(dv) {}
+  SparseCpuRealStorage(tcapint n)
+      : RealStorage(DeviceTag::CPU, n), data(), default_value(ZERO_R1) {}
 
-  bool is_sparse() const override { return true; }
+  bool is_sparse() const override { return default_value == ZERO_R1; }
 
   /**
    * Return the sparse element count
@@ -40,13 +43,13 @@ struct SparseCpuRealStorage : RealStorage {
   real1 operator[](const tcapint &idx) const override {
     const auto it = data.find(idx);
     if (it == data.end()) {
-      return ZERO_R1;
+      return default_value;
     }
     return it->second;
   }
 
   void write(const tcapint &idx, const real1 &val) override {
-    if (std::abs(val) <= FP_NORM_EPSILON) {
+    if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
       data[idx] = val;
@@ -54,7 +57,7 @@ struct SparseCpuRealStorage : RealStorage {
   }
 
   void add(const tcapint &idx, const real1 &val) override {
-    if (std::abs(val) <= FP_NORM_EPSILON) {
+    if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       return;
     }
 
@@ -65,7 +68,7 @@ struct SparseCpuRealStorage : RealStorage {
       return;
     }
 
-    if (std::abs(val + it->second) <= FP_NORM_EPSILON) {
+    if (std::abs(val + it->second + default_value) <= FP_NORM_EPSILON) {
       data.erase(it);
       return;
     }
@@ -73,21 +76,11 @@ struct SparseCpuRealStorage : RealStorage {
     it->second += val;
   }
 
-  void FillZeros() override { data.clear(); }
-  void FillOnes() override {
-    for (size_t i = 0U; i < size; ++i) {
-      data[i] = ONE_R1;
-    }
-  }
+  void FillZeros() override { FillValue(ZERO_R1); }
+  void FillOnes() override { FillValue(ONE_R1); }
   void FillValue(const real1 &v) override {
-    if (std::abs(v) <= FP_NORM_EPSILON) {
-      FillZeros();
-      return;
-    }
-
-    for (size_t i = 0U; i < size; ++i) {
-      data[i] = v;
-    }
+    data.clear();
+    default_value = v;
   }
 
   StoragePtr Upcast(const DType &dt) override {

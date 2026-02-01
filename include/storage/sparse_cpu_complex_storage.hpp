@@ -19,13 +19,14 @@ namespace Weed {
  */
 struct SparseCpuComplexStorage : ComplexStorage {
   ComplexSparseVector data;
+  complex default_value;
 
   SparseCpuComplexStorage(const ComplexSparseVector &v, const tcapint &n)
       : ComplexStorage(DeviceTag::CPU, n), data(v) {}
   SparseCpuComplexStorage(const tcapint &n)
       : ComplexStorage(DeviceTag::CPU, n), data() {}
 
-  bool is_sparse() const override { return true; }
+  bool is_sparse() const override { return default_value == ZERO_CMPLX; }
 
   /**
    * Return the sparse element count
@@ -38,13 +39,13 @@ struct SparseCpuComplexStorage : ComplexStorage {
   complex operator[](const tcapint &idx) const override {
     const auto it = data.find(idx);
     if (it == data.end()) {
-      return ZERO_CMPLX;
+      return default_value;
     }
     return it->second;
   }
 
   void write(const tcapint &idx, const complex &val) override {
-    if (std::abs(val) <= FP_NORM_EPSILON) {
+    if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       data.erase(idx);
     } else {
       data[idx] = val;
@@ -52,7 +53,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
   }
 
   void add(const tcapint &idx, const complex &val) override {
-    if (std::abs(val) <= FP_NORM_EPSILON) {
+    if (std::abs(val - default_value) <= FP_NORM_EPSILON) {
       return;
     }
 
@@ -63,7 +64,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
       return;
     }
 
-    if (std::abs(val + it->second) <= FP_NORM_EPSILON) {
+    if (std::abs(val + it->second - default_value) <= FP_NORM_EPSILON) {
       data.erase(it);
       return;
     }
@@ -71,21 +72,11 @@ struct SparseCpuComplexStorage : ComplexStorage {
     it->second += val;
   }
 
-  void FillZeros() override { data.clear(); }
-  void FillOnes() override {
-    for (size_t i = 0U; i < size; ++i) {
-      data[i] = ONE_CMPLX;
-    }
-  }
+  void FillZeros() override { FillValue(ZERO_CMPLX); }
+  void FillOnes() override { FillValue(ONE_CMPLX); }
   void FillValue(const complex &v) override {
-    if (std::abs(v) <= FP_NORM_EPSILON) {
-      FillZeros();
-      return;
-    }
-
-    for (size_t i = 0U; i < size; ++i) {
-      data[i] = v;
-    }
+    data.clear();
+    default_value = v;
   }
 
   StoragePtr Upcast(const DType &dt) override { return get_ptr(); }
