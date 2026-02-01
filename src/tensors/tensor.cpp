@@ -479,6 +479,9 @@ TensorPtr Tensor::max(TensorPtr a) {
 
 void Tensor::make_max_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
+  a->grad =
+      Tensor::make_gradient(a->shape, a->storage->dtype, a->storage->device,
+                            a->storage->get_device_id(), true);
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         TensorPtr out_grad = out->grad;
@@ -505,6 +508,9 @@ TensorPtr Tensor::min(TensorPtr a) {
 
 void Tensor::make_min_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
+  a->grad =
+      Tensor::make_gradient(a->shape, a->storage->dtype, a->storage->device,
+                            a->storage->get_device_id(), true);
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         TensorPtr out_grad = out->grad;

@@ -209,6 +209,10 @@ struct Tensor {
                               "instance that does not require autograd!");
     }
 
+    if (grad) {
+      return;
+    }
+
     grad =
         Tensor::make_gradient(shape, storage->dtype, storage->device,
                               storage->get_device_id(), storage->is_sparse());
