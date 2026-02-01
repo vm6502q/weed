@@ -45,7 +45,8 @@ void max(const Tensor &a, Tensor &out);
 /**
  * Maximum (real) extremum function gradient (all-matching)
  */
-void max_grad(Tensor &din, const Tensor &in, const Tensor &dout, const Tensor &out);
+void max_grad(Tensor &din, const Tensor &in, const Tensor &dout,
+              const Tensor &out);
 
 /**
  * Minimum (real) extremum
@@ -54,5 +55,6 @@ void min(const Tensor &a, Tensor &out);
 /**
  * Minimum (real) extremum function gradient (all-matching)
  */
-void min_grad(Tensor &din, const Tensor &in, const Tensor &dout, const Tensor &out);
+void min_grad(Tensor &din, const Tensor &in, const Tensor &dout,
+              const Tensor &out);
 } // namespace Weed

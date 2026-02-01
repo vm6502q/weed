@@ -131,17 +131,17 @@ static void cpu_min(const Tensor &a, Tensor &out) {
 }
 
 static void cpu_grad_real(Tensor &din, const Tensor &in, const Tensor &dout,
-                              const Tensor &out) {
+                          const Tensor &out) {
   CPU_GRAD_STORAGE_INIT_3(RealStorage, RealStorage, RealStorage);
   CPU_GRAD();
 }
-static void cpu_grad_complex(Tensor &din, const Tensor &in,
-                                 const Tensor &dout, const Tensor &out) {
+static void cpu_grad_complex(Tensor &din, const Tensor &in, const Tensor &dout,
+                             const Tensor &out) {
   CPU_GRAD_STORAGE_INIT_3(ComplexStorage, RealStorage, ComplexStorage);
   CPU_GRAD();
 }
-static void cpu_grad_mixed(Tensor &din, const Tensor &in,
-                               const Tensor &dout, const Tensor &out) {
+static void cpu_grad_mixed(Tensor &din, const Tensor &in, const Tensor &dout,
+                           const Tensor &out) {
   CPU_GRAD_STORAGE_INIT_3(ComplexStorage, RealStorage, RealStorage);
   CPU_GRAD();
 }
@@ -164,17 +164,17 @@ static void gpu_min(const Tensor &a, Tensor &out) {
 }
 
 static void gpu_grad_real(Tensor &din, const Tensor &in, const Tensor &dout,
-                              const Tensor &out) {
+                          const Tensor &out) {
   GPU_GRAD(GpuRealStorage, GpuRealStorage, GpuRealStorage,
            OCL_API_MATCH_GRAD_REAL);
 }
-static void gpu_grad_complex(Tensor &din, const Tensor &in,
-                                 const Tensor &dout, const Tensor &out) {
+static void gpu_grad_complex(Tensor &din, const Tensor &in, const Tensor &dout,
+                             const Tensor &out) {
   GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuComplexStorage,
            OCL_API_MATCH_GRAD_COMPLEX);
 }
-static void gpu_grad_mixed(Tensor &din, const Tensor &in,
-                               const Tensor &dout, const Tensor &out) {
+static void gpu_grad_mixed(Tensor &din, const Tensor &in, const Tensor &dout,
+                           const Tensor &out) {
   GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuRealStorage,
            OCL_API_MATCH_GRAD_MIXED);
 }
@@ -258,27 +258,21 @@ void RealExtremumKernel::extremum_grad(Tensor &din, const Tensor &in,
   }
 }
 
-RealExtremumKernel max_kernel = {cpu_max,
-                                 cpu_grad_real,
-                                 cpu_grad_complex,
-                                 cpu_grad_mixed,
+RealExtremumKernel max_kernel = {
+    cpu_max,        cpu_grad_real, cpu_grad_complex,
+    cpu_grad_mixed,
 #if ENABLE_GPU
-                                 gpu_max,
-                                 gpu_grad_real,
-                                 gpu_grad_complex,
-                                 gpu_grad_mixed
+    gpu_max,        gpu_grad_real, gpu_grad_complex,
+    gpu_grad_mixed
 #endif
 };
 
-RealExtremumKernel min_kernel = {cpu_min,
-                                 cpu_grad_real,
-                                 cpu_grad_complex,
-                                 cpu_grad_mixed,
+RealExtremumKernel min_kernel = {
+    cpu_min,        cpu_grad_real, cpu_grad_complex,
+    cpu_grad_mixed,
 #if ENABLE_GPU
-                                 gpu_min,
-                                 gpu_grad_real,
-                                 gpu_grad_complex,
-                                 gpu_grad_mixed
+    gpu_min,        gpu_grad_real, gpu_grad_complex,
+    gpu_grad_mixed
 #endif
 };
 

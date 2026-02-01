@@ -471,7 +471,7 @@ TensorPtr Tensor::max(TensorPtr a) {
   Weed::max(*(a.get()), *(out.get()));
 
   if (rg) {
-    make_tanh_node(a, out);
+    make_max_node(a, out);
   }
 
   return out;
@@ -495,7 +495,7 @@ TensorPtr Tensor::min(TensorPtr a) {
   Weed::min(*(a.get()), *(out.get()));
 
   if (rg) {
-    make_tanh_node(a, out);
+    make_min_node(a, out);
   }
 
   return out;

@@ -292,6 +292,54 @@ TEST_CASE("test_max_mixed_grad") {
   REQUIRE_CMPLX((*xg)[2], R(1));
 }
 
+TEST_CASE("test_min") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr y = Tensor::min(x);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(1));
+
+  RealStorage *xg = static_cast<RealStorage *>(x->grad->storage.get());
+  REQUIRE((*xg)[0] == R(1));
+  REQUIRE((*xg)[1] == R(0));
+  REQUIRE((*xg)[2] == R(0));
+}
+
+TEST_CASE("test_min_complex_grad") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr y = Tensor::min(x);
+  TensorPtr z = std::make_shared<ComplexScalar>(R(1), true, TEST_DTAG);
+  TensorPtr w = y * z;
+  Tensor::backward(w);
+
+  REQUIRE(GET_REAL(y) == R(1));
+
+  ComplexStorage *xg = static_cast<ComplexStorage *>(x->grad->storage.get());
+  REQUIRE_CMPLX((*xg)[0], R(1));
+  REQUIRE_CMPLX((*xg)[1], R(0));
+  REQUIRE_CMPLX((*xg)[2], R(0));
+}
+
+TEST_CASE("test_min_mixed_grad") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr y = Tensor::min(x);
+  x->grad->upcast(DType::COMPLEX);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(1));
+
+  ComplexStorage *xg = static_cast<ComplexStorage *>(x->grad->storage.get());
+  REQUIRE_CMPLX((*xg)[0], R(1));
+  REQUIRE_CMPLX((*xg)[1], R(0));
+  REQUIRE_CMPLX((*xg)[2], R(0));
+}
+
 TEST_CASE("test_scalar_clamp") {
   TensorPtr x = std::make_shared<RealScalar>(R(2), true, TEST_DTAG);
   TensorPtr y = Tensor::clamp(x, R(1), R(3));
