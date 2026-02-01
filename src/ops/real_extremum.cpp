@@ -18,6 +18,14 @@
   GET_CONST_FLAT_TENSOR(ft, a, pa);                                            \
   const size_t n = a.get_broadcast_size()
 
+#define SPARSE_CPU_1_RUN()                                                     \
+  if (a.storage->is_sparse() && a.is_contiguous()) {                           \
+    GET_STORAGE(SparseCpuRealStorage, a, sa);                                  \
+    pfControl.par_for(sa->data, fn);                                           \
+  } else {                                                                     \
+    pfControl.par_for(1U, n, fn);                                              \
+  }
+
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
   GPU_GRAD_ARGS();                                                             \
   std::shared_ptr<type1> a_storage =                                           \
@@ -57,29 +65,32 @@
   };                                                                           \
   pfControl.par_for(0, n, fn)
 
-#define CPU_MAX()                                                              \
+#define CPU_RUN_HEADER()                                                       \
   const unsigned cpuCount =                                                    \
       (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
-  std::vector<real1> m(cpuCount, (*pa)[0U]);                                   \
-  pfControl.par_for(1U, n, [&](const tcapint &i, const unsigned &cpu) {        \
+  std::vector<real1> m(cpuCount, (*pa)[0U]);
+
+#define CPU_MAX()                                                              \
+  CPU_RUN_HEADER();                                                            \
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
     const real1 v = (*pa)[i];                                                  \
     if (v > m[cpu]) {                                                          \
       m[cpu] = v;                                                              \
     }                                                                          \
-  });                                                                          \
+  };                                                                           \
+  SPARSE_CPU_1_RUN();                                                          \
   const real1 v = *std::max_element(m.begin(), m.end())
 
 #define CPU_MIN()                                                              \
-  const unsigned cpuCount =                                                    \
-      (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
-  std::vector<real1> m(cpuCount, (*pa)[0U]);                                   \
-  pfControl.par_for(1U, n, [&](const tcapint &i, const unsigned &cpu) {        \
+  CPU_RUN_HEADER();                                                            \
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
     const real1 v = (*pa)[i];                                                  \
     if (v < m[cpu]) {                                                          \
       m[cpu] = v;                                                              \
     }                                                                          \
-  });                                                                          \
-  const real1 v = *std::min_element(m.begin(), m.end())
+  };                                                                           \
+  SPARSE_CPU_1_RUN();                                                          \
+  const real1 v = *std::min_element(m.begin(), m.end());
 
 #define GPU_HEADER()                                                           \
   if (!(a_storage.array)) {                                                    \
