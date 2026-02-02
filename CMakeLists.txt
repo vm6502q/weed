@@ -39,6 +39,8 @@ add_library (weed STATIC
     src/ops/util.cpp
     src/storage/cpu_complex_storage.cpp
     src/storage/cpu_real_storage.cpp
+    src/storage/sparse_cpu_complex_storage.cpp
+    src/storage/sparse_cpu_real_storage.cpp
     src/tensors/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)

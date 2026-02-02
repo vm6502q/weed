@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "storage/storage.hpp"
+#include "storage/complex_storage.hpp"
 
 namespace Weed {
 /**
@@ -82,9 +82,7 @@ struct SparseCpuComplexStorage : ComplexStorage {
   StoragePtr Upcast(const DType &dt) override { return get_ptr(); }
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(const int64_t &did = -1) override {
-    throw std::domain_error("Don't use sparse Storage::gpu() (for now)!");
-  }
+  StoragePtr gpu(const int64_t &did = -1) override;
 };
 typedef std::shared_ptr<SparseCpuComplexStorage> SparseCpuComplexStoragePtr;
 } // namespace Weed

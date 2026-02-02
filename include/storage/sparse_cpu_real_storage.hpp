@@ -11,10 +11,8 @@
 
 #pragma once
 
+#include "storage/real_storage.hpp"
 #include "storage/sparse_cpu_complex_storage.hpp"
-#include "storage/storage.hpp"
-
-#include <algorithm>
 
 namespace Weed {
 /**
@@ -83,24 +81,10 @@ struct SparseCpuRealStorage : RealStorage {
     default_value = v;
   }
 
-  StoragePtr Upcast(const DType &dt) override {
-    if (dt == DType::REAL) {
-      return get_ptr();
-    }
-
-    SparseCpuComplexStoragePtr n =
-        std::make_shared<SparseCpuComplexStorage>(size);
-    for (auto it = data.begin(); it != data.end(); ++it) {
-      n->data[it->first] = (complex)it->second;
-    }
-
-    return n;
-  }
+  StoragePtr Upcast(const DType &dt) override;
 
   StoragePtr cpu() override { return get_ptr(); }
-  StoragePtr gpu(const int64_t &did = -1) override {
-    throw std::domain_error("Don't use sparse Storage::gpu() (for now)!");
-  }
+  StoragePtr gpu(const int64_t &did = -1) override;
 };
 typedef std::shared_ptr<SparseCpuRealStorage> SparseCpuRealStoragePtr;
 } // namespace Weed
