@@ -352,10 +352,24 @@ struct Tensor {
   /**
    * Create a new Tensor like the original, without Storage value initialization
    */
+  static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
+                                 const DeviceTag &dtag, const bool &rg,
+                                 const bool &s);
+  /**
+   * Create a new Tensor like the original, without Storage value initialization
+   */
   static TensorPtr allocate_like(const std::vector<tcapint> &shape,
                                  const std::vector<tcapint> &stride,
                                  const TensorPtr orig, const DType &dt,
                                  const bool &rg, const bool &s);
+  /**
+   * Create a new Tensor like the original, without Storage value initialization
+   */
+  static TensorPtr allocate_like(const std::vector<tcapint> &shape,
+                                 const std::vector<tcapint> &stride,
+                                 const TensorPtr orig, const DType &dt,
+                                 const DeviceTag &dtag, const bool &rg,
+                                 const bool &s);
 
   /**
    * Use autograd to calculate gradients that are in the same graph as this

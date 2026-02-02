@@ -72,13 +72,30 @@ TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
   return n;
 }
 
+TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
+                                const DeviceTag &dtag, const bool &rg,
+                                const bool &s) {
+  TensorPtr n = allocate_like(orig->shape, orig->stride, orig, dt, dtag, rg, s);
+  n->freeze = orig->freeze;
+
+  return n;
+}
+
 TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
                                 const std::vector<tcapint> &strd,
                                 const TensorPtr orig, const DType &dt,
                                 const bool &rg, const bool &s) {
-  const StoragePtr sp = orig->storage;
-  const DeviceTag dtag = sp->device;
-  int64_t did = sp->get_device_id();
+  const DeviceTag dtag = orig->storage->device;
+
+  return allocate_like(shp, strd, orig, dt, dtag, rg, s);
+}
+
+TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
+                                const std::vector<tcapint> &strd,
+                                const TensorPtr orig, const DType &dt,
+                                const DeviceTag &dtag, const bool &rg,
+                                const bool &s) {
+  const int64_t did = orig->storage->get_device_id();
 
   return std::make_shared<Tensor>(shp, strd, rg, dt, dtag, did, s);
 }
@@ -687,7 +704,7 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     std::vector<TensorPtr> p{out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
-      p.push_back(b->grad);
+      p.push_back(b);
     }
     if (b->requires_grad) {
       p.push_back(b->grad);
@@ -752,26 +769,38 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
 void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    TensorPtr out_grad = out->grad;
+    std::vector<TensorPtr> p{out->grad};
     if (a->requires_grad) {
-      TensorPtr a_grad = a->grad;
-      TensorPtr bt = transpose(b);
+      p.push_back(a->grad);
+      p.push_back(b);
+    }
+    if (b->requires_grad) {
+      p.push_back(b->grad);
+      p.push_back(a);
+    }
+    DeviceTag dtag = get_dtag_by_presidence(p);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    if (a->requires_grad) {
+      TensorPtr a_grad = a->grad->cast(dtag);
+      TensorPtr bt = transpose(b)->cast(dtag);
       const DType &dt = get_dtype_by_presidence({b, out_grad});
       TensorPtr tmp =
           Tensor::allocate_like(a_grad, dt, false, IS_SPARSE(out_grad));
       Weed::matmul(*(out_grad.get()), *(bt.get()), *(tmp.get()));
       a_grad->upcast(dt);
       Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+      a->grad = a_grad;
     }
     if (b->requires_grad) {
-      TensorPtr b_grad = b->grad;
-      TensorPtr at = transpose(a);
+      TensorPtr b_grad = b->grad->cast(dtag);
+      TensorPtr at = transpose(a)->cast(dtag);
       const DType &dt = get_dtype_by_presidence({a, out_grad});
       TensorPtr tmp =
           Tensor::allocate_like(b_grad, dt, false, IS_SPARSE(out_grad));
       Weed::matmul(*(at.get()), *(out_grad.get()), *(tmp.get()));
       b_grad->upcast(dt);
       Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
+      b->grad = b_grad;
     }
   });
 }
@@ -807,17 +836,27 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
 void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    TensorPtr out_grad = out->grad;
+    std::vector<TensorPtr> p{out->grad};
     if (a->requires_grad) {
-      TensorPtr a_grad = a->grad;
+      p.push_back(a->grad);
+    }
+    if (b->requires_grad) {
+      p.push_back(b->grad);
+    }
+    DeviceTag dtag = get_dtag_by_presidence(p);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    if (a->requires_grad) {
+      TensorPtr a_grad = a->grad->cast(dtag);
       a_grad->upcast(out_grad->storage->dtype);
       Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
+      a->grad = a_grad;
       a->reduce_grad_broadcast();
     }
     if (b->requires_grad) {
-      TensorPtr b_grad = b->grad;
+      TensorPtr b_grad = b->grad->cast(dtag);
       b_grad->upcast(out_grad->storage->dtype);
       Weed::sub_in_place(*(b_grad.get()), *(out_grad.get()));
+      b->grad = b_grad;
       b->reduce_grad_broadcast();
     }
   });
@@ -854,26 +893,40 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
 void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    TensorPtr out_grad = out->grad;
+    std::vector<TensorPtr> p{out->grad};
     if (a->requires_grad) {
-      TensorPtr a_grad = a->grad;
+      p.push_back(a->grad);
+      p.push_back(b);
+    }
+    if (b->requires_grad) {
+      p.push_back(b->grad);
+      p.push_back(a);
+    }
+    DeviceTag dtag = get_dtag_by_presidence(p);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    if (a->requires_grad) {
+      TensorPtr a_grad = a->grad->cast(dtag);
       const DType &dt = get_dtype_by_presidence({b, out_grad});
       a_grad->upcast(dt);
-      TensorPtr tmp = Tensor::allocate_like(b, dt, false, IS_SPARSE(b));
+      TensorPtr tmp = Tensor::allocate_like(b, dt, dtag, false, IS_SPARSE(b));
       Weed::div(*(out_grad.get()), *(b.get()), *(tmp.get()));
       Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+      a->grad = a_grad;
       a->reduce_grad_broadcast();
     }
     if (b->requires_grad) {
-      TensorPtr b_grad = b->grad;
+      TensorPtr _a = a->cast(dtag);
+      TensorPtr b_grad = b->grad->cast(dtag);
       TensorPtr b_sqr =
           Tensor::allocate_like(b, b->storage->dtype, false, IS_SPARSE(b));
       Weed::mul(*(b.get()), *(b.get()), *(b_sqr.get()));
+      b_sqr = b_sqr->cast(dtag);
       const DType &dt = get_dtype_by_presidence({a, b_sqr});
       b_grad->upcast(dt);
-      TensorPtr tmp = Tensor::allocate_like(a, dt, false, IS_SPARSE(a));
-      Weed::div(*(a.get()), *(b_sqr.get()), *(tmp.get()));
+      TensorPtr tmp = Tensor::allocate_like(_a, dt, false, IS_SPARSE(a));
+      Weed::div(*(_a.get()), *(b_sqr.get()), *(tmp.get()));
       Weed::sub_in_place(*(b_grad.get()), *(tmp.get()));
+      b->grad = b_grad;
       b->reduce_grad_broadcast();
     }
   });
@@ -895,8 +948,10 @@ TensorPtr Tensor::pow(TensorPtr a, real1 p) {
 void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
   y->make_gradient();
   y->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, p, y]() {
-    TensorPtr dx = x->grad;
-    TensorPtr dy = y->grad;
+    DeviceTag dtag = get_dtag_by_presidence({x->grad, y->grad});
+
+    TensorPtr dx = x->grad->cast(dtag);
+    TensorPtr dy = y->grad->cast(dtag);
 
     TensorPtr dy_y =
         Tensor::allocate_like(dy, dy->storage->dtype, false, IS_SPARSE(dy));
@@ -911,6 +966,7 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
 
     dx->upcast(r->storage->dtype);
     Weed::add_in_place(*(dx.get()), *(r.get()));
+    x->grad = dx;
   });
 }
 
@@ -931,8 +987,10 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
   y->make_gradient();
   y->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, log_b, y]() {
-        TensorPtr dx = x->grad;
-        TensorPtr dy = y->grad;
+        DeviceTag dtag = get_dtag_by_presidence({x->grad, y->grad});
+
+        TensorPtr dx = x->grad->cast(dtag);
+        TensorPtr dy = y->grad->cast(dtag);
 
         TensorPtr s = SCALAR(log_b, dy);
         TensorPtr dy_v = s * dy;
@@ -943,6 +1001,7 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
 
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
+        x->grad = dx;
       });
 }
 
@@ -963,8 +1022,10 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
   y->make_gradient();
   y->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, inv_log_b, y]() {
-        TensorPtr dx = x->grad;
-        TensorPtr dy = y->grad;
+        DeviceTag dtag = get_dtag_by_presidence({x->grad, y->grad});
+
+        TensorPtr dx = x->grad->cast(dtag);
+        TensorPtr dy = y->grad->cast(dtag);
 
         TensorPtr s = SCALAR(inv_log_b, dy);
         TensorPtr dy_v = s * dy;
@@ -975,6 +1036,7 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
 
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
+        x->grad = dx;
       });
 }
 } // namespace Weed
