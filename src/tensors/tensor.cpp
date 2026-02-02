@@ -51,7 +51,7 @@ const tlenint PSTRIDEPOW_DEFAULT =
                   ? std::stoi(std::string(getenv("WEED_PSTRIDEPOW")))
                   : PSTRIDEPOW);
 const tcapint GSTRIDE =
-    (tlenint)(getenv("WEED_GSTRIDE")
+    (tcapint)(getenv("WEED_GSTRIDE")
                   ? std::stoi(std::string(getenv("WEED_GSTRIDE")))
                   : ((1 << PSTRIDEPOW_DEFAULT) *
                      std::thread::hardware_concurrency()));
