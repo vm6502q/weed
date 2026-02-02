@@ -20,6 +20,14 @@ namespace Weed {
  */
 struct Sequential : public Module {
   std::vector<ModulePtr> layers;
+  std::vector<ParameterPtr> param_vector;
+
+  Sequential(const std::vector<ModulePtr>& l) : layers(l), param_vector() {
+    for (size_t i = 0U; i < layers.size(); ++i) {
+      const std::vector<ParameterPtr> l = layers[i]->parameters();
+      param_vector.insert(param_vector.end(), l.begin(), l.end());
+    }
+  }
 
   TensorPtr forward(TensorPtr x) override {
     TensorPtr tmp = x;
@@ -30,14 +38,6 @@ struct Sequential : public Module {
     return tmp;
   }
 
-  std::vector<ParameterPtr> parameters() override {
-    std::vector<ParameterPtr> p;
-    for (size_t i = 0U; i < layers.size(); ++i) {
-      const std::vector<ParameterPtr> l = layers[i]->parameters();
-      p.insert(p.end(), l.begin(), l.end());
-    }
-
-    return p;
-  }
+  std::vector<ParameterPtr> parameters() override { return param_vector; }
 };
 } // namespace Weed
