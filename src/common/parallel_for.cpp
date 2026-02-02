@@ -26,16 +26,17 @@
 #endif
 
 namespace Weed {
+#if ENABLE_ENV_VARS
+const tlenint PSTRIDEPOW_DEFAULT =
+    (tlenint)(getenv("WEED_PSTRIDEPOW")
+                  ? std::stoi(std::string(getenv("WEED_PSTRIDEPOW")))
+                  : PSTRIDEPOW);
+#else
+const tlenint PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
+#endif
 
 ParallelFor::ParallelFor()
-#if ENABLE_ENV_VARS
-    : pStride(getenv("WEED_PSTRIDEPOW")
-                  ? pow2Gpu((tlenint)std::stoi(
-                        std::string(getenv("WEED_PSTRIDEPOW"))))
-                  : pow2Gpu((tlenint)PSTRIDEPOW))
-#else
-    : pStride(pow2Gpu((tlenint)PSTRIDEPOW))
-#endif
+    : pStride(pow2Gpu((tlenint)PSTRIDEPOW_DEFAULT))
 #if ENABLE_PTHREAD
       ,
       numCores(std::thread::hardware_concurrency())

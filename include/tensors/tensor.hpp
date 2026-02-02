@@ -206,20 +206,7 @@ struct Tensor {
     return stor;
   }
 
-  void make_gradient() {
-    if (!requires_grad) {
-      throw std::domain_error("Called Tensor::make_gradient() on a node "
-                              "instance that does not require autograd!");
-    }
-
-    if (grad) {
-      return;
-    }
-
-    grad =
-        Tensor::make_gradient(shape, storage->dtype, storage->device,
-                              storage->get_device_id(), storage->is_sparse());
-  }
+  void make_gradient(const bool &force_sparse = false);
 
   /**
    * For broadcast, make this scalar match the shape of a target Tensor
@@ -251,14 +238,7 @@ struct Tensor {
   /**
    * Compare the device of two tensors and return the higher-performance one
    */
-  static DeviceTag get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
-    for (const TensorPtr &p : v) {
-      if (p->storage->device == DeviceTag::GPU) {
-        return DeviceTag::GPU;
-      }
-    }
-    return DeviceTag::CPU;
-  }
+  static DeviceTag get_dtag_by_presidence(const std::vector<TensorPtr> &v);
 
   /**
    * Validate the Tensor shape, for constructors
@@ -334,11 +314,6 @@ struct Tensor {
   }
 
   /**
-   * Ensure that all tensors in a list are on the same device
-   */
-  static bool all_same_device(const std::vector<TensorPtr> &);
-
-  /**
    * Create a new Tensor like the original, but a Scalar, and without Storage
    * value initialization
    */
@@ -352,24 +327,10 @@ struct Tensor {
   /**
    * Create a new Tensor like the original, without Storage value initialization
    */
-  static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
-                                 const DeviceTag &dtag, const bool &rg,
-                                 const bool &s);
-  /**
-   * Create a new Tensor like the original, without Storage value initialization
-   */
   static TensorPtr allocate_like(const std::vector<tcapint> &shape,
                                  const std::vector<tcapint> &stride,
                                  const TensorPtr orig, const DType &dt,
                                  const bool &rg, const bool &s);
-  /**
-   * Create a new Tensor like the original, without Storage value initialization
-   */
-  static TensorPtr allocate_like(const std::vector<tcapint> &shape,
-                                 const std::vector<tcapint> &stride,
-                                 const TensorPtr orig, const DType &dt,
-                                 const DeviceTag &dtag, const bool &rg,
-                                 const bool &s);
 
   /**
    * Use autograd to calculate gradients that are in the same graph as this

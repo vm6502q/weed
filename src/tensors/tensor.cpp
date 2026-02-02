@@ -26,6 +26,7 @@
 
 #include "storage/all_storage.hpp"
 
+#include <thread>
 #include <unordered_set>
 
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
@@ -44,19 +45,66 @@
   }
 
 namespace Weed {
-bool Tensor::all_same_device(const std::vector<TensorPtr> &t) {
-  if (t.empty()) {
-    return true;
-  }
+#if ENABLE_ENV_VARS
+const tlenint PSTRIDEPOW_DEFAULT =
+    (tlenint)(getenv("WEED_PSTRIDEPOW")
+                  ? std::stoi(std::string(getenv("WEED_PSTRIDEPOW")))
+                  : PSTRIDEPOW);
+const tcapint GSTRIDE =
+    (tlenint)(getenv("WEED_GSTRIDE")
+                  ? std::stoi(std::string(getenv("WEED_GSTRIDE")))
+                  : ((1 << PSTRIDEPOW_DEFAULT) *
+                     std::thread::hardware_concurrency()));
+#else
+const tlenint PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
+const tcapint GSTRIDE =
+    (1 << PSTRIDEPOW_DEFAULT) * std::thread::hardware_concurrency();
+#endif
 
-  const DeviceTag d = t[0U]->storage->device;
-  for (size_t i = 1U; i < t.size(); ++i) {
-    if (d != t[i]->storage->device) {
-      return false;
+DeviceTag Tensor::get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
+  for (const TensorPtr &p : v) {
+    const tcapint sz = p->storage->size;
+    const tcapint sp = p->storage->get_sparse_size();
+    if (sz == sp) {
+      if (sz > GSTRIDE) {
+        return DeviceTag::GPU;
+      }
+    } else {
+      if ((sp << 1U) > GSTRIDE) {
+        return DeviceTag::GPU;
+      }
     }
   }
 
-  return true;
+  return DeviceTag::CPU;
+}
+
+void Tensor::make_gradient(const bool &force_sparse) {
+  if (!requires_grad) {
+    throw std::domain_error("Called Tensor::make_gradient() on a node "
+                            "instance that does not require autograd!");
+  }
+
+  if (grad) {
+    return;
+  }
+
+  const tcapint sz = storage->size;
+  const tcapint sp = storage->get_sparse_size();
+  DeviceTag dtag = DeviceTag::CPU;
+  if (sz == sp) {
+    if (sz > GSTRIDE) {
+      dtag = DeviceTag::GPU;
+    }
+  } else {
+    if ((sp << 1U) > GSTRIDE) {
+      dtag = DeviceTag::GPU;
+    }
+  }
+
+  grad = Tensor::make_gradient(shape, storage->dtype, dtag,
+                               storage->get_device_id(),
+                               force_sparse || storage->is_sparse());
 }
 
 TensorPtr Tensor::allocate_scalar_like(const TensorPtr orig, const bool &rg) {
@@ -72,29 +120,11 @@ TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
   return n;
 }
 
-TensorPtr Tensor::allocate_like(const TensorPtr orig, const DType &dt,
-                                const DeviceTag &dtag, const bool &rg,
-                                const bool &s) {
-  TensorPtr n = allocate_like(orig->shape, orig->stride, orig, dt, dtag, rg, s);
-  n->freeze = orig->freeze;
-
-  return n;
-}
-
 TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
                                 const std::vector<tcapint> &strd,
                                 const TensorPtr orig, const DType &dt,
                                 const bool &rg, const bool &s) {
   const DeviceTag dtag = orig->storage->device;
-
-  return allocate_like(shp, strd, orig, dt, dtag, rg, s);
-}
-
-TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
-                                const std::vector<tcapint> &strd,
-                                const TensorPtr orig, const DType &dt,
-                                const DeviceTag &dtag, const bool &rg,
-                                const bool &s) {
   const int64_t did = orig->storage->get_device_id();
 
   return std::make_shared<Tensor>(shp, strd, rg, dt, dtag, did, s);
@@ -102,7 +132,7 @@ TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
 
 Tensor::Tensor(const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
-               const DType &dtype, const DeviceTag &dtag, const int64_t &did,
+               const DType &dtype, const DeviceTag &_dtag, const int64_t &did,
                const bool &s)
     : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
       grad_node(nullptr), requires_grad(rg) {
@@ -110,6 +140,14 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
   validate_constructor();
 
   const tcapint size = get_size();
+  DeviceTag dtag = _dtag;
+  if (dtag == DEFAULT_DEVICE) {
+    if (size > GSTRIDE) {
+      dtag = DeviceTag::GPU;
+    } else {
+      dtag = DeviceTag::CPU;
+    }
+  }
 
   if (s && (dtag == DeviceTag::CPU)) {
     switch (dtype) {
@@ -142,7 +180,7 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
 
 Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
-               const DeviceTag &dtag, const int64_t &did)
+               const DeviceTag &_dtag, const int64_t &did)
     : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
       grad_node(nullptr), requires_grad(rg) {
 
@@ -155,6 +193,15 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
                                 "same size as implied by shape and stride!");
   }
 
+  DeviceTag dtag = _dtag;
+  if (dtag == DEFAULT_DEVICE) {
+    if (size > GSTRIDE) {
+      dtag = DeviceTag::GPU;
+    } else {
+      dtag = DeviceTag::CPU;
+    }
+  }
+
 #if ENABLE_GPU
   INIT_DEVICE_STORAGE(val, GpuRealStorage, CpuRealStorage);
 #else
@@ -163,7 +210,7 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
 }
 Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg,
-               const DeviceTag &dtag, const int64_t &did)
+               const DeviceTag &_dtag, const int64_t &did)
     : shape(shp), stride(strd), freeze(shp.size(), false), offset(0U),
       grad_node(nullptr), requires_grad(rg) {
 
@@ -174,6 +221,15 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
   if (size != val.size()) {
     throw std::invalid_argument("Tensor value initializer vector must have "
                                 "same size as implied by shape and stride!");
+  }
+
+  DeviceTag dtag = _dtag;
+  if (dtag == DEFAULT_DEVICE) {
+    if (size > GSTRIDE) {
+      dtag = DeviceTag::GPU;
+    } else {
+      dtag = DeviceTag::CPU;
+    }
   }
 
 #if ENABLE_GPU
@@ -534,16 +590,14 @@ TensorPtr Tensor::max(TensorPtr a) {
 
 void Tensor::make_max_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
-  a->grad =
-      Tensor::make_gradient(a->shape, a->storage->dtype, a->storage->device,
-                            a->storage->get_device_id(), true);
+  a->make_gradient(true);
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         DeviceTag dtag = get_dtag_by_presidence({a, out, a->grad, out->grad});
         TensorPtr _a = a->cast(dtag);
+        TensorPtr _out = out->cast(dtag);
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
-        TensorPtr _out = out->cast(dtag);
         a_grad->upcast(out_grad->storage->dtype);
         out_grad->match_shape(a_grad);
         Weed::max_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
@@ -567,16 +621,14 @@ TensorPtr Tensor::min(TensorPtr a) {
 
 void Tensor::make_min_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
-  a->grad =
-      Tensor::make_gradient(a->shape, a->storage->dtype, a->storage->device,
-                            a->storage->get_device_id(), true);
+  a->make_gradient(true);
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
         DeviceTag dtag = get_dtag_by_presidence({a, out, a->grad, out->grad});
         TensorPtr _a = a->cast(dtag);
+        TensorPtr _out = out->cast(dtag);
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
-        TensorPtr _out = out->cast(dtag);
         a_grad->upcast(out_grad->storage->dtype);
         out_grad->match_shape(a_grad);
         Weed::min_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
@@ -614,11 +666,6 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
 }
 
 TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
-  if (!all_same_device({a, b})) {
-    throw std::invalid_argument(
-        "Cannot mix Tensor devices in Tensor::add(a, b)!");
-  }
-
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
@@ -671,11 +718,6 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
-  if (!all_same_device({a, b})) {
-    throw std::invalid_argument(
-        "Cannot mix Tensor devices in Tensor::mul(a, b)!");
-  }
-
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
@@ -738,11 +780,6 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
-  if (!all_same_device({a, b})) {
-    throw std::invalid_argument(
-        "Cannot mix Tensor devices in Tensor::matmul(a, b)!");
-  }
-
   if ((a->shape.size() != 2U) || (b->shape.size() != 2U)) {
     throw std::invalid_argument(
         "Tensor::matmul is only for matrices with 2 indices!");
@@ -806,11 +843,6 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
-  if (!all_same_device({a, b})) {
-    throw std::invalid_argument(
-        "Cannot mix Tensor devices in Tensor::sub(a, b)!");
-  }
-
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
@@ -863,11 +895,6 @@ void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
-  if (!all_same_device({a, b})) {
-    throw std::invalid_argument(
-        "Cannot mix Tensor devices in Tensor::div(a, b)!");
-  }
-
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
@@ -893,23 +920,23 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
 void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    std::vector<TensorPtr> p{out->grad};
+    std::vector<TensorPtr> p{b, out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
-      p.push_back(b);
     }
     if (b->requires_grad) {
       p.push_back(b->grad);
       p.push_back(a);
     }
     DeviceTag dtag = get_dtag_by_presidence(p);
+    TensorPtr _b = b->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
-      const DType &dt = get_dtype_by_presidence({b, out_grad});
+      const DType &dt = get_dtype_by_presidence({_b, out_grad});
       a_grad->upcast(dt);
-      TensorPtr tmp = Tensor::allocate_like(b, dt, dtag, false, IS_SPARSE(b));
-      Weed::div(*(out_grad.get()), *(b.get()), *(tmp.get()));
+      TensorPtr tmp = Tensor::allocate_like(_b, dt, false, IS_SPARSE(b));
+      Weed::div(*(out_grad.get()), *(_b.get()), *(tmp.get()));
       Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
       a->grad = a_grad;
       a->reduce_grad_broadcast();
@@ -918,9 +945,8 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
       TensorPtr _a = a->cast(dtag);
       TensorPtr b_grad = b->grad->cast(dtag);
       TensorPtr b_sqr =
-          Tensor::allocate_like(b, b->storage->dtype, false, IS_SPARSE(b));
-      Weed::mul(*(b.get()), *(b.get()), *(b_sqr.get()));
-      b_sqr = b_sqr->cast(dtag);
+          Tensor::allocate_like(_b, _b->storage->dtype, false, IS_SPARSE(b));
+      Weed::mul(*(_b.get()), *(_b.get()), *(b_sqr.get()));
       const DType &dt = get_dtype_by_presidence({a, b_sqr});
       b_grad->upcast(dt);
       TensorPtr tmp = Tensor::allocate_like(_a, dt, false, IS_SPARSE(a));
@@ -948,21 +974,24 @@ TensorPtr Tensor::pow(TensorPtr a, real1 p) {
 void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
   y->make_gradient();
   y->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, p, y]() {
-    DeviceTag dtag = get_dtag_by_presidence({x->grad, y->grad});
+    DeviceTag dtag = get_dtag_by_presidence({x, y, x->grad, y->grad});
 
     TensorPtr dx = x->grad->cast(dtag);
     TensorPtr dy = y->grad->cast(dtag);
 
+    TensorPtr _x = x->cast(dtag);
+    TensorPtr _y = y->cast(dtag);
+
     TensorPtr dy_y =
         Tensor::allocate_like(dy, dy->storage->dtype, false, IS_SPARSE(dy));
-    Weed::mul(*(dy.get()), *(y.get()), *(dy_y.get()));
+    Weed::mul(*(dy.get()), *(_y.get()), *(dy_y.get()));
 
     TensorPtr s = SCALAR(p, dy_y);
     TensorPtr dy_y_p = s * dy_y;
 
     TensorPtr r = Tensor::allocate_like(dy_y_p, dy_y_p->storage->dtype, false,
                                         IS_SPARSE(dy_y_p));
-    Weed::div(*(dy_y_p.get()), *(x.get()), *(r.get()));
+    Weed::div(*(dy_y_p.get()), *(_x.get()), *(r.get()));
 
     dx->upcast(r->storage->dtype);
     Weed::add_in_place(*(dx.get()), *(r.get()));
@@ -987,17 +1016,19 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
   y->make_gradient();
   y->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, log_b, y]() {
-        DeviceTag dtag = get_dtag_by_presidence({x->grad, y->grad});
+        DeviceTag dtag = get_dtag_by_presidence({y, x->grad, y->grad});
 
         TensorPtr dx = x->grad->cast(dtag);
         TensorPtr dy = y->grad->cast(dtag);
+
+        TensorPtr _y = y->cast(dtag);
 
         TensorPtr s = SCALAR(log_b, dy);
         TensorPtr dy_v = s * dy;
 
         TensorPtr r = Tensor::allocate_like(dy_v, dy_v->storage->dtype, false,
                                             IS_SPARSE(dy_v));
-        Weed::mul(*(dy_v.get()), *(y.get()), *(r.get()));
+        Weed::mul(*(dy_v.get()), *(_y.get()), *(r.get()));
 
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
@@ -1022,17 +1053,19 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
   y->make_gradient();
   y->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, inv_log_b, y]() {
-        DeviceTag dtag = get_dtag_by_presidence({x->grad, y->grad});
+        DeviceTag dtag = get_dtag_by_presidence({x, x->grad, y->grad});
 
         TensorPtr dx = x->grad->cast(dtag);
         TensorPtr dy = y->grad->cast(dtag);
+
+        TensorPtr _x = x->cast(dtag);
 
         TensorPtr s = SCALAR(inv_log_b, dy);
         TensorPtr dy_v = s * dy;
 
         TensorPtr r = Tensor::allocate_like(dy_v, dy_v->storage->dtype, false,
                                             IS_SPARSE(dy_v));
-        Weed::div(*(dy_v.get()), *(x.get()), *(r.get()));
+        Weed::div(*(dy_v.get()), *(_x.get()), *(r.get()));
 
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));

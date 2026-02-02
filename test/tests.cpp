@@ -814,11 +814,14 @@ TEST_CASE("test_mixed_scalar_div") {
 TEST_CASE("test_real_scalar_div_sparse") {
   RealSparseVector xvec;
   xvec[1] = R(4);
+  RealSparseVector yvec;
+  yvec[0] = R(2);
+  yvec[1] = R(2);
+  yvec[2] = R(2);
 
   TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
                                          std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(std::vector<real1>{R(2), R(2), R(2)},
-                                         std::vector<tcapint>{3},
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
                                          std::vector<tcapint>{1}, false);
   TensorPtr z = x / y;
 

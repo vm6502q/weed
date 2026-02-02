@@ -62,43 +62,4 @@ inline tcapint pow2Gpu(const tlenint &p) { return (tcapint)1U << p; }
 // These are utility functions defined in qinterface/protected.cpp:
 unsigned char *cl_alloc(size_t ucharCount);
 void cl_free(void *toFree);
-
-#if ENABLE_ENV_VARS
-const tlenint WEED_MAX_CPU_POW_DEFAULT =
-    getenv("WEED_MAX_CPU_POW")
-        ? (tlenint)std::stoi(std::string(getenv("WEED_MAX_CPU_POW")))
-        : -1;
-const tlenint WEED_MAX_PAGE_POW_DEFAULT =
-    getenv("WEED_MAX_PAGE_POW")
-        ? (tlenint)std::stoi(std::string(getenv("WEED_MAX_PAGE_POW")))
-        : WEED_MAX_CPU_POW_DEFAULT;
-const tlenint WEED_MAX_PAGING_POW_DEFAULT =
-    getenv("WEED_MAX_PAGING_POW")
-        ? (tlenint)std::stoi(std::string(getenv("WEED_MAX_PAGING_POW")))
-        : WEED_MAX_CPU_POW_DEFAULT;
-const tlenint PSTRIDEPOW_DEFAULT =
-    (tlenint)(getenv("WEED_PSTRIDEPOW")
-                  ? std::stoi(std::string(getenv("WEED_PSTRIDEPOW")))
-                  : PSTRIDEPOW);
-const size_t WEED_SPARSE_MAX_ALLOC_MB_DEFAULT =
-    (size_t)(getenv("WEED_SPARSE_MAX_ALLOC_MB")
-                 ? std::stoi(std::string(getenv("WEED_SPARSE_MAX_ALLOC_MB")))
-                 : -1);
-const real1_f _weed_sparse_thresh =
-    getenv("WEED_SPARSE_TRUNCATION_THRESHOLD")
-        ? (real1_f)std::stof(
-              std::string(getenv("WEED_SPARSE_TRUNCATION_THRESHOLD")))
-        : REAL1_EPSILON;
-#else
-const tlenint WEED_MAX_CPU_POW_DEFAULT = -1;
-const tlenint WEED_MAX_PAGE_POW_DEFAULT = WEED_MAX_CPU_POW_DEFAULT;
-const tlenint WEED_MAX_PAGING_POW_DEFAULT = WEED_MAX_CPU_POW_DEFAULT;
-const tlenint PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
-const size_t WEED_SPARSE_MAX_ALLOC_MB_DEFAULT = -1;
-const real1_f _weed_sparse_thresh = REAL1_EPSILON;
-#endif
-const size_t WEED_SPARSE_MAX_ALLOC_BYTES_DEFAULT =
-    WEED_SPARSE_MAX_ALLOC_MB_DEFAULT * 1024U * 1024U;
-const size_t WEED_SPARSE_MAX_KEYS =
-    (WEED_SPARSE_MAX_ALLOC_BYTES_DEFAULT / SPARSE_KEY_BYTES) >> 1U;
 } // namespace Weed
