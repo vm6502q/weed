@@ -11,16 +11,14 @@
 
 #pragma once
 
+#include "modules/module.hpp"
 #include "tensors/parameter.hpp"
 
 namespace Weed {
 /**
- * Composable module with forward function and parameters for autograd
- * optimization
+ * Convenience wrapper on sigmoid as a module
  */
-struct Module {
-  virtual TensorPtr forward(const TensorPtr) = 0;
-  virtual std::vector<ParameterPtr> parameters() { return std::vector<ParameterPtr>(); }
+struct Tanh : public Module {
+  TensorPtr forward(TensorPtr x) override { return Tensor::tanh(x); }
 };
-typedef std::shared_ptr<Module> ModulePtr;
 } // namespace Weed

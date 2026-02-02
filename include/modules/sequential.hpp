@@ -18,10 +18,9 @@ namespace Weed {
 /**
  * Standard interface for sequential models of multiple layers
  */
-class Sequential : public Module {
+struct Sequential : public Module {
   std::vector<ModulePtr> layers;
 
-public:
   TensorPtr forward(TensorPtr x) override {
     TensorPtr tmp = x;
     for (size_t i = 0U; i < layers.size(); ++i) {
@@ -30,6 +29,7 @@ public:
 
     return tmp;
   }
+
   std::vector<ParameterPtr> parameters() override {
     std::vector<ParameterPtr> p;
     for (size_t i = 0U; i < layers.size(); ++i) {
