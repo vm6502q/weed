@@ -44,6 +44,8 @@ struct Storage : public std::enable_shared_from_this<Storage> {
     }
   }
 
+  virtual ~Storage() {}
+
   /**
    * If sparse, return the sparse element count (or otherwise the dense size)
    */

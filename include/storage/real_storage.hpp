@@ -21,6 +21,8 @@ struct RealStorage : Storage {
   RealStorage(const DeviceTag &dtg, const tcapint &n)
       : Storage(dtg, DType::REAL, n) {}
 
+  virtual ~RealStorage() {}
+
   /**
    * Get the real element at the position
    */

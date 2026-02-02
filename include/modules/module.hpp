@@ -23,6 +23,7 @@ struct Module {
   virtual std::vector<ParameterPtr> parameters() {
     return std::vector<ParameterPtr>();
   }
+  virtual ~Module() {}
 };
 typedef std::shared_ptr<Module> ModulePtr;
 } // namespace Weed
