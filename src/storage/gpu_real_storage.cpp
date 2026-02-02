@@ -15,10 +15,8 @@
 namespace Weed {
 StoragePtr GpuRealStorage::cpu() {
   CpuRealStoragePtr cp = std::make_shared<CpuRealStorage>(size);
-  is_mapped = dev->LockSync(buffer, sizeof(real1) * size, cp->data.get());
-  if (is_mapped) {
-    array = cp->data;
-  }
+  is_mapped =
+      dev->LockSync(buffer, sizeof(real1) * size, cp->data.get(), false);
 
   return cp;
 }

@@ -20,7 +20,9 @@ namespace Weed {
  */
 struct Module {
   virtual TensorPtr forward(const TensorPtr) = 0;
-  virtual std::vector<ParameterPtr> parameters() { return std::vector<ParameterPtr>(); }
+  virtual std::vector<ParameterPtr> parameters() {
+    return std::vector<ParameterPtr>();
+  }
 };
 typedef std::shared_ptr<Module> ModulePtr;
 } // namespace Weed

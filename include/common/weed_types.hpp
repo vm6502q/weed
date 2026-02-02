@@ -129,8 +129,8 @@ constexpr tlenint bitsInCap = ((tlenint)1U) << ((tlenint)TCAPPOW);
 
 struct Node;
 typedef std::shared_ptr<Node> NodePtr;
-typedef std::shared_ptr<real1[]> RealPtr;
-typedef std::shared_ptr<complex[]> ComplexPtr;
+typedef std::unique_ptr<real1[], void (*)(real1 *)> RealPtr;
+typedef std::unique_ptr<complex[], void (*)(complex *)> ComplexPtr;
 
 #define bitsInByte 8U
 #define WEED_ALIGN_SIZE 64U

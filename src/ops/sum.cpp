@@ -50,25 +50,25 @@
   }
 
 #define GPU_SUM(type)                                                          \
-  if (!(a_storage.array)) {                                                    \
-    a_storage.array = a_storage.Alloc(n);                                      \
+  if (!(a_storage->array)) {                                                   \
+    a_storage->array = a_storage->Alloc(n);                                    \
   }                                                                            \
-  type *gpa = a_storage.array.get();                                           \
+  type *gpa = a_storage->array.get();                                          \
   const bool isMapped =                                                        \
-      a_storage.dev->LockSync(a_storage.buffer, sizeof(type) * n, gpa);        \
+      a_storage->dev->LockSync(a_storage->buffer, sizeof(type) * n, gpa);      \
   CPU_SUM(type)
 
 #define GPU_WRITE(SetType)                                                     \
-  o_storage.dev->SetType(t, o_storage.buffer, 0U);                             \
+  o_storage->dev->SetType(t, o_storage->buffer, 0U);                           \
   if (isMapped) {                                                              \
-    a_storage.dev->UnlockSync(a_storage.buffer, a_storage.array.get());        \
+    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->array.get());     \
   } else {                                                                     \
-    a_storage.array = nullptr;                                                 \
+    a_storage->array = nullptr;                                                \
   }
 
 #define GPU_CAST(storage1, storage2)                                           \
-  storage1 a_storage = *static_cast<storage1 *>(a.storage.get());              \
-  storage2 o_storage = *static_cast<storage2 *>(out.storage.get())
+  storage1 *a_storage = static_cast<storage1 *>(a.storage.get());              \
+  storage2 *o_storage = static_cast<storage2 *>(out.storage.get())
 
 namespace Weed {
 static void cpu_sum_real(const Tensor &a, Tensor &out) {

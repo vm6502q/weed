@@ -151,10 +151,11 @@ struct GpuDevice {
   /**
    * Map or copy a GPU buffer into (CPU-accessible) host memory
    */
-  bool LockSync(BufferPtr buffer, const size_t &sz, void *array) {
+  bool LockSync(BufferPtr buffer, const size_t &sz, void *array,
+                bool allow_lock = true) {
     EventVecPtr waitVec = ResetWaitEvents();
 
-    if (device_context->use_host_mem) {
+    if (allow_lock && device_context->use_host_mem) {
       // Needs unlock
       tryOcl("Failed to map buffer", [&] {
         cl_int error;

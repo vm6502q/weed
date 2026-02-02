@@ -94,24 +94,24 @@
   const real1 v = *std::min_element(m.begin(), m.end());
 
 #define GPU_HEADER()                                                           \
-  if (!(a_storage.array)) {                                                    \
-    a_storage.array = a_storage.Alloc(n);                                      \
+  if (!(a_storage->array)) {                                                   \
+    a_storage->array = a_storage->Alloc(n);                                    \
   }                                                                            \
-  real1 *gpa = a_storage.array.get();                                          \
+  real1 *gpa = a_storage->array.get();                                         \
   const bool isMapped =                                                        \
-      a_storage.dev->LockSync(a_storage.buffer, sizeof(real1) * n, gpa)
+      a_storage->dev->LockSync(a_storage->buffer, sizeof(real1) * n, gpa)
 
 #define GPU_WRITE(SetType)                                                     \
-  o_storage.dev->SetType(v, o_storage.buffer, 0U);                             \
+  o_storage->dev->SetType(v, o_storage->buffer, 0U);                           \
   if (isMapped) {                                                              \
-    a_storage.dev->UnlockSync(a_storage.buffer, a_storage.array.get());        \
+    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->array.get());     \
   } else {                                                                     \
-    a_storage.array = nullptr;                                                 \
+    a_storage->array = nullptr;                                                \
   }
 
 #define GPU_CAST(storage1, storage2)                                           \
-  storage1 a_storage = *static_cast<storage1 *>(a.storage.get());              \
-  storage2 o_storage = *static_cast<storage2 *>(out.storage.get())
+  storage1 *a_storage = static_cast<storage1 *>(a.storage.get());              \
+  storage2 *o_storage = static_cast<storage2 *>(out.storage.get())
 
 namespace Weed {
 static void cpu_max(const Tensor &a, Tensor &out) {
