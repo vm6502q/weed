@@ -22,7 +22,22 @@ class Sequential : public Module {
   std::vector<ModulePtr> layers;
 
 public:
-  TensorPtr forward(TensorPtr x);
-  std::vector<ParameterPtr> parameters();
+  TensorPtr forward(TensorPtr x) {
+    TensorPtr tmp = x;
+    for (size_t i = 0U; i < layers.size(); ++i) {
+      tmp = layers[i]->forward(x);
+    }
+
+    return tmp;
+  }
+  std::vector<ParameterPtr> parameters() {
+    std::vector<ParameterPtr> p;
+    for (size_t i = 0U; i < layers.size(); ++i) {
+      const std::vector<ParameterPtr> l = layers[i]->parameters();
+      p.insert(p.end(), l.begin(), l.end());
+    }
+
+    return p;
+  }
 };
 } // namespace Weed
