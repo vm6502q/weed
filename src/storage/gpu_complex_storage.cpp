@@ -15,8 +15,7 @@
 namespace Weed {
 StoragePtr GpuComplexStorage::cpu() {
   CpuComplexStoragePtr cp = std::make_shared<CpuComplexStorage>(size);
-  is_mapped =
-      dev->LockSync(buffer, sizeof(complex) * size, cp->data.get(), false);
+  dev->LockSync(buffer, sizeof(complex) * size, cp->data.get(), false);
 
   return cp;
 }

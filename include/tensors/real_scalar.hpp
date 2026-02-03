@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "storage/real_storage.hpp"
+#include "storage/typed_storage.hpp"
 #include "tensors/scalar.hpp"
 
 namespace Weed {

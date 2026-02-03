@@ -50,10 +50,10 @@
   }
 
 #define GPU_SUM(type)                                                          \
-  if (!(a_storage->array)) {                                                   \
-    a_storage->array = a_storage->Alloc(n);                                    \
+  if (!(a_storage->data)) {                                                    \
+    a_storage->data = a_storage->Alloc(n);                                     \
   }                                                                            \
-  type *gpa = a_storage->array.get();                                          \
+  type *gpa = a_storage->data.get();                                           \
   const bool isMapped =                                                        \
       a_storage->dev->LockSync(a_storage->buffer, sizeof(type) * n, gpa);      \
   CPU_SUM(type)
@@ -61,9 +61,9 @@
 #define GPU_WRITE(SetType)                                                     \
   o_storage->dev->SetType(t, o_storage->buffer, 0U);                           \
   if (isMapped) {                                                              \
-    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->array.get());     \
+    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->data.get());      \
   } else {                                                                     \
-    a_storage->array = nullptr;                                                \
+    a_storage->data = nullptr;                                                 \
   }
 
 #define GPU_CAST(storage1, storage2)                                           \

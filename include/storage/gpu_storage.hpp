@@ -12,6 +12,7 @@
 #pragma once
 
 #include "devices/gpu_device.hpp"
+#include "storage/typed_storage.hpp"
 
 #if !ENABLE_OPENCL && !ENABLE_CUDA
 #error GPU files were included without either OpenCL and CUDA enabled.
@@ -21,29 +22,69 @@ namespace Weed {
 /**
  * GPU-accessible storage
  */
-struct GpuStorage {
+template <typename T> struct GpuStorage : TypedStorage<T> {
+  std::unique_ptr<T[], void (*)(T *)> data;
   GpuDevicePtr dev;
   BufferPtr buffer;
-  bool is_mapped;
 
-  GpuStorage() : dev(nullptr), buffer(nullptr), is_mapped(false) {}
+  GpuStorage(const tcapint &n, const int64_t &did, const bool &alloc = true)
+      : TypedStorage<T>(DeviceTag::GPU, n), data(nullptr, [](T *) {}) {
+    dev = OCLEngine::Instance().GetWeedDevice(did);
+    if (alloc) {
+      AddAlloc(sizeof(T) * TypedStorage<T>::size);
+      buffer = MakeBuffer(n);
+    }
+  }
+
+  GpuStorage(const std::vector<T> &val, const int64_t &did)
+      : TypedStorage<T>(DeviceTag::GPU, val.size()),
+        data(TypedStorage<T>::Alloc(val.size())) {
+    dev = OCLEngine::Instance().GetWeedDevice(did);
+    AddAlloc(sizeof(T) * TypedStorage<T>::size);
+    std::copy(val.begin(), val.end(), data.get());
+    buffer = MakeBuffer(val.size());
+    if (!(dev->device_context->use_host_mem)) {
+      data = nullptr;
+    }
+  }
+
+  virtual ~GpuStorage() { SubtractAlloc(sizeof(T) * TypedStorage<T>::size); }
+
+  int64_t get_device_id() const override { return dev->deviceID; }
 
   void AddAlloc(const size_t &sz) { dev->AddAlloc(sz); }
   void SubtractAlloc(const size_t &sz) { dev->SubtractAlloc(sz); }
 
-  BufferPtr MakeBuffer(const tcapint &n, const size_t &szf, void *array) {
+  BufferPtr MakeBuffer(const tcapint &n) {
     if (dev->device_context->use_host_mem) {
-      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, szf * n,
-                             array);
+      if (!data) {
+        data = TypedStorage<T>::Alloc(n);
+      }
+
+      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
+                             sizeof(T) * n, data.get());
     }
 
-    if (!array) {
-      return dev->MakeBuffer(CL_MEM_READ_WRITE, szf * n);
+    if (!data) {
+      return dev->MakeBuffer(CL_MEM_READ_WRITE, sizeof(T) * n);
     }
 
-    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, szf * n,
-                           array);
+    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
+                           sizeof(T) * n, data.get());
+  }
+
+  T operator[](const tcapint &idx) const = 0;
+
+  void write(const tcapint &idx, const T &val) override {
+    throw std::domain_error("Don't use GPU-based Storage::write()!");
+  }
+
+  void add(const tcapint &idx, const T &val) override {
+    throw std::domain_error("Don't use GPU-based Storage::add()!");
+  }
+
+  StoragePtr gpu(const int64_t &did = -1) override {
+    return TypedStorage<T>::get_ptr();
   }
 };
-typedef std::shared_ptr<GpuStorage> GpuStoragePtr;
 } // namespace Weed

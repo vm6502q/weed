@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "storage/real_storage.hpp"
+#include "storage/typed_storage.hpp"
 #include "tensors/tensor.hpp"
 
 namespace Weed {
@@ -38,14 +38,15 @@ struct RealTensor : public Tensor {
    * Select element at flattened position
    */
   real1 operator[](const tcapint &idx) const {
-    return (*static_cast<RealStorage *>(storage.get()))[get_storage_index(idx)];
+    return (*static_cast<TypedStorage<real1> *>(
+        storage.get()))[get_storage_index(idx)];
   }
 
   /**
    * Set the real element at the position
    */
   void write(const tcapint &idx, const real1 &val) {
-    static_cast<RealStorage *>(storage.get())
+    static_cast<TypedStorage<real1> *>(storage.get())
         ->write(get_storage_index(idx), val);
   }
 
@@ -53,7 +54,8 @@ struct RealTensor : public Tensor {
    * Add to the real element at the position
    */
   void add(const tcapint &idx, const real1 &val) {
-    static_cast<RealStorage *>(storage.get())->add(get_storage_index(idx), val);
+    static_cast<TypedStorage<real1> *>(storage.get())
+        ->add(get_storage_index(idx), val);
   }
 };
 

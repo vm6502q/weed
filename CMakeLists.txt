@@ -325,15 +325,15 @@ install (FILES
     include/ops/sum.hpp
     include/ops/util.hpp
     include/storage/all_storage.hpp
-    include/storage/complex_storage.hpp
     include/storage/cpu_complex_storage.hpp
     include/storage/cpu_real_storage.hpp
+    include/storage/cpu_storage.hpp
     include/storage/gpu_complex_storage.hpp
     include/storage/gpu_real_storage.hpp
     include/storage/gpu_storage.hpp
-    include/storage/real_storage.hpp
     include/storage/sparse_cpu_complex_storage.hpp
     include/storage/sparse_cpu_real_storage.hpp
+    include/storage/sparse_cpu_storage.hpp
     include/storage/storage.hpp
     include/storage/typed_storage.hpp
     include/tensors/base_tensor.hpp

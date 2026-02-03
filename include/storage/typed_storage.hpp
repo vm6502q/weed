@@ -15,7 +15,7 @@
 
 namespace Weed {
 /**
- * Storage for real data type elements
+ * Type-specific Storage template
  */
 template <typename T> struct TypedStorage : Storage {
   TypedStorage(const DeviceTag &dtg, const tcapint &n)
@@ -52,9 +52,24 @@ template <typename T> struct TypedStorage : Storage {
   virtual void add(const tcapint &idx, const T &val) = 0;
 
   /**
+   * Fill the entire Storage with 0
+   */
+  void FillZeros() { FillValue((T)ZERO_R1); }
+
+  /**
+   * Fill the entire Storage with 1
+   */
+  void FillOnes() { FillValue((T)ONE_R1); }
+
+  /**
    * Fill the entire Storage with specified real value
    */
   virtual void FillValue(const T &v) = 0;
+
+  /**
+   * Up-cast data type
+   */
+  virtual StoragePtr Upcast(const DType &dt) = 0;
 
 #if defined(__APPLE__)
   static T *_aligned_state_vec_alloc(tcapint allocSize) {
@@ -95,4 +110,8 @@ template <typename T> struct TypedStorage : Storage {
 #endif
   }
 };
+typedef TypedStorage<real1> RealStorage;
+typedef TypedStorage<complex> ComplexStorage;
+typedef std::shared_ptr<RealStorage> RealStoragePtr;
+typedef std::shared_ptr<ComplexStorage> ComplexStoragePtr;
 } // namespace Weed

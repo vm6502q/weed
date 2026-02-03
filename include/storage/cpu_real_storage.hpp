@@ -11,59 +11,18 @@
 
 #pragma once
 
-#include "storage/cpu_complex_storage.hpp"
-#include "storage/real_storage.hpp"
+#include "storage/cpu_storage.hpp"
 
-#include <algorithm>
+#include <vector>
 
 namespace Weed {
 /**
- * CPU-accessible storage for real data type elements
+ * CPU-accessible storage for complex data type elements
  */
-struct CpuRealStorage : RealStorage {
-  RealPtr data;
-
-  CpuRealStorage(const tcapint &n)
-      : RealStorage(DeviceTag::CPU, n), data(Alloc(n)) {}
-
-  CpuRealStorage(const std::vector<real1> &i)
-      : RealStorage(DeviceTag::CPU, i.size()), data(Alloc(i.size())) {
-    std::copy(i.begin(), i.end(), data.get());
-  }
-
-  real1 operator[](const tcapint &idx) const override {
-    return data.get()[(size_t)idx];
-  }
-
-  void write(const tcapint &idx, const real1 &val) override {
-    data.get()[(size_t)idx] = val;
-  }
-
-  void add(const tcapint &idx, const real1 &val) override {
-    data.get()[(size_t)idx] += val;
-  }
-
-  void FillZeros() override {
-    std::fill(data.get(), data.get() + size, ZERO_R1);
-  }
-  void FillOnes() override { std::fill(data.get(), data.get() + size, ONE_R1); }
-  void FillValue(const real1 &v) override {
-    std::fill(data.get(), data.get() + size, v);
-  }
-
-  StoragePtr Upcast(const DType &dt) override {
-    if (dt == DType::REAL) {
-      return get_ptr();
-    }
-
-    CpuComplexStoragePtr n = std::make_shared<CpuComplexStorage>(size);
-    std::transform(data.get(), data.get() + size, n->data.get(),
-                   [](real1 v) { return complex(v, ZERO_R1); });
-
-    return n;
-  }
-
-  StoragePtr cpu() override { return get_ptr(); }
+struct CpuRealStorage : CpuStorage<real1> {
+  CpuRealStorage(const tcapint &n) : CpuStorage<real1>(n) {}
+  CpuRealStorage(const std::vector<real1> &i) : CpuStorage<real1>(i) {}
+  StoragePtr Upcast(const DType &dt) override;
   StoragePtr gpu(const int64_t &did = -1) override;
 };
 typedef std::shared_ptr<CpuRealStorage> CpuRealStoragePtr;
