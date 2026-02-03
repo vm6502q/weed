@@ -69,17 +69,9 @@ struct GpuComplexStorage : public ComplexStorage, public GpuStorage {
       if (!array) {
         array = Alloc(n);
       }
-
-      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
-                             sizeof(complex) * n, array.get());
     }
 
-    if (!array) {
-      return dev->MakeBuffer(CL_MEM_READ_WRITE, sizeof(complex) * n);
-    }
-
-    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
-                           sizeof(complex) * n, array.get());
+    return GpuStorage::MakeBuffer(n, sizeof(complex), array.get());
   }
 
   complex operator[](const tcapint &idx) const override {

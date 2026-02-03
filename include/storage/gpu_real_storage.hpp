@@ -79,17 +79,9 @@ struct GpuRealStorage : public RealStorage, public GpuStorage {
       if (!array) {
         array = Alloc(n);
       }
-
-      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
-                             sizeof(real1) * n, array.get());
     }
 
-    if (!array) {
-      return dev->MakeBuffer(CL_MEM_READ_WRITE, sizeof(real1) * n);
-    }
-
-    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
-                           sizeof(real1) * n, array.get());
+    return GpuStorage::MakeBuffer(n, sizeof(real1), array.get());
   }
 
   real1 operator[](const tcapint &idx) const override {

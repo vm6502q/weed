@@ -30,6 +30,20 @@ struct GpuStorage {
 
   void AddAlloc(const size_t &sz) { dev->AddAlloc(sz); }
   void SubtractAlloc(const size_t &sz) { dev->SubtractAlloc(sz); }
+
+  BufferPtr MakeBuffer(const tcapint &n, const size_t &szf, void *array) {
+    if (dev->device_context->use_host_mem) {
+      return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, szf * n,
+                             array);
+    }
+
+    if (!array) {
+      return dev->MakeBuffer(CL_MEM_READ_WRITE, szf * n);
+    }
+
+    return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, szf * n,
+                           array);
+  }
 };
 typedef std::shared_ptr<GpuStorage> GpuStoragePtr;
 } // namespace Weed
