@@ -295,9 +295,19 @@ void GpuDevice::RequestKernel(const OCLAPI &api_call, const tcapint *vciArgs,
   QueueCall(api_call, nwi, ngs, buffers, nwi2, ngs2);
 }
 
+void GpuDevice::ClearIntBuffer(BufferPtr buffer, const size_t &nwi) {
+  const size_t ngs = pick_group_size(nwi);
+  QueueCall(OCLAPI::OCL_API_CLEAR_BUFFER_INT, nwi, ngs,
+            std::vector<BufferPtr>{buffer});
+}
 void GpuDevice::ClearRealBuffer(BufferPtr buffer, const size_t &nwi) {
   const size_t ngs = pick_group_size(nwi);
   QueueCall(OCLAPI::OCL_API_CLEAR_BUFFER_REAL, nwi, ngs,
+            std::vector<BufferPtr>{buffer});
+}
+void GpuDevice::FillOnesInt(BufferPtr buffer, const size_t &nwi) {
+  const size_t ngs = pick_group_size(nwi);
+  QueueCall(OCLAPI::OCL_API_FILL_ONES_INT, nwi, ngs,
             std::vector<BufferPtr>{buffer});
 }
 void GpuDevice::FillOnesReal(BufferPtr buffer, const size_t &nwi) {
@@ -309,6 +319,20 @@ void GpuDevice::FillOnesComplex(BufferPtr buffer, const size_t &nwi) {
   const size_t ngs = pick_group_size(nwi);
   QueueCall(OCLAPI::OCL_API_FILL_ONES_COMPLEX, nwi, ngs,
             std::vector<BufferPtr>{buffer});
+}
+void GpuDevice::FillValueInt(BufferPtr buffer, const size_t &nwi,
+                             const symint &v) {
+  tcapint vciArgs[VCI_ARG_LEN] = {(tcapint)v, 0U, 0U, 0U, 0U,
+                                  0U,         0U, 0U, 0U, 0U};
+  EventVecPtr waitVec = ResetWaitEvents();
+  PoolItemPtr poolItem = GetFreePoolItem();
+  cl::Event writeArgsEvent;
+  DISPATCH_TEMP_WRITE(waitVec, *(poolItem->vciBuffer), sizeof(tcapint), vciArgs,
+                      writeArgsEvent);
+  const size_t ngs = pick_group_size(nwi);
+  writeArgsEvent.wait();
+  QueueCall(OCLAPI::OCL_API_FILL_VALUE_INT, nwi, ngs,
+            std::vector<BufferPtr>{buffer, poolItem->vciBuffer});
 }
 void GpuDevice::FillValueReal(BufferPtr buffer, const size_t &nwi,
                               const real1 &v) {

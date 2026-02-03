@@ -13,3 +13,6 @@
 #define tcapint2 ushort2
 #define tcapint4 ushort4
 #define tlenInt uchar
+#define symint short
+#define symint2 short2
+#define symint4 short4

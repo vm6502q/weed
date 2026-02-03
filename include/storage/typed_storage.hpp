@@ -110,7 +110,7 @@ template <typename T> struct TypedStorage : Storage {
 #endif
   }
 };
-typedef TypedStorage<tcapint> IntStorage;
+typedef TypedStorage<symint> IntStorage;
 typedef TypedStorage<real1> RealStorage;
 typedef TypedStorage<complex> ComplexStorage;
 typedef std::shared_ptr<IntStorage> IntStoragePtr;

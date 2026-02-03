@@ -4,8 +4,6 @@ if (TCAPPOW LESS 3)
     message(FATAL_ERROR "TCAPPOW must be at least 3, equivalent to >= 8 qubits!")
 endif (TCAPPOW LESS 3)
 
-if (TCAPPOW GREATER 6)
-    target_sources(weed PRIVATE
-        src/common/big_integer.cpp
-        )
-endif (TCAPPOW GREATER 6)
+if (TCAPPOW GREATER 7)
+    message(FATAL_ERROR "TCAPPOW must be less than 8, equivalent to <= 128 qubits!")
+endif (TCAPPOW GREATER 7)

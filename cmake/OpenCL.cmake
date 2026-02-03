@@ -113,6 +113,7 @@ if (ENABLE_OPENCL)
         src/common/oclengine.cpp
         src/devices/gpu_device.cpp
         src/storage/gpu_complex_storage.cpp
+        src/storage/gpu_int_storage.cpp
         src/storage/gpu_real_storage.cpp
         )
 

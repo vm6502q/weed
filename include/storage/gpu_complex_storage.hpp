@@ -19,7 +19,7 @@
 
 namespace Weed {
 /**
- * GPU-accessible storage for complex data type elements
+ * GPU-accessible storage for complex-value data type elements
  */
 struct GpuComplexStorage : public GpuStorage<complex> {
   GpuComplexStorage(const tcapint &n, const int64_t &did,

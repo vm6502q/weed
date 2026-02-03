@@ -66,9 +66,12 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t &dev) {
 
 // clang-format off
 const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
+    OCLKernelHandle(OCL_API_CLEAR_BUFFER_INT, "clear_buffer_int"),
     OCLKernelHandle(OCL_API_CLEAR_BUFFER_REAL, "clear_buffer_real"),
+    OCLKernelHandle(OCL_API_FILL_ONES_INT, "fill_ones_int"),
     OCLKernelHandle(OCL_API_FILL_ONES_REAL, "fill_ones_real"),
     OCLKernelHandle(OCL_API_FILL_ONES_COMPLEX, "fill_ones_complex"),
+    OCLKernelHandle(OCL_API_FILL_VALUE_INT, "fill_value_int"),
     OCLKernelHandle(OCL_API_FILL_VALUE_REAL, "fill_value_real"),
     OCLKernelHandle(OCL_API_FILL_VALUE_COMPLEX, "fill_value_complex"),
     OCLKernelHandle(OCL_API_REAL_TO_COMPLEX_BUFFER, "real_to_complex_buffer"),

@@ -13,3 +13,6 @@
 #define tcapint2 ulong2
 #define tcapint4 ulong4
 #define tlenInt uchar
+#define symint long
+#define symint2 long2
+#define symint4 long4

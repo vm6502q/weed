@@ -17,15 +17,15 @@
 
 namespace Weed {
 /**
- * CPU-accessible storage for complex-value data type elements
+ * CPU-accessible storage for integer-value data type elements
  */
-struct CpuComplexStorage : CpuStorage<complex> {
-  CpuComplexStorage(const tcapint &n) : CpuStorage<complex>(n) {}
-  CpuComplexStorage(const std::vector<complex> &i) : CpuStorage<complex>(i) {}
+struct CpuIntStorage : CpuStorage<symint> {
+  CpuIntStorage(const tcapint &n) : CpuStorage<symint>(n) {}
+  CpuIntStorage(const std::vector<symint> &i) : CpuStorage<symint>(i) {}
   StoragePtr Upcast(const DType &dt) override {
-    return TypedStorage<complex>::get_ptr();
+    throw std::domain_error("Don't up-cast integer type (for symbol tables)!");
   }
   StoragePtr gpu(const int64_t &did = -1) override;
 };
-typedef std::shared_ptr<CpuComplexStorage> CpuComplexStoragePtr;
+typedef std::shared_ptr<CpuIntStorage> CpuIntStoragePtr;
 } // namespace Weed

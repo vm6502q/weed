@@ -17,7 +17,7 @@
 
 namespace Weed {
 /**
- * CPU-accessible storage for complex data type elements
+ * CPU-accessible storage for real-value data type elements
  */
 struct CpuRealStorage : CpuStorage<real1> {
   CpuRealStorage(const tcapint &n) : CpuStorage<real1>(n) {}

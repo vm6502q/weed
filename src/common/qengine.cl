@@ -110,9 +110,17 @@ inline cmplx polar_unit(const real1 theta) {
         g_buffer[l_X * I_A] = l_buffer[0U];                                                                            \
     }
 
+void kernel clear_buffer_int(global symint* a)
+{
+    a[i_X] = 0;
+}
 void kernel clear_buffer_real(global real1* a)
 {
     a[i_X] = ZERO_R1;
+}
+void kernel fill_ones_int(global symint* a)
+{
+    a[i_X] = 1;
 }
 void kernel fill_ones_real(global real1* a)
 {
@@ -121,6 +129,10 @@ void kernel fill_ones_real(global real1* a)
 void kernel fill_ones_complex(global cmplx* a)
 {
     a[i_X] = (cmplx)(ONE_R1, ZERO_R1);
+}
+void kernel fill_value_int(global symint* a, constant symint* v)
+{
+    a[i_X] = *v;
 }
 void kernel fill_value_real(global real1* a, constant real1* v)
 {

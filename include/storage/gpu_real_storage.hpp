@@ -19,7 +19,7 @@
 
 namespace Weed {
 /**
- * GPU-accessible storage for real data type elements
+ * GPU-accessible storage for real-value data type elements
  */
 struct GpuRealStorage : public GpuStorage<real1> {
   GpuRealStorage(const tcapint &n, int64_t did, const bool &alloc = true)

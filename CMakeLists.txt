@@ -39,6 +39,7 @@ add_library (weed STATIC
     src/ops/pow.cpp
     src/ops/util.cpp
     src/storage/cpu_complex_storage.cpp
+    src/storage/cpu_int_storage.cpp
     src/storage/cpu_real_storage.cpp
     src/storage/sparse_cpu_complex_storage.cpp
     src/storage/sparse_cpu_real_storage.cpp

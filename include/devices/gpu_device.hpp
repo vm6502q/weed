@@ -222,7 +222,15 @@ struct GpuDevice {
   /**
    * Request a buffer zeroing in the queue (OpenCL v1.1 compatible style)
    */
+  void ClearIntBuffer(BufferPtr buffer, const size_t &nwi);
+  /**
+   * Request a buffer zeroing in the queue (OpenCL v1.1 compatible style)
+   */
   void ClearRealBuffer(BufferPtr buffer, const size_t &nwi);
+  /**
+   * Fill a buffer of Weed:symint elements with 1
+   */
+  void FillOnesInt(BufferPtr buffer, const size_t &nwi);
   /**
    * Fill a buffer of Weed:real1 elements with 1.0
    */
@@ -231,6 +239,10 @@ struct GpuDevice {
    * Fill a buffer of Weed:complex elements with 1.0
    */
   void FillOnesComplex(BufferPtr buffer, const size_t &nwi);
+  /**
+   * Fill a buffer of Weed:real1 elements with specified value
+   */
+  void FillValueInt(BufferPtr buffer, const size_t &nwi, const symint &v);
   /**
    * Fill a buffer of Weed:real1 elements with specified value
    */
@@ -249,11 +261,19 @@ struct GpuDevice {
   /**
    * Read a single real1 from a buffer
    */
+  real1 GetInt(BufferPtr buffer, const tcapint &idx);
+  /**
+   * Read a single real1 from a buffer
+   */
   real1 GetReal(BufferPtr buffer, const tcapint &idx);
   /**
    * Read a single complex from a buffer
    */
   complex GetComplex(BufferPtr buffer, const tcapint &idx);
+  /**
+   * Write a single real1 to a buffer
+   */
+  void SetInt(const real1 &val, BufferPtr buffer, const tcapint &idx);
   /**
    * Write a single real1 to a buffer
    */
