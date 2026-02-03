@@ -489,7 +489,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
 
         TensorPtr dx = a->grad->cast(dtag);
-        TensorPtr dy = out->grad->cast(dtag);
+        TensorPtr dy = out->grad->copy()->cast(dtag);
 
         // re-insert reduced axis
         dy->shape.insert(dy->shape.begin() + axis, a->shape[axis]);
