@@ -15,5 +15,5 @@ namespace Weed {
 /**
  * Data types available in Weed
  */
-enum DType { REAL = 1, COMPLEX = 2, DEFAULT_DTYPE = REAL };
+enum DType { REAL = 1, COMPLEX = 2, INT = 3, DEFAULT_DTYPE = REAL };
 } // namespace Weed

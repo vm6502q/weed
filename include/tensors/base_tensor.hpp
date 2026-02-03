@@ -29,7 +29,9 @@ struct BaseTensor {
 
   BaseTensor() : storage(nullptr), offset(0U), shape(), stride() {}
   BaseTensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd)
-      : storage(nullptr), offset(0U), shape(shp), stride(strd) {}
+      : storage(nullptr), offset(0U), shape(shp), stride(strd) {
+    validate_constructor();
+  }
 
   /**
    * Make this (base) tensor a shallow copy of another

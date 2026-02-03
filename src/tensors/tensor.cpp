@@ -150,7 +150,7 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
     : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
       freeze(shp.size(), false) {
 
-  validate_constructor();
+  validate_dtype(dtype);
 
   const tcapint size = get_size();
   DeviceTag dtag = _dtag;
@@ -197,8 +197,6 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
     : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
       freeze(shp.size(), false) {
 
-  validate_constructor();
-
   const tcapint size = get_size();
 
   if (size != val.size()) {
@@ -226,8 +224,6 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
                const DeviceTag &_dtag, const int64_t &did)
     : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
       freeze(shp.size(), false) {
-
-  validate_constructor();
 
   const tcapint size = get_size();
 
@@ -257,16 +253,12 @@ Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
     : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
       freeze(shp.size(), false) {
 
-  validate_constructor();
-
   storage = std::make_shared<SparseCpuRealStorage>(val, get_size());
 }
 Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg)
     : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
       freeze(shp.size(), false) {
-
-  validate_constructor();
 
   storage = std::make_shared<SparseCpuComplexStorage>(val, get_size());
 }

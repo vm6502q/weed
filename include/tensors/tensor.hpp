@@ -67,10 +67,18 @@ struct Tensor : BaseTensor {
 
   void validate_constructor() override {
     BaseTensor::validate_constructor();
-    if ((shape.size() != 1U) || (shape[0U] != 1U)) {
-      for (size_t i = 0U; i < stride.size(); ++i) {
-        freeze[i] = stride[i] == 0U;
-      }
+    if ((shape.size() == 1U) && (shape[0U] == 1U)) {
+      return;
+    }
+    for (size_t i = 0U; i < stride.size(); ++i) {
+      freeze[i] = stride[i] == 0U;
+    }
+  }
+
+  void validate_dtype(const DType &dtype) {
+    if (dtype == DType::INT) {
+      throw std::invalid_argument("Tensor cannot have DType::INT! (INT is only "
+                                  "for SymbolTensor, not arithmetic Tensor.)");
     }
   }
 
