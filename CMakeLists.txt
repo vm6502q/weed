@@ -341,6 +341,7 @@ install (FILES
     include/tensors/real_scalar.hpp
     include/tensors/real_tensor.hpp
     include/tensors/scalar.hpp
+    include/tensors/symbol_tensor.hpp
     include/tensors/tensor.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/weed
     )
