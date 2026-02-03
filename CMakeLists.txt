@@ -335,6 +335,7 @@ install (FILES
     include/storage/sparse_cpu_complex_storage.hpp
     include/storage/sparse_cpu_real_storage.hpp
     include/storage/storage.hpp
+    include/storage/typed_storage.hpp
     include/tensors/base_tensor.hpp
     include/tensors/complex_scalar.hpp
     include/tensors/complex_tensor.hpp

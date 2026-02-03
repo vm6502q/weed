@@ -17,9 +17,9 @@ namespace Weed {
 /**
  * Storage for real data type elements
  */
-struct RealStorage : TypedStorage<real1> {
-  RealStorage(const DeviceTag &dtg, const tcapint &n)
-      : TypedStorage<real1>(dtg, n) {}
+struct IntStorage : TypedStorage<tcapint> {
+  IntStorage(const DeviceTag &dtg, const tcapint &n)
+      : TypedStorage<tcapint>(dtg, n) {}
 };
-typedef std::shared_ptr<RealStorage> RealStoragePtr;
+typedef std::shared_ptr<IntStorage> IntStoragePtr;
 } // namespace Weed

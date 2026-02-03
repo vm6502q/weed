@@ -237,6 +237,7 @@ WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
 #endif
 #endif
 
+typedef std::unordered_map<tcapint, tcapint> IntSparseVector;
 typedef std::unordered_map<tcapint, real1> RealSparseVector;
 typedef std::unordered_map<tcapint, complex> ComplexSparseVector;
 
