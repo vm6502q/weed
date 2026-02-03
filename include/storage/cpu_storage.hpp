@@ -17,7 +17,7 @@
 
 namespace Weed {
 /**
- * CPU-accessible storage for complex data type elements
+ * CPU-accessible storage
  */
 template <typename T> struct CpuStorage : TypedStorage<T> {
   std::unique_ptr<T[], void (*)(T *)> data;

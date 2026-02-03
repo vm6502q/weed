@@ -76,11 +76,11 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
   T operator[](const tcapint &idx) const = 0;
 
   void write(const tcapint &idx, const T &val) override {
-    throw std::domain_error("Don't use GPU-based ComplexStorage::write()!");
+    throw std::domain_error("Don't use GPU-based Storage::write()!");
   }
 
   void add(const tcapint &idx, const T &val) override {
-    throw std::domain_error("Don't use GPU-based ComplexStorage::add()!");
+    throw std::domain_error("Don't use GPU-based Storage::add()!");
   }
 
   StoragePtr gpu(const int64_t &did = -1) override {
