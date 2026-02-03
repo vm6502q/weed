@@ -20,7 +20,6 @@ StoragePtr CpuIntStorage::gpu(const int64_t &did) {
   GpuIntStoragePtr cp = std::make_shared<GpuIntStorage>(size, did, false);
   cp->data = cp->Alloc(size);
   std::copy(data.get(), data.get() + size, cp->data.get());
-  cp->AddAlloc(sizeof(tcapint) * size);
   cp->buffer = cp->MakeBuffer(size);
   if (!(cp->dev->device_context->use_host_mem)) {
     cp->data = nullptr;

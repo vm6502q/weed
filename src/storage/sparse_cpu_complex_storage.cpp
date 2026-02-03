@@ -23,7 +23,6 @@ StoragePtr SparseCpuComplexStorage::gpu(const int64_t &did) {
   for (size_t i = 0U; i < size; ++i) {
     data[i] = (*this)[i];
   }
-  cp->AddAlloc(sizeof(complex) * size);
   cp->buffer = cp->MakeBuffer(size);
   if (!(cp->dev->device_context->use_host_mem)) {
     cp->data = nullptr;

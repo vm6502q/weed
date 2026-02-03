@@ -30,8 +30,8 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
   GpuStorage(const tcapint &n, const int64_t &did, const bool &alloc = true)
       : TypedStorage<T>(DeviceTag::GPU, n), data(nullptr, [](T *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
+    AddAlloc(sizeof(T) * TypedStorage<T>::size);
     if (alloc) {
-      AddAlloc(sizeof(T) * TypedStorage<T>::size);
       buffer = MakeBuffer(n);
     }
   }

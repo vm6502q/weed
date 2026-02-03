@@ -21,7 +21,6 @@ StoragePtr CpuRealStorage::gpu(const int64_t &did) {
   GpuRealStoragePtr cp = std::make_shared<GpuRealStorage>(size, did, false);
   cp->data = cp->Alloc(size);
   std::copy(data.get(), data.get() + size, cp->data.get());
-  cp->AddAlloc(sizeof(real1) * size);
   cp->buffer = cp->MakeBuffer(size);
   if (!(cp->dev->device_context->use_host_mem)) {
     cp->data = nullptr;
@@ -32,6 +31,7 @@ StoragePtr CpuRealStorage::gpu(const int64_t &did) {
   return get_ptr();
 #endif
 }
+
 StoragePtr CpuRealStorage::Upcast(const DType &dt) {
   if (dt != DType::COMPLEX) {
     return get_ptr();
