@@ -480,6 +480,59 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
       });
 }
 
+TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
+  const bool rg = a->requires_grad;
+
+  TensorPtr acp = a->copy();
+  std::vector<tcapint> &sh = acp->shape;
+  std::vector<tcapint> &st = acp->stride;
+
+  if (sh.size() == 1U) {
+    sh[0U] = 1U;
+    st[0U] = 0U;
+  } else {
+    const size_t p_stride = acp->stride[axis];
+
+    sh.erase(sh.begin() + axis);
+    st.erase(st.begin() + axis);
+
+    const size_t o_stride = acp->stride[axis] / p_stride;
+
+    for (size_t j = axis; j < acp->stride.size(); ++j) {
+      acp->stride[j] /= o_stride;
+    }
+  }
+
+  TensorPtr out = allocate_like(acp, acp->storage->dtype, rg, IS_SPARSE(a));
+  Weed::reduce(axis, *(a.get()), *(out.get()));
+
+  if (rg) {
+    make_sum_node(a, out, axis);
+  }
+
+  return out;
+}
+
+void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out, axis]() {
+        DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
+
+        TensorPtr dx = a->grad->cast(dtag);
+        TensorPtr dy = out->grad->cast(dtag);
+
+        // re-insert reduced axis
+        dy->shape.insert(dy->shape.begin() + axis, a->shape[axis]);
+        dy->stride.insert(dy->stride.begin() + axis, 0U);
+
+        dx->upcast(dy->storage->dtype);
+        Weed::reduce_grad(axis, *dx, *a, *dy);
+
+        a->grad = dx;
+      });
+}
+
 TensorPtr Tensor::abs(TensorPtr a) {
   const bool rg = a->requires_grad;
   TensorPtr out = allocate_like(a, DType::REAL, rg, IS_SPARSE(a));

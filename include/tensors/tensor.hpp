@@ -356,6 +356,19 @@ struct Tensor {
   static void make_mean_node(TensorPtr a, TensorPtr out);
 
   /**
+   * Average of all elements by axis (with autograd)
+   */
+  static TensorPtr mean(TensorPtr a, const tcapint &axis) {
+    return div(sum(a, axis), SCALAR(a->shape[axis], a));
+  }
+
+  /**
+   * Sum of all elements by axis (with autograd)
+   */
+  static TensorPtr sum(TensorPtr a, const tcapint &axis);
+  static void make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis);
+
+  /**
    * Absolute value (with autograd)
    */
   static TensorPtr abs(TensorPtr a);

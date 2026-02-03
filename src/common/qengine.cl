@@ -185,6 +185,69 @@ void kernel reduce_complex(global cmplx* a, global cmplx* b, constant tcapint* s
   b[i_X * I_B] = sum;
 }
 
+void kernel reduce_grad_real(global real1* din, global real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+{
+  tcapint tmp = i_X;
+  tcapint o = 0U;
+  const tcapint id = I_A;
+
+  for (int d = O_C - 1; d >= 0; --d) {
+    if (d == id) {
+      continue;
+    }
+
+    tcapint dim = shape[d];
+    tcapint i_d = tmp % dim;
+    tmp /= dim;
+
+    o += i_d * stride[d];
+  }
+
+  din[i_X * I_B] += dout[o];
+}
+
+void kernel reduce_grad_complex(global cmplx* din, global cmplx* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+{
+  tcapint tmp = i_X;
+  tcapint o = 0U;
+  const tcapint id = I_A;
+
+  for (int d = O_C - 1; d >= 0; --d) {
+    if (d == id) {
+      continue;
+    }
+
+    tcapint dim = shape[d];
+    tcapint i_d = tmp % dim;
+    tmp /= dim;
+
+    o += i_d * stride[d];
+  }
+
+  din[i_X * I_B] += dout[o];
+}
+
+void kernel reduce_grad_mixed(global real1* din, global real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+{
+  tcapint tmp = i_X;
+  tcapint o = 0U;
+  const tcapint id = I_A;
+
+  for (int d = O_C - 1; d >= 0; --d) {
+    if (d == id) {
+      continue;
+    }
+
+    tcapint dim = shape[d];
+    tcapint i_d = tmp % dim;
+    tmp /= dim;
+
+    o += i_d * stride[d];
+  }
+
+  din[(i_X * I_B) << 1U] += dout[o];
+}
+
 void kernel relu(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     const real1 tmp = a[i_X * I_A + O_A];

@@ -130,6 +130,34 @@ TEST_CASE("test_mean_complex") {
   REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(R(1) / R(3)));
 }
 
+TEST_CASE("test_sum_axis_real") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(1)}, std::vector<tcapint>{2},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr y = Tensor::sum(x, 0U);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(2));
+
+  RealStorage *xg = static_cast<RealStorage *>(x->grad->storage.get());
+  REQUIRE((*xg)[0] == R(1));
+  REQUIRE((*xg)[1] == R(1));
+}
+
+TEST_CASE("test_sum_axis_complex") {
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<complex>{R(1), R(1)}, std::vector<tcapint>{2},
+      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr y = Tensor::sum(x, 0U);
+  Tensor::backward(y);
+
+  REQUIRE_CMPLX(GET_COMPLEX(y), R(2));
+
+  ComplexStorage *xg = static_cast<ComplexStorage *>(x->grad->storage.get());
+  REQUIRE((*xg)[0] == R(1));
+  REQUIRE((*xg)[1] == R(1));
+}
+
 TEST_CASE("test_scalar_relu") {
   TensorPtr x = std::make_shared<RealScalar>(R(2), true, TEST_DTAG);
   TensorPtr y = Tensor::relu(x);
