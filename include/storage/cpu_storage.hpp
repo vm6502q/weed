@@ -39,10 +39,20 @@ template <typename T> struct CpuStorage : TypedStorage<T> {
   }
 
   void write(const tcapint &idx, const T &val) override {
+    if (idx >= TypedStorage<T>::size) {
+      throw std::invalid_argument(
+          "CpuStorage::write(i, v) index out-of-bounds!");
+    }
+
     data.get()[(size_t)idx] = val;
   }
 
   void add(const tcapint &idx, const T &val) override {
+    if (idx >= TypedStorage<T>::size) {
+      throw std::invalid_argument(
+          "CpuStorage::add(i, v) index out-of-bounds!");
+    }
+
     data.get()[(size_t)idx] += val;
   }
 
