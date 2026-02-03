@@ -21,7 +21,7 @@ StoragePtr GpuRealStorage::cpu() {
   return cp;
 }
 StoragePtr GpuRealStorage::Upcast(const DType &dt) {
-  if (dt == DType::REAL) {
+  if (dt != DType::COMPLEX) {
     return get_ptr();
   }
 

@@ -33,7 +33,7 @@ StoragePtr CpuRealStorage::gpu(const int64_t &did) {
 #endif
 }
 StoragePtr CpuRealStorage::Upcast(const DType &dt) {
-  if (dt == DType::REAL) {
+  if (dt != DType::COMPLEX) {
     return get_ptr();
   }
 
