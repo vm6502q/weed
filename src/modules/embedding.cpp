@@ -18,7 +18,7 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
   // Output shape = indices.shape + [embedding_dim]
   std::vector<tcapint> out_shape = indices->shape;
   out_shape.push_back(embedding_dim);
-  std::vector<tcapint> out_stride = Tensor::gradient_stride(out_shape);
+  std::vector<tcapint> out_stride = Tensor::full_contiguous_stride(out_shape);
 
   TensorPtr out = Tensor::allocate_like(
       out_shape, out_stride, weight, weight->storage->dtype,

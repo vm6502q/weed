@@ -134,7 +134,8 @@ struct Tensor : BaseTensor {
   /**
    * Find the gradient stride (before reduction), for constructors
    */
-  static std::vector<tcapint> gradient_stride(const std::vector<tcapint> &shp) {
+  static std::vector<tcapint>
+  full_contiguous_stride(const std::vector<tcapint> &shp) {
     if ((shp.size() == 1U) && (shp[0U] == 1U)) {
       return std::vector<tcapint>{0U};
     }
@@ -178,8 +179,8 @@ struct Tensor : BaseTensor {
                                  const int64_t did, const bool &s) {
     // This must be reduced along broadcast dimensions
     // during the backward() step.
-    TensorPtr g = std::make_shared<Tensor>(shp, gradient_stride(shp), false,
-                                           dtype, dtag, did, s);
+    TensorPtr g = std::make_shared<Tensor>(shp, full_contiguous_stride(shp),
+                                           false, dtype, dtag, did, s);
     g->storage->FillZeros();
 
     return g;
