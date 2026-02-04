@@ -20,6 +20,9 @@ namespace Weed {
  */
 struct Module {
   virtual TensorPtr forward(const TensorPtr) = 0;
+  virtual TensorPtr forward(const BaseTensorPtr t) {
+    return forward(std::dynamic_pointer_cast<Tensor>(t));
+  }
   virtual std::vector<ParameterPtr> parameters() {
     return std::vector<ParameterPtr>();
   }

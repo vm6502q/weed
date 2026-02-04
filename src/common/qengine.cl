@@ -585,3 +585,49 @@ void kernel log_complex(global cmplx* a, global cmplx* out, constant tcapint* ve
 {
     out[i_X * I_B] = zlog(a[i_X * I_A + O_A]) * (*inv_log_b);
 }
+
+void kernel embedding_real(global symint* idx, global real1* W, global real1* O, constant tcapint* vecCapIntArgs)
+{
+    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint w_base = O_B + token * I_B;
+    const tcapint o_base = i_X * O_C;
+    for (tcapint d = 0U; d < J_B; ++d) {
+      O[o_base + d * O_C] = W[w_base + d * I_C];
+    }
+}
+void kernel embedding_complex(global symint* idx, global cmplx* W, global cmplx* O, constant tcapint* vecCapIntArgs)
+{
+    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint w_base = O_B + token * I_B;
+    const tcapint o_base = i_X * O_C;
+    for (tcapint d = 0U; d < J_B; ++d) {
+      O[o_base + d * O_C] = W[w_base + d * I_C];
+    }
+}
+void kernel embedding_grad_real(global symint* idx, global real1* dW, global real1* dO, constant tcapint* vecCapIntArgs)
+{
+    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint w_base = O_B + token * I_B;
+    const tcapint o_base = J_A + i_X * O_C;
+    for (tcapint d = 0U; d < J_B; ++d) {
+      dW[w_base + d * O_C] += dO[o_base + d * I_C];
+    }
+}
+void kernel embedding_grad_complex(global symint* idx, global cmplx* dW, global cmplx* dO, constant tcapint* vecCapIntArgs)
+{
+    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint w_base = O_B + token * I_B;
+    const tcapint o_base = J_A + i_X * O_C;
+    for (tcapint d = 0U; d < J_B; ++d) {
+      dW[w_base + d * O_C] += dO[o_base + d * I_C];
+    }
+}
+void kernel embedding_grad_mixed(global symint* idx, global real1* dW, global real1* dO, constant tcapint* vecCapIntArgs)
+{
+    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint w_base = O_B + token * I_B;
+    const tcapint o_base = J_A + i_X * O_C;
+    for (tcapint d = 0U; d < J_B; ++d) {
+      dW[(w_base + d * O_C) << 1U] += dO[o_base + d * I_C];
+    }
+}

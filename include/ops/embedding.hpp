@@ -11,14 +11,16 @@
 
 #pragma once
 
+#include "tensors/symbol_tensor.hpp"
 #include "tensors/tensor.hpp"
-
-#include <string>
 
 namespace Weed {
 /**
- * Validate that all tensors are on the same device, or throw otherwise
+ * Embedding forward function
  */
-void validate_all_same_device(const std::vector<const BaseTensor *> &t,
-                              const std::string cls);
+void embedding_gather(const SymbolTensor &, const Tensor &, Tensor &);
+/**
+ * Embedding backward function
+ */
+void embedding_scatter_add(Tensor &a, const SymbolTensor &, const Tensor &);
 } // namespace Weed

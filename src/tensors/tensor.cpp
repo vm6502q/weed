@@ -397,7 +397,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         // da += dout  (broadcast)
@@ -426,7 +426,7 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         // da += dout / N   (broadcast)
@@ -478,7 +478,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
   out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out, axis]() {
-        DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
 
         TensorPtr dx = a->grad->cast(dtag);
         TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
@@ -511,7 +511,7 @@ void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
         TensorPtr _a = a->cast(dtag);
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
@@ -538,7 +538,7 @@ void Tensor::make_relu_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
         TensorPtr _a = a->cast(dtag);
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
@@ -563,16 +563,16 @@ TensorPtr Tensor::sigmoid(TensorPtr a) {
 
 void Tensor::make_sigmoid_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
-  out->grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({out, a->grad, out->grad});
-        TensorPtr a_grad = a->grad->cast(dtag);
-        TensorPtr out_grad = out->grad->cast(dtag);
-        TensorPtr _out = out->cast(dtag);
-        a_grad->upcast(out_grad->storage->dtype);
-        Weed::sigmoid_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
-        a->grad = a_grad;
-      });
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a}, [a,
+                                                                      out]() {
+    const DeviceTag dtag = get_dtag_by_presidence({out, a->grad, out->grad});
+    TensorPtr a_grad = a->grad->cast(dtag);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    TensorPtr _out = out->cast(dtag);
+    a_grad->upcast(out_grad->storage->dtype);
+    Weed::sigmoid_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
+    a->grad = a_grad;
+  });
 }
 
 TensorPtr Tensor::tanh(TensorPtr a) {
@@ -590,16 +590,16 @@ TensorPtr Tensor::tanh(TensorPtr a) {
 
 void Tensor::make_tanh_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
-  out->grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({out, a->grad, out->grad});
-        TensorPtr a_grad = a->grad->cast(dtag);
-        TensorPtr out_grad = out->grad->cast(dtag);
-        TensorPtr _out = out->cast(dtag);
-        a_grad->upcast(out_grad->storage->dtype);
-        Weed::tanh_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
-        a->grad = a_grad;
-      });
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a}, [a,
+                                                                      out]() {
+    const DeviceTag dtag = get_dtag_by_presidence({out, a->grad, out->grad});
+    TensorPtr a_grad = a->grad->cast(dtag);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    TensorPtr _out = out->cast(dtag);
+    a_grad->upcast(out_grad->storage->dtype);
+    Weed::tanh_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
+    a->grad = a_grad;
+  });
 }
 
 TensorPtr Tensor::max(TensorPtr a) {
@@ -618,19 +618,19 @@ TensorPtr Tensor::max(TensorPtr a) {
 void Tensor::make_max_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
   a->make_gradient(true);
-  out->grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({a, out, a->grad, out->grad});
-        TensorPtr _a = a->cast(dtag);
-        TensorPtr _out = out->cast(dtag);
-        TensorPtr a_grad = a->grad->cast(dtag);
-        TensorPtr out_grad = out->grad->cast(dtag);
-        a_grad->upcast(out_grad->storage->dtype);
-        out_grad->match_shape(a_grad);
-        Weed::max_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
-                       *(_out.get()));
-        a->grad = a_grad;
-      });
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a}, [a,
+                                                                      out]() {
+    const DeviceTag dtag = get_dtag_by_presidence({a, out, a->grad, out->grad});
+    TensorPtr _a = a->cast(dtag);
+    TensorPtr _out = out->cast(dtag);
+    TensorPtr a_grad = a->grad->cast(dtag);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    a_grad->upcast(out_grad->storage->dtype);
+    out_grad->match_shape(a_grad);
+    Weed::max_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
+                   *(_out.get()));
+    a->grad = a_grad;
+  });
 }
 
 TensorPtr Tensor::min(TensorPtr a) {
@@ -649,19 +649,19 @@ TensorPtr Tensor::min(TensorPtr a) {
 void Tensor::make_min_node(TensorPtr a, TensorPtr out) {
   out->make_gradient();
   a->make_gradient(true);
-  out->grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
-        DeviceTag dtag = get_dtag_by_presidence({a, out, a->grad, out->grad});
-        TensorPtr _a = a->cast(dtag);
-        TensorPtr _out = out->cast(dtag);
-        TensorPtr a_grad = a->grad->cast(dtag);
-        TensorPtr out_grad = out->grad->cast(dtag);
-        a_grad->upcast(out_grad->storage->dtype);
-        out_grad->match_shape(a_grad);
-        Weed::min_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
-                       *(_out.get()));
-        a->grad = a_grad;
-      });
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{a}, [a,
+                                                                      out]() {
+    const DeviceTag dtag = get_dtag_by_presidence({a, out, a->grad, out->grad});
+    TensorPtr _a = a->cast(dtag);
+    TensorPtr _out = out->cast(dtag);
+    TensorPtr a_grad = a->grad->cast(dtag);
+    TensorPtr out_grad = out->grad->cast(dtag);
+    a_grad->upcast(out_grad->storage->dtype);
+    out_grad->match_shape(a_grad);
+    Weed::min_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
+                   *(_out.get()));
+    a->grad = a_grad;
+  });
 }
 
 TensorPtr Tensor::clamp(TensorPtr a, real1 lo, real1 hi) {
@@ -681,7 +681,7 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
   out->make_gradient();
   out->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out, lo, hi]() {
-        DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
         TensorPtr _a = a->cast(dtag);
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
@@ -725,7 +725,7 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (b->requires_grad) {
       p.push_back(b->grad);
     }
-    DeviceTag dtag = get_dtag_by_presidence(p);
+    const DeviceTag dtag = get_dtag_by_presidence(p);
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
@@ -779,7 +779,7 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
       p.push_back(b->grad);
       p.push_back(a);
     }
-    DeviceTag dtag = get_dtag_by_presidence(p);
+    const DeviceTag dtag = get_dtag_by_presidence(p);
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr _b = b->cast(dtag);
@@ -842,7 +842,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
       p.push_back(b->grad);
       p.push_back(a);
     }
-    DeviceTag dtag = get_dtag_by_presidence(p);
+    const DeviceTag dtag = get_dtag_by_presidence(p);
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
@@ -902,7 +902,7 @@ void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (b->requires_grad) {
       p.push_back(b->grad);
     }
-    DeviceTag dtag = get_dtag_by_presidence(p);
+    const DeviceTag dtag = get_dtag_by_presidence(p);
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
@@ -955,7 +955,7 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
       p.push_back(b->grad);
       p.push_back(a);
     }
-    DeviceTag dtag = get_dtag_by_presidence(p);
+    const DeviceTag dtag = get_dtag_by_presidence(p);
     TensorPtr _b = b->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
@@ -1001,7 +1001,7 @@ TensorPtr Tensor::pow(TensorPtr a, real1 p) {
 void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
   y->make_gradient();
   y->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, p, y]() {
-    DeviceTag dtag = get_dtag_by_presidence({x, y, x->grad, y->grad});
+    const DeviceTag dtag = get_dtag_by_presidence({x, y, x->grad, y->grad});
 
     TensorPtr dx = x->grad->cast(dtag);
     TensorPtr dy = y->grad->cast(dtag);
@@ -1043,7 +1043,7 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
   y->make_gradient();
   y->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, log_b, y]() {
-        DeviceTag dtag = get_dtag_by_presidence({y, x->grad, y->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({y, x->grad, y->grad});
 
         TensorPtr dx = x->grad->cast(dtag);
         TensorPtr dy = y->grad->cast(dtag);
@@ -1080,7 +1080,7 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
   y->make_gradient();
   y->grad_node =
       std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, inv_log_b, y]() {
-        DeviceTag dtag = get_dtag_by_presidence({x, x->grad, y->grad});
+        const DeviceTag dtag = get_dtag_by_presidence({x, x->grad, y->grad});
 
         TensorPtr dx = x->grad->cast(dtag);
         TensorPtr dy = y->grad->cast(dtag);

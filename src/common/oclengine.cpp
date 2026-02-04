@@ -133,7 +133,11 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_EXP_REAL, "exp_real"),
     OCLKernelHandle(OCL_API_EXP_COMPLEX, "exp_complex"),
     OCLKernelHandle(OCL_API_LOG_REAL, "log_real"),
-    OCLKernelHandle(OCL_API_LOG_COMPLEX, "log_complex")
+    OCLKernelHandle(OCL_API_EMBEDDING_REAL, "embedding_real"),
+    OCLKernelHandle(OCL_API_EMBEDDING_COMPLEX, "embedding_complex"),
+    OCLKernelHandle(OCL_API_EMBEDDING_GRAD_REAL, "embedding_grad_real"),
+    OCLKernelHandle(OCL_API_EMBEDDING_GRAD_COMPLEX, "embedding_grad_complex"),
+    OCLKernelHandle(OCL_API_EMBEDDING_GRAD_MIXED, "embedding_grad_mixed")
 };
 // clang-format on
 
