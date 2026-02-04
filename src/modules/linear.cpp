@@ -80,8 +80,6 @@ TensorPtr Linear::forward(const TensorPtr x) {
     y = y + bias;
   }
 
-  y->materialize_broadcast();
-
   return y;
 }
 
