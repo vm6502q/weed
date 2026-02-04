@@ -67,7 +67,7 @@ struct Tensor : BaseTensor {
 
   void validate_constructor() override {
     BaseTensor::validate_constructor();
-    if ((shape.size() == 1U) && (shape[0U] == 1U)) {
+    if ((stride.size() == 1U) && (stride[0U] == 0U)) {
       return;
     }
     for (size_t i = 0U; i < stride.size(); ++i) {
