@@ -21,7 +21,7 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
   std::vector<tcapint> out_stride = Tensor::full_contiguous_stride(out_shape);
 
   TensorPtr out = Tensor::allocate_like(
-      out_shape, out_stride, weight, weight->storage->dtype,
+      out_shape, out_stride, *(weight.get()), weight->storage->dtype,
       weight->requires_grad, weight->storage->is_sparse());
 
   Weed::embedding_gather(*(indices.get()), *(weight.get()), *(out.get()));

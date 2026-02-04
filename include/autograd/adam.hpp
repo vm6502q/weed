@@ -46,9 +46,9 @@ struct Adam {
    */
   void register_parameter(ParameterPtr p) {
     AdamState s;
-    s.m = Tensor::allocate_like(p, p->storage->dtype, false,
+    s.m = Tensor::allocate_like(*(p.get()), p->storage->dtype, false,
                                 p->storage->is_sparse());
-    s.v = Tensor::allocate_like(p, p->storage->dtype, false,
+    s.v = Tensor::allocate_like(*(p.get()), p->storage->dtype, false,
                                 p->storage->is_sparse());
 
     s.m->storage->FillZeros();

@@ -631,3 +631,12 @@ void kernel embedding_grad_mixed(global symint* idx, global real1* dW, global re
       dW[(w_base + d * O_C) << 1U] += dO[o_base + d * I_C];
     }
 }
+
+void kernel copy_real(global real1* a, global real1* b, constant tcapint* vecCapIntArgs)
+{
+    a[i_X * I_A] = b[i_X * I_B + O_B];
+}
+void kernel copy_complex(global cmplx* a, global cmplx* b, constant tcapint* vecCapIntArgs)
+{
+    a[i_X * I_A] = b[i_X * I_B + O_B];
+}

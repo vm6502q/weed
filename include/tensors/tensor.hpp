@@ -29,7 +29,7 @@ typedef std::shared_ptr<Tensor> TensorPtr;
 /**
  * Tensor with arbitrary dimensions and autograd
  */
-struct Tensor : BaseTensor {
+struct Tensor : public BaseTensor {
   NodePtr grad_node;
   TensorPtr grad;
   bool requires_grad;
@@ -103,6 +103,11 @@ struct Tensor : BaseTensor {
    * For broadcast, make this scalar match the shape of a target Tensor
    */
   bool match_shape(const TensorPtr a);
+
+  /**
+   * Materialize all broadcast indices
+   */
+  void materialize_broadcast();
 
   /**
    * For internal use, sum the gradient over all broadcast indices
@@ -190,19 +195,19 @@ struct Tensor : BaseTensor {
    * Create a new Tensor like the original, but a Scalar, and without Storage
    * value initialization
    */
-  static TensorPtr allocate_scalar_like(const TensorPtr orig, const bool &rg);
+  static TensorPtr allocate_scalar_like(const Tensor &orig, const bool &rg);
 
   /**
    * Create a new Tensor like the original, without Storage value initialization
    */
-  static TensorPtr allocate_like(const TensorPtr orig, const DType &dt,
+  static TensorPtr allocate_like(const Tensor &orig, const DType &dt,
                                  const bool &rg, const bool &s);
   /**
    * Create a new Tensor like the original, without Storage value initialization
    */
   static TensorPtr allocate_like(const std::vector<tcapint> &shape,
                                  const std::vector<tcapint> &stride,
-                                 const TensorPtr orig, const DType &dt,
+                                 const Tensor &orig, const DType &dt,
                                  const bool &rg, const bool &s);
 
   /**

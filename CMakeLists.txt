@@ -29,6 +29,7 @@ add_library (weed STATIC
     src/ops/abs.cpp
     src/ops/clamp.cpp
     src/ops/commuting.cpp
+    src/ops/copy_broadcast.cpp
     src/ops/div.cpp
     src/ops/embedding.cpp
     src/ops/in_place.cpp
@@ -318,6 +319,8 @@ install (FILES
     include/modules/tanh.hpp
     include/ops/abs.hpp
     include/ops/clamp.hpp
+    include/ops/commuting.hpp
+    include/ops/copy_broadcast.hpp
     include/ops/div.hpp
     include/ops/embedding.hpp
     include/ops/in_place.hpp
