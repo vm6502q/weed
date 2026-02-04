@@ -19,6 +19,6 @@ namespace Weed {
 /**
  * Validate that all tensors are on the same device, or throw otherwise
  */
-void validate_all_same_device(const std::vector<const BaseTensor *> &t,
+void validate_all_same_device(const std::vector<const Tensor *> &t,
                               const std::string cls);
 } // namespace Weed

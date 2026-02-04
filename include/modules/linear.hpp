@@ -12,6 +12,7 @@
 #pragma once
 
 #include "modules/module.hpp"
+#include "tensors/parameter.hpp"
 
 namespace Weed {
 /**

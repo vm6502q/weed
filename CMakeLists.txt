@@ -24,13 +24,11 @@ add_library (weed STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
     src/modules/dropout.cpp
-    src/modules/embedding.cpp
     src/modules/linear.cpp
     src/ops/abs.cpp
     src/ops/clamp.cpp
     src/ops/commuting.cpp
     src/ops/div.cpp
-    src/ops/embedding.cpp
     src/ops/in_place.cpp
     src/ops/matmul.cpp
     src/ops/reduce.cpp
@@ -309,7 +307,6 @@ install (FILES
     include/enums/device_tag.hpp
     include/enums/dtype.hpp
     include/modules/dropout.hpp
-    include/modules/embedding.hpp
     include/modules/linear.hpp
     include/modules/module.hpp
     include/modules/relu.hpp
@@ -319,7 +316,6 @@ install (FILES
     include/ops/abs.hpp
     include/ops/clamp.hpp
     include/ops/div.hpp
-    include/ops/embedding.hpp
     include/ops/in_place.hpp
     include/ops/matmul.hpp
     include/ops/pow.hpp

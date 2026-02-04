@@ -71,8 +71,6 @@ template <typename T> struct TypedStorage : Storage {
    */
   virtual StoragePtr Upcast(const DType &dt) = 0;
 
-  static size_t round_up(size_t n, size_t a) { return ((n + a - 1) / a) * a; }
-
 #if defined(__APPLE__)
   static T *_aligned_state_vec_alloc(tcapint allocSize) {
     void *toRet;
