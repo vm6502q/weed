@@ -97,7 +97,7 @@ struct BaseTensor {
    * Is the Tensor Storage contiguous (i.e., densely packed in a traversable
    * order)?
    */
-  bool is_contiguous() const { return is_contiguous(shape, stride); }
+  bool is_contiguous() const { return !offset && is_contiguous(shape, stride); }
 
   /**
    * Is this Tensor a Scalar (i.e., has only a single storage element that's
