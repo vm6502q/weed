@@ -178,7 +178,7 @@ static void gpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
 static void cpu_tanh(const Tensor &a, Tensor &out) {
   CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
-    po->write(i, std::tanh((*pa)[i]));
+    po->write(i, (real1)std::tanh((*pa)[i]));
   };
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }

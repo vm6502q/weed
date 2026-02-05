@@ -286,7 +286,7 @@ struct Tensor : public BaseTensor {
    * Average of all elements by axis (with autograd)
    */
   static TensorPtr mean(TensorPtr a, const tcapint &axis) {
-    return div(sum(a, axis), SCALAR(a->shape[axis], a));
+    return div(sum(a, axis), SCALAR((real1)a->shape[axis], a));
   }
 
   /**

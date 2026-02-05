@@ -102,7 +102,7 @@ static void gpu_mean_real(const Tensor &a, Tensor &out) {
   GPU_INIT_2_SCALAR(RealStorage, RealStorage);
   GPU_CAST(GpuRealStorage, GpuRealStorage);
   GPU_SUM(real1);
-  t /= n;
+  t /= (real1)n;
   GPU_WRITE(SetReal);
 }
 static void gpu_sum_complex(const Tensor &a, Tensor &out) {
@@ -115,7 +115,7 @@ static void gpu_mean_complex(const Tensor &a, Tensor &out) {
   GPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
   GPU_CAST(GpuComplexStorage, GpuComplexStorage);
   GPU_SUM(complex);
-  t /= n;
+  t /= (real1)n;
   GPU_WRITE(SetComplex);
 }
 #endif
