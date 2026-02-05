@@ -16,6 +16,7 @@
 // #include "autograd/mse_loss.hpp"
 // #include "autograd/sgd.hpp"
 #include "autograd/zero_grad.hpp"
+#include "modules/gru.hpp"
 #include "modules/linear.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"

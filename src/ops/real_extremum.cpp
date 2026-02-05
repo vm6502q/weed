@@ -115,13 +115,13 @@
 
 namespace Weed {
 static void cpu_max(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(RealTensor, RealStorage);
+  CPU_INIT_2_SCALAR(RealTensor, RealTensor);
   CPU_MAX();
   po->write(0U, v);
 }
 
 static void cpu_min(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(RealTensor, RealStorage);
+  CPU_INIT_2_SCALAR(RealTensor, RealTensor);
   CPU_MIN();
   po->write(0U, v);
 }

@@ -21,12 +21,12 @@
 
 #define CPU_INIT_2_SCALAR(ft, strg)                                            \
   GET_CONST_FLAT_TENSOR(ft, a, pa);                                            \
-  GET_STORAGE(strg, out, po);                                                  \
+  GET_FLAT_TENSOR(strg, out, po);                                              \
   const size_t n = a.get_broadcast_size()
 
 #define CPU_INIT_2(ft, strg)                                                   \
   GET_CONST_FLAT_TENSOR(ft, a, pa);                                            \
-  GET_STORAGE(strg, out, po);                                                  \
+  GET_FLAT_TENSOR(strg, out, po);                                              \
   const size_t n = out.storage->size
 
 #define CPU_INIT_2_IN_PLACE(ft1, ft2)                                          \
@@ -37,7 +37,7 @@
 #define CPU_INIT_3(ft1, ft2, strg)                                             \
   GET_CONST_FLAT_TENSOR(ft1, a, pa);                                           \
   GET_CONST_FLAT_TENSOR(ft2, b, pb);                                           \
-  GET_STORAGE(strg, out, po);                                                  \
+  GET_FLAT_TENSOR(strg, out, po);                                              \
   const size_t n = out.storage->size
 
 #define CPU_GRAD_INIT_3(ft1, ft2, ft3)                                         \

@@ -85,7 +85,7 @@
 
 namespace Weed {
 void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     real1 tmp = (*pa)[i];
     po->write(i, (tmp < ZERO_R1) ? -tmp : tmp);
@@ -93,7 +93,7 @@ void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
 void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(ComplexTensor, RealStorage);
+  CPU_INIT_2(ComplexTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, (real1)std::abs((*pa)[i]));
   };

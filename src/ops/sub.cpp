@@ -45,24 +45,24 @@
 
 namespace Weed {
 void SubKernel::cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_INIT_3(RealTensor, RealTensor, RealStorage);
+  CPU_INIT_3(RealTensor, RealTensor, RealTensor);
   SUB_KERNEL();
   SPARSE_CPU_3_RUN(SparseCpuRealStorage, SparseCpuRealStorage);
 }
 void SubKernel::cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
-  CPU_INIT_3(ComplexTensor, ComplexTensor, ComplexStorage);
+  CPU_INIT_3(ComplexTensor, ComplexTensor, ComplexTensor);
   SUB_KERNEL();
   SPARSE_CPU_3_RUN(SparseCpuComplexStorage, SparseCpuRealStorage);
 }
 void SubKernel::cpu_mixed_c_left(const Tensor &a, const Tensor &b,
                                  Tensor &out) {
-  CPU_INIT_3(ComplexTensor, RealTensor, ComplexStorage);
+  CPU_INIT_3(ComplexTensor, RealTensor, ComplexTensor);
   SUB_KERNEL();
   SPARSE_CPU_3_RUN(SparseCpuComplexStorage, SparseCpuRealStorage);
 }
 void SubKernel::cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                   Tensor &out) {
-  CPU_INIT_3(RealTensor, ComplexTensor, ComplexStorage);
+  CPU_INIT_3(RealTensor, ComplexTensor, ComplexTensor);
   SUB_KERNEL();
   SPARSE_CPU_3_RUN(SparseCpuRealStorage, SparseCpuComplexStorage);
 }

@@ -69,7 +69,7 @@
 namespace Weed {
 void ClampKernel::cpu(const Tensor &a, const real1 &l, const real1 &h,
                       Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, std::min(std::max((*pa)[i], l), h));
   };

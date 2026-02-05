@@ -65,7 +65,7 @@
 
 namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, std::max((*pa)[i], ZERO_R1));
   };
@@ -122,7 +122,7 @@ static void gpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 #endif
 
 static void cpu_sigmoid(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, ONE_R1 / (ONE_R1 + exp(-(*pa)[i])));
   };
@@ -179,7 +179,7 @@ static void gpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
 #endif
 
 static void cpu_tanh(const Tensor &a, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, std::tanh((*pa)[i]));
   };

@@ -72,7 +72,7 @@
 
 namespace Weed {
 static void cpu_sum_real(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(RealTensor, RealStorage);
+  CPU_INIT_2_SCALAR(RealTensor, RealTensor);
   CPU_KERNEL(real1, SparseCpuRealStorage);
   po->write(0U, t);
 }
@@ -82,7 +82,7 @@ static void cpu_mean_real(const Tensor &a, Tensor &out) {
   po->write(0U, (*po)[0U] / (real1)a.get_broadcast_size());
 }
 static void cpu_sum_complex(const Tensor &a, Tensor &out) {
-  CPU_INIT_2_SCALAR(ComplexTensor, ComplexStorage);
+  CPU_INIT_2_SCALAR(ComplexTensor, ComplexTensor);
   CPU_KERNEL(complex, SparseCpuComplexStorage);
   po->write(0U, t);
 }

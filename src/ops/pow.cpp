@@ -49,14 +49,14 @@
 
 namespace Weed {
 static void cpu_real_pow(const Tensor &a, const real1 &p, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, (real1)std::pow((real1_s)(*pa)[i], (real1_s)p));
   };
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
 static void cpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const real1 log_b = (real1)std::log((real1_s)b);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, (real1)std::exp((real1_s)((*pa)[i] * log_b)));
@@ -64,7 +64,7 @@ static void cpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
 static void cpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(RealTensor, RealStorage);
+  CPU_INIT_2(RealTensor, RealTensor);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, (real1)(std::log((real1_s)(*pa)[i])) * inv_log_b);
@@ -72,14 +72,14 @@ static void cpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
 static void cpu_complex_pow(const Tensor &a, const real1 &p, Tensor &out) {
-  CPU_INIT_2(ComplexTensor, ComplexStorage);
+  CPU_INIT_2(ComplexTensor, ComplexTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, std::pow((*pa)[i], p));
   };
   SPARSE_CPU_2_RUN(SparseCpuComplexStorage);
 }
 static void cpu_complex_exp(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(ComplexTensor, ComplexStorage);
+  CPU_INIT_2(ComplexTensor, ComplexTensor);
   const real1 log_b = (real1)std::log((real1_s)b);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, std::exp((*pa)[i] * log_b));
@@ -87,7 +87,7 @@ static void cpu_complex_exp(const Tensor &a, const real1 &b, Tensor &out) {
   SPARSE_CPU_2_RUN(SparseCpuComplexStorage);
 }
 static void cpu_complex_log(const Tensor &a, const real1 &b, Tensor &out) {
-  CPU_INIT_2(ComplexTensor, ComplexStorage);
+  CPU_INIT_2(ComplexTensor, ComplexTensor);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, std::log((*pa)[i]) * inv_log_b);
