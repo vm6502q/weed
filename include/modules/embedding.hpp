@@ -34,10 +34,10 @@ struct Embedding : public Module {
     throw std::domain_error(
         "Embedding::forward(x) takes a SymbolTensor, not a Tensor!");
   }
-  TensorPtr forward(const BaseTensorPtr t) {
+  TensorPtr forward(const BaseTensorPtr t) override {
     return forward(std::dynamic_pointer_cast<SymbolTensor>(t));
   }
-  TensorPtr forward(const SymbolTensorPtr t) override;
+  TensorPtr forward(const SymbolTensorPtr t);
   std::vector<ParameterPtr> parameters() override { return {weight}; }
 };
 typedef std::shared_ptr<Embedding> EmbeddingPtr;
