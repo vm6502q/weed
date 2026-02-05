@@ -126,20 +126,23 @@ static void cpu_min(const Tensor &a, Tensor &out) {
   po->write(0U, v);
 }
 
+template <typename T1, typename T2>
+static void cpu_grad(Tensor &din, const Tensor &in, const Tensor &dout,
+                     const Tensor &out) {
+  CPU_GRAD_INIT_3(T1, RealTensor, T2);
+  CPU_GRAD();
+}
 static void cpu_grad_real(Tensor &din, const Tensor &in, const Tensor &dout,
                           const Tensor &out) {
-  CPU_GRAD_INIT_3(RealTensor, RealTensor, RealTensor);
-  CPU_GRAD();
+  cpu_grad<RealTensor, RealTensor>(din, in, dout, out);
 }
 static void cpu_grad_complex(Tensor &din, const Tensor &in, const Tensor &dout,
                              const Tensor &out) {
-  CPU_GRAD_INIT_3(ComplexTensor, RealTensor, ComplexTensor);
-  CPU_GRAD();
+  cpu_grad<ComplexTensor, ComplexTensor>(din, in, dout, out);
 }
 static void cpu_grad_mixed(Tensor &din, const Tensor &in, const Tensor &dout,
                            const Tensor &out) {
-  CPU_GRAD_INIT_3(ComplexTensor, RealTensor, ComplexTensor);
-  CPU_GRAD();
+  cpu_grad<ComplexTensor, RealTensor>(din, in, dout, out);
 }
 
 #if ENABLE_GPU
