@@ -24,9 +24,6 @@ struct PowKernel {
   void pow(const Tensor &, const real1 &, Tensor &);
 };
 
-extern PowKernel pow_kernel;
-extern PowKernel log_kernel;
-
 /**
  * Element-wise power
  */
