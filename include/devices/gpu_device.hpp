@@ -18,15 +18,7 @@
 #error GPU files were included without either OpenCL and CUDA enabled.
 #endif
 
-#if ENABLE_CUDA
-#include "common/cudaengine.cuh"
-#endif
-
-#if ENABLE_OPENCL
 #define WEED_GPU_SINGLETON (OCLEngine::Instance())
-#elif ENABLE_CUDA
-#define WEED_GPU_SINGLETON (CUDAEngine::Instance())
-#endif
 
 #include <list>
 

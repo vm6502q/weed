@@ -17,9 +17,7 @@
 #error GPU files were included without either OpenCL and CUDA enabled.
 #endif
 
-#if ENABLE_OPENCL
 #include "common/oclengine.hpp"
-#endif
 
 #include <algorithm>
 #include <vector>

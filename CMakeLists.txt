@@ -91,7 +91,6 @@ if (ENABLE_EXAMPLES)
     include ("cmake/Examples.cmake")
 endif (ENABLE_EXAMPLES)
 include ("cmake/OpenCL.cmake" )
-include ("cmake/CUDA.cmake")
 
 message ("C++ standard year is (at least): ${CPP_STD}")
 message ("Tensor capacity power is: ${TCAPPOW}")
@@ -101,10 +100,6 @@ message ("CPU work item stride power is: ${PSTRIDEPOW}")
 message ("Async CPU is: ${ENABLE_ASYNC}")
 message ("OpenCL (v2.0) out-of-order queue is: ${ENABLE_OOO_OCL}")
 message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
-
-if (ENABLE_OPENCL AND ENABLE_CUDA)
-  message(FATAL_ERROR "You cannot enable both OpenCL and CUDA! Please choose one (or turn both off)." )
-endif (ENABLE_OPENCL AND ENABLE_CUDA)
 
 if (FPPOW GREATER 6)
     target_link_libraries(weed PUBLIC quadmath)
@@ -147,16 +142,6 @@ else (MSVC)
         set(WEED_CPP_STD_OPT -std=c++11)
     endif ()
 endif (MSVC)
-
-if (TCAPPOW GREATER 6)
-    set(WEED_CUDA_COMPILE_OPTS -O3 -use_fast_math -Xcompiler -fpermissive ${WEED_CPP_STD_OPT} --ptxas-options -O3,)
-else (TCAPPOW GREATER 6)
-    set(WEED_CUDA_COMPILE_OPTS -O3 -use_fast_math -Werror all-warnings ${WEED_CPP_STD_OPT} --ptxas-options -O3,)
-endif (TCAPPOW GREATER 6)
-
-if (ENABLE_GVIRTUS)
-    set(WEED_CUDA_COMPILE_OPTS --cudart=shared ${WEED_CUDA_COMPILE_OPTS})
-endif (ENABLE_GVIRTUS)
 
 if (MSVC)
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -254,20 +239,12 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-if (ENABLE_CUDA)
-    target_compile_options (weed PUBLIC
-        "$<$<COMPILE_LANGUAGE:C>:${WEED_COMPILE_OPTS}>"
-        "$<$<COMPILE_LANGUAGE:CXX>:${WEED_COMPILE_OPTS}>"
-        "$<$<COMPILE_LANGUAGE:CUDA>:${WEED_CUDA_COMPILE_OPTS}>"
-        -DCATCH_CONFIG_FAST_COMPILE
-        )
-else (ENABLE_CUDA)
-    if (MSVC)
-        target_compile_options (weed PUBLIC ${WEED_COMPILE_OPTS})
-    else (MSVC)
-        target_compile_options (weed PUBLIC ${WEED_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    endif (MSVC)
-endif (ENABLE_CUDA)
+if (MSVC)
+target_compile_options (weed PUBLIC ${WEED_COMPILE_OPTS})
+else (MSVC)
+target_compile_options (weed PUBLIC ${WEED_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+endif (MSVC)
+
 if (NOT PACK_DEBIAN)
     target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 endif (NOT PACK_DEBIAN)
@@ -291,7 +268,6 @@ install (FILES
     include/common/weed_types.hpp
     include/common/complex16x2simd.hpp
     include/common/complex8x2simd.hpp
-    include/common/cudaengine.cuh
     include/common/oclapi.hpp
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
