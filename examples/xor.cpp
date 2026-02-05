@@ -59,8 +59,8 @@ int main() {
     Tensor::backward(loss);
     adam_step(opt, params);
 
-    loss_r = GET_REAL(loss);
     if ((epoch % 10) == 0U) {
+      loss_r = GET_REAL(loss);
       std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
     }
 
