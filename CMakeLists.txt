@@ -25,6 +25,7 @@ add_library (weed STATIC
     src/common/parallel_for.cpp
     src/modules/dropout.cpp
     src/modules/embedding.cpp
+    src/modules/gru.cpp
     src/modules/linear.cpp
     src/modules/lstm.cpp
     src/ops/abs.cpp
@@ -312,6 +313,7 @@ install (FILES
     include/enums/dtype.hpp
     include/modules/dropout.hpp
     include/modules/embedding.hpp
+    include/modules/gru.hpp
     include/modules/linear.hpp
     include/modules/lstm.hpp
     include/modules/module.hpp

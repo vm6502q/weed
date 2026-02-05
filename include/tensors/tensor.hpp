@@ -146,6 +146,12 @@ struct Tensor : public BaseTensor {
   std::vector<TensorPtr> chunk(const size_t &chunks, const int64_t &axis = -1);
 
   /**
+   * A view into a contiguous sub-range of a Tensor along one axis
+   */
+  TensorPtr slice(const int64_t &axis, const tcapint &start,
+                  const tcapint &length);
+
+  /**
    * Tensor initialized with 0
    */
   static TensorPtr zeros(const std::vector<tcapint> &shape,

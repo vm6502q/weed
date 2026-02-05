@@ -14,6 +14,16 @@
 namespace Weed {
 TensorPtr LSTM::forward(const TensorPtr x) {
   const LSTMState &prev = state.back();
+  if (prev.h->shape.size() == 1U) {
+    prev.h->shape.insert(prev.h->shape.begin(), x->shape[0U]);
+    prev.h->stride.insert(prev.h->stride.begin(), 0U);
+    prev.h->materialize_broadcast();
+  }
+  if (prev.c->shape.size() == 1U) {
+    prev.c->shape.insert(prev.c->shape.begin(), x->shape[0U]);
+    prev.c->stride.insert(prev.c->stride.begin(), 0U);
+    prev.c->materialize_broadcast();
+  }
 
   // z = W_x(x) + W_h(h_{t-1})
   TensorPtr z = W_x.forward(x) + W_h.forward(prev.h);

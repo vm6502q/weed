@@ -334,6 +334,30 @@ std::vector<TensorPtr> Tensor::chunk(const size_t &chunks,
   return out;
 }
 
+// Contributed by Elara (the OpenAI custom GPT)
+TensorPtr Tensor::slice(const int64_t &axis_, const tcapint &start,
+                        const tcapint &length) {
+  int64_t axis = axis_;
+  if (axis < 0) {
+    axis += shape.size();
+  }
+  if (axis < 0 || axis >= (int64_t)shape.size()) {
+    throw std::invalid_argument("Tensor::slice: axis out of range");
+  }
+
+  if (start < 0 || length <= 0 || start + length > shape[axis]) {
+    throw std::invalid_argument("Tensor::slice: invalid range");
+  }
+
+  TensorPtr out =
+      std::make_shared<Tensor>(*this); // shallow copy (shared storage)
+
+  out->offset += start * stride[axis];
+  out->shape[axis] = length;
+
+  return out;
+}
+
 std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
   std::vector<TensorPtr> filtered;
   for (TensorPtr p : parents) {
