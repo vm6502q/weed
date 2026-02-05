@@ -120,6 +120,62 @@ struct Tensor : public BaseTensor {
   TensorPtr operator[](const tcapint &idx) const;
 
   /**
+   * Internally cast this real-value tensor to a complex-value tensor (if
+   * necessary)
+   */
+  void upcast(const DType &dt) { storage = storage->Upcast(dt); }
+
+  /**
+   * Cast this CPU-based tensor to a GPU-based one tensor or vice-versa (if
+   * necessary)
+   */
+  TensorPtr cast(const DeviceTag &dt) const {
+    TensorPtr cp = std::make_shared<Tensor>(*this);
+    if (dt == DeviceTag::CPU) {
+      cp->storage = cp->storage->cpu();
+    } else if (dt == DeviceTag::GPU) {
+      cp->storage = cp->storage->gpu();
+    }
+
+    return cp;
+  }
+
+  /**
+   * Split tensor into equally-sized chunks along axis
+   */
+  std::vector<TensorPtr> chunk(const size_t &chunks, const int64_t &axis = -1);
+
+  /**
+   * Tensor initialized with 0
+   */
+  static TensorPtr zeros(const std::vector<tcapint> &shape,
+                         const bool &rg = false,
+                         const DType &dtype = DType::REAL,
+                         const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+                         const int64_t &did = -1, const bool &s = true) {
+    TensorPtr z = std::make_shared<Tensor>(shape, full_contiguous_stride(shape),
+                                           rg, dtype, dtag, did, s);
+    z->storage->FillZeros();
+
+    return z;
+  }
+
+  /**
+   * Tensor initialized with 1
+   */
+  static TensorPtr ones_like(const std::vector<tcapint> &shape,
+                             const bool &rg = false,
+                             const DType &dtype = DType::REAL,
+                             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+                             const int64_t &did = -1, const bool &s = true) {
+    TensorPtr z = std::make_shared<Tensor>(shape, full_contiguous_stride(shape),
+                                           rg, dtype, dtag, did, s);
+    z->storage->FillOnes();
+
+    return z;
+  }
+
+  /**
    * Compare the data type of two tensors and return the more-encompassing one
    */
   static DType get_dtype_by_presidence(const std::vector<TensorPtr> &v) {
@@ -153,27 +209,6 @@ struct Tensor : public BaseTensor {
     }
 
     return g_stride;
-  }
-
-  /**
-   * Internally cast this real-value tensor to a complex-value tensor (if
-   * necessary)
-   */
-  void upcast(const DType &dt) { storage = storage->Upcast(dt); }
-
-  /**
-   * Cast this CPU-based tensor to a GPU-based one tensor or vice-versa (if
-   * necessary)
-   */
-  TensorPtr cast(const DeviceTag &dt) const {
-    TensorPtr cp = std::make_shared<Tensor>(*this);
-    if (dt == DeviceTag::CPU) {
-      cp->storage = cp->storage->cpu();
-    } else if (dt == DeviceTag::GPU) {
-      cp->storage = cp->storage->gpu();
-    }
-
-    return cp;
   }
 
   /**

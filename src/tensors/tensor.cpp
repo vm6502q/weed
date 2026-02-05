@@ -295,6 +295,45 @@ TensorPtr Tensor::operator[](const tcapint &idx) const {
   return v;
 }
 
+// Contributed by Elara (the OpenAI custom GPT)
+std::vector<TensorPtr> Tensor::chunk(const size_t &chunks,
+                                     const int64_t &axis_) {
+  if (chunks == 0) {
+    throw std::invalid_argument("Tensor::chunk: chunks must be > 0");
+  }
+
+  int64_t axis = axis_;
+  if (axis < 0) {
+    axis += shape.size();
+  }
+  if (axis < 0 || axis >= (int64_t)shape.size()) {
+    throw std::invalid_argument("Tensor::chunk: axis out of range");
+  }
+
+  const tcapint dim = shape[axis];
+  if (dim % chunks != 0) {
+    throw std::invalid_argument(
+        "Tensor::chunk: dimension not divisible by chunks");
+  }
+
+  const tcapint chunk_dim = dim / chunks;
+
+  std::vector<TensorPtr> out;
+  out.reserve(chunks);
+
+  for (size_t i = 0; i < chunks; ++i) {
+    TensorPtr t =
+        std::make_shared<Tensor>(*this); // shallow copy (shared storage)
+
+    t->shape[axis] = chunk_dim;
+    t->offset += i * chunk_dim * stride[axis];
+
+    out.push_back(t);
+  }
+
+  return out;
+}
+
 std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
   std::vector<TensorPtr> filtered;
   for (TensorPtr p : parents) {

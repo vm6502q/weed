@@ -26,6 +26,7 @@ add_library (weed STATIC
     src/modules/dropout.cpp
     src/modules/embedding.cpp
     src/modules/linear.cpp
+    src/modules/lstm.cpp
     src/ops/abs.cpp
     src/ops/clamp.cpp
     src/ops/commuting.cpp
@@ -312,6 +313,7 @@ install (FILES
     include/modules/dropout.hpp
     include/modules/embedding.hpp
     include/modules/linear.hpp
+    include/modules/lstm.hpp
     include/modules/module.hpp
     include/modules/relu.hpp
     include/modules/sequential.hpp
