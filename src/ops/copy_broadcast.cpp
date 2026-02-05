@@ -40,27 +40,28 @@
                                 {a_storage->buffer, b_storage->buffer})
 
 namespace Weed {
-void CopyKernel::cpu_real(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(RealTensor, RealTensor);
+template <typename T1, typename T2> static void cpu_real(Tensor &a, const Tensor &b) {
+  CPU_INIT_2_IN_PLACE(T1, T1);
   COPY_KERNEL();
-  SPARSE_CPU_2_SWITCH(SparseCpuRealStorage);
+  SPARSE_CPU_2_SWITCH(T2);
 }
-void CopyKernel::cpu_complex(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(ComplexTensor, ComplexTensor);
-  COPY_KERNEL();
-  SPARSE_CPU_2_SWITCH(SparseCpuComplexStorage);
+static inline void cpu_real(Tensor &a, const Tensor &b) {
+  cpu_real<RealTensor, SparseCpuRealStorage>(a, b);
+}
+static inline void cpu_complex(Tensor &a, const Tensor &b) {
+  cpu_real<ComplexTensor, SparseCpuComplexStorage>(a, b);
 }
 #if ENABLE_GPU
-void CopyKernel::gpu_real(Tensor &a, const Tensor &b) {
+static inline void gpu_real(Tensor &a, const Tensor &b) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, GpuRealStorage, OCL_API_COPY_REAL);
 }
-void CopyKernel::gpu_complex(Tensor &a, const Tensor &b) {
+static inline void gpu_complex(Tensor &a, const Tensor &b) {
   DISPATCH_GPU_KERNEL(GpuComplexStorage, GpuComplexStorage,
                       OCL_API_COPY_COMPLEX);
 }
 #endif
 
-void CopyKernel::copy_broadcast(Tensor &a, const Tensor &b) {
+void copy_broadcast(Tensor &a, const Tensor &b) {
   validate_all_same_device({&a, &b}, "CopyKernel::copy_broadcast");
   const tcapint aSize = a.get_size();
   const tcapint bSize = b.get_broadcast_size();
@@ -87,11 +88,5 @@ void CopyKernel::copy_broadcast(Tensor &a, const Tensor &b) {
     cpu_real(a, b);
 #endif
   }
-}
-
-CopyKernel copy_kernel;
-
-void copy_broadcast(Tensor &a, const Tensor &b) {
-  copy_kernel.copy_broadcast(a, b);
 }
 } // namespace Weed

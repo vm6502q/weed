@@ -14,18 +14,6 @@
 #include "tensors/tensor.hpp"
 
 namespace Weed {
-struct CopyKernel {
-  void cpu_real(Tensor &, const Tensor &);
-  void cpu_complex(Tensor &, const Tensor &);
-#if ENABLE_GPU
-  void gpu_real(Tensor &, const Tensor &);
-  void gpu_complex(Tensor &, const Tensor &);
-#endif
-  void copy_broadcast(Tensor &a, const Tensor &b);
-};
-
-extern CopyKernel copy_kernel;
-
 /**
  * Materialize broadcast indices
  */
