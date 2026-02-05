@@ -155,7 +155,6 @@ void kernel reduce_real(global real1* a, global real1* b, constant tcapint* shap
   }
   b[i_X * I_B + O_B] = sum;
 }
-
 void kernel reduce_complex(global cmplx* a, global cmplx* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
@@ -180,7 +179,6 @@ void kernel reduce_complex(global cmplx* a, global cmplx* b, constant tcapint* s
   }
   b[i_X * I_B + O_B] = sum;
 }
-
 void kernel reduce_grad_real(global real1* din, global real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
@@ -201,7 +199,6 @@ void kernel reduce_grad_real(global real1* din, global real1* dout, constant tca
 
   din[i_X * I_B + O_B] += dout[o];
 }
-
 void kernel reduce_grad_complex(global cmplx* din, global cmplx* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
@@ -222,7 +219,6 @@ void kernel reduce_grad_complex(global cmplx* din, global cmplx* dout, constant 
 
   din[i_X * I_B + O_B] += dout[o];
 }
-
 void kernel reduce_grad_mixed(global real1* din, global real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;

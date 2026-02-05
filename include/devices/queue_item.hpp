@@ -11,8 +11,17 @@
 
 #pragma once
 
-#include "common/oclengine.hpp"
 #include "common/weed_types.hpp"
+
+#if !ENABLE_OPENCL && !ENABLE_CUDA
+#error GPU files were included without either OpenCL and CUDA enabled.
+#endif
+
+#if ENABLE_OPENCL
+#include "common/oclengine.hpp"
+#else
+#include "common/cudaengine.cuh"
+#endif
 
 #include <vector>
 

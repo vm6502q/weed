@@ -233,6 +233,7 @@ WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
 #define REAL1_EPSILON_CUDA REAL1_EPSILON
 #define PI_R1_CUDA PI_R1
 #endif
+#define SineShift M_PI_2
 #endif
 
 typedef std::unordered_map<tcapint, tcapint> IntSparseVector;
