@@ -33,6 +33,8 @@ struct BaseTensor {
     validate_constructor();
   }
 
+  virtual ~BaseTensor() {}
+
   /**
    * Make this (base) tensor a shallow copy of another
    */
