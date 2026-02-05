@@ -29,10 +29,6 @@ struct RealUnaryKernel {
   void unary_grad(Tensor &, const Tensor &, const Tensor &);
 };
 
-extern RealUnaryKernel relu_kernel;
-extern RealUnaryKernel sigmoid_kernel;
-extern RealUnaryKernel tanh_kernel;
-
 /**
  * Rectified-linear activation function
  */

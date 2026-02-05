@@ -26,9 +26,6 @@ struct CommutingKernel {
   void commuting(const Tensor &a, const Tensor &b, Tensor &out);
 };
 
-extern CommutingKernel add_kernel;
-extern CommutingKernel mul_kernel;
-
 /**
  * Element-wise addition
  */

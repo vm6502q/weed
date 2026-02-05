@@ -84,15 +84,15 @@
   }
 
 namespace Weed {
-void AbsKernel::cpu_real(const Tensor &a, Tensor &out) {
+static inline void cpu_real(const Tensor &a, Tensor &out) {
   CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
-    real1 tmp = (*pa)[i];
+    const real1 tmp = (*pa)[i];
     po->write(i, (tmp < ZERO_R1) ? -tmp : tmp);
   };
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
-void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
+static inline void cpu_complex(const Tensor &a, Tensor &out) {
   CPU_INIT_2(ComplexTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
     po->write(i, (real1)std::abs((*pa)[i]));
@@ -100,14 +100,14 @@ void AbsKernel::cpu_complex(const Tensor &a, Tensor &out) {
   SPARSE_CPU_2_RUN(SparseCpuComplexStorage);
 }
 #if ENABLE_GPU
-void AbsKernel::gpu_real(const Tensor &a, Tensor &out) {
+static inline void gpu_real(const Tensor &a, Tensor &out) {
   GPU(GpuRealStorage, GpuRealStorage, OCL_API_ABS_REAL);
 }
-void AbsKernel::gpu_complex(const Tensor &a, Tensor &out) {
+static inline void gpu_complex(const Tensor &a, Tensor &out) {
   GPU(GpuComplexStorage, GpuRealStorage, OCL_API_ABS_COMPLEX);
 }
 #endif
-void AbsKernel::abs(const Tensor &a, Tensor &out) {
+void abs(const Tensor &a, Tensor &out) {
   validate_all_same_device({&a, &out}, "AbsKernel::abs");
   if (a.get_size() != out.get_size()) {
     throw std::invalid_argument(
@@ -131,75 +131,80 @@ void AbsKernel::abs(const Tensor &a, Tensor &out) {
   }
 }
 
-void AbsKernel::cpu_real_grad_real(Tensor &din, const Tensor &in,
-                                   const Tensor &dout) {
-  CPU_GRAD_INIT_3(RealTensor, RealTensor, RealTensor);
+template <typename T1, typename T2>
+static void cpu_real_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+  CPU_GRAD_INIT_3(T1, RealTensor, RealTensor);
   REAL_ABS_GRAD_KERNEL();
-  SPARSE_CPU_GRAD_3_RUN(SparseCpuRealStorage, SparseCpuRealStorage);
+  SPARSE_CPU_GRAD_3_RUN(T2, SparseCpuRealStorage);
 }
-void AbsKernel::cpu_real_grad_complex(Tensor &din, const Tensor &in,
-                                      const Tensor &dout) {
-  CPU_GRAD_INIT_3(ComplexTensor, RealTensor, ComplexTensor);
+template <typename T1, typename T2, typename T3>
+static void cpu_complex_grad(Tensor &din, const Tensor &in,
+                             const Tensor &dout) {
+  CPU_GRAD_INIT_3(ComplexTensor, T1, T2);
   COMPLEX_ABS_GRAD_KERNEL();
-  SPARSE_CPU_GRAD_3_RUN(SparseCpuComplexStorage, SparseCpuComplexStorage);
+  SPARSE_CPU_GRAD_3_RUN(SparseCpuComplexStorage, T3);
 }
-void AbsKernel::cpu_real_grad_mixed(Tensor &din, const Tensor &in,
-                                    const Tensor &dout) {
-  CPU_GRAD_INIT_3(ComplexTensor, RealTensor, RealTensor);
-  REAL_ABS_GRAD_KERNEL();
-  SPARSE_CPU_GRAD_3_RUN(SparseCpuComplexStorage, SparseCpuRealStorage);
-}
-void AbsKernel::cpu_complex_grad_real(Tensor &din, const Tensor &in,
+static inline void cpu_real_grad_real(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  CPU_GRAD_INIT_3(ComplexTensor, ComplexTensor, RealTensor);
-  COMPLEX_ABS_GRAD_KERNEL();
-  SPARSE_CPU_GRAD_3_RUN(SparseCpuComplexStorage, SparseCpuRealStorage);
+  cpu_real_grad<RealTensor, SparseCpuRealStorage>(din, in, dout);
 }
-void AbsKernel::cpu_complex_grad_complex(Tensor &din, const Tensor &in,
+static inline void cpu_real_grad_complex(Tensor &din, const Tensor &in,
                                          const Tensor &dout) {
-  CPU_GRAD_INIT_3(ComplexTensor, ComplexTensor, ComplexTensor);
-  COMPLEX_ABS_GRAD_KERNEL();
-  SPARSE_CPU_GRAD_3_RUN(SparseCpuComplexStorage, SparseCpuComplexStorage);
+  cpu_complex_grad<RealTensor, ComplexTensor, SparseCpuComplexStorage>(din, in,
+                                                                       dout);
 }
-void AbsKernel::cpu_complex_grad_mixed(Tensor &din, const Tensor &in,
+static inline void cpu_real_grad_mixed(Tensor &din, const Tensor &in,
                                        const Tensor &dout) {
-  CPU_GRAD_INIT_3(ComplexTensor, ComplexTensor, RealTensor);
-  COMPLEX_ABS_GRAD_KERNEL();
-  SPARSE_CPU_GRAD_3_RUN(SparseCpuComplexStorage, SparseCpuRealStorage);
+  cpu_real_grad<ComplexTensor, SparseCpuComplexStorage>(din, in, dout);
+}
+static inline void cpu_complex_grad_real(Tensor &din, const Tensor &in,
+                                         const Tensor &dout) {
+  cpu_complex_grad<ComplexTensor, RealTensor, SparseCpuRealStorage>(din, in,
+                                                                    dout);
+}
+static inline void cpu_complex_grad_complex(Tensor &din, const Tensor &in,
+                                            const Tensor &dout) {
+  cpu_complex_grad<ComplexTensor, ComplexTensor, SparseCpuComplexStorage>(
+      din, in, dout);
+}
+static inline void cpu_complex_grad_mixed(Tensor &din, const Tensor &in,
+                                          const Tensor &dout) {
+  cpu_complex_grad<ComplexTensor, RealTensor, SparseCpuRealStorage>(din, in,
+                                                                    dout);
 }
 #if ENABLE_GPU
-void AbsKernel::gpu_real_grad_real(Tensor &din, const Tensor &in,
-                                   const Tensor &dout) {
+static inline void gpu_real_grad_real(Tensor &din, const Tensor &in,
+                                      const Tensor &dout) {
   GPU_GRAD(GpuRealStorage, GpuRealStorage, GpuRealStorage,
            OCL_API_ABS_REAL_GRAD_REAL);
 }
-void AbsKernel::gpu_real_grad_complex(Tensor &din, const Tensor &in,
-                                      const Tensor &dout) {
+static inline void gpu_real_grad_complex(Tensor &din, const Tensor &in,
+                                         const Tensor &dout) {
   GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuComplexStorage,
            OCL_API_ABS_REAL_GRAD_COMPLEX);
 }
-void AbsKernel::gpu_real_grad_mixed(Tensor &din, const Tensor &in,
-                                    const Tensor &dout) {
+static inline void gpu_real_grad_mixed(Tensor &din, const Tensor &in,
+                                       const Tensor &dout) {
   GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuRealStorage,
            OCL_API_ABS_REAL_GRAD_MIXED);
 }
-void AbsKernel::gpu_complex_grad_real(Tensor &din, const Tensor &in,
-                                      const Tensor &dout) {
+static inline void gpu_complex_grad_real(Tensor &din, const Tensor &in,
+                                         const Tensor &dout) {
   GPU_GRAD(GpuComplexStorage, GpuComplexStorage, GpuRealStorage,
            OCL_API_ABS_COMPLEX_GRAD_REAL);
 }
-void AbsKernel::gpu_complex_grad_complex(Tensor &din, const Tensor &in,
-                                         const Tensor &dout) {
+static inline void gpu_complex_grad_complex(Tensor &din, const Tensor &in,
+                                            const Tensor &dout) {
   GPU_GRAD(GpuComplexStorage, GpuComplexStorage, GpuComplexStorage,
            OCL_API_ABS_COMPLEX_GRAD_COMPLEX);
 }
-void AbsKernel::gpu_complex_grad_mixed(Tensor &din, const Tensor &in,
-                                       const Tensor &dout) {
+static inline void gpu_complex_grad_mixed(Tensor &din, const Tensor &in,
+                                          const Tensor &dout) {
   GPU_GRAD(GpuComplexStorage, GpuComplexStorage, GpuRealStorage,
            OCL_API_ABS_COMPLEX_GRAD_MIXED);
 }
 #endif
-void AbsKernel::abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+void abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   validate_all_same_device({&din, &in, &dout}, "AbsKernel::abs_grad");
   if ((din.storage->dtype == DType::REAL) &&
       (dout.storage->dtype != DType::REAL)) {
@@ -278,12 +283,5 @@ void AbsKernel::abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
 #endif
     }
   }
-}
-
-AbsKernel abs_kernel;
-
-void abs(const Tensor &a, Tensor &out) { abs_kernel.abs(a, out); }
-void abs_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
-  abs_kernel.abs_grad(din, in, dout);
 }
 } // namespace Weed

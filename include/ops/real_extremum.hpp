@@ -35,9 +35,6 @@ struct RealExtremumKernel {
   void extremum_grad(Tensor &, const Tensor &, const Tensor &, const Tensor &);
 };
 
-extern RealExtremumKernel max_kernel;
-extern RealExtremumKernel min_kernel;
-
 /**
  * Maximum (real) extremum
  */

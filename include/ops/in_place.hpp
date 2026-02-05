@@ -26,9 +26,6 @@ struct InPlaceKernel {
   void in_place(Tensor &a, const Tensor &b);
 };
 
-extern InPlaceKernel add_in_place_kernel;
-extern InPlaceKernel sub_in_place_kernel;
-
 /**
  * Element-wise add-in-place
  */
