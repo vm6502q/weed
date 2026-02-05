@@ -37,7 +37,7 @@ struct Embedding : public Module {
   TensorPtr forward(const BaseTensorPtr t) {
     return forward(std::dynamic_pointer_cast<SymbolTensor>(t));
   }
-  TensorPtr forward(const SymbolTensorPtr t);
+  TensorPtr forward(const SymbolTensorPtr t) override;
   std::vector<ParameterPtr> parameters() override { return {weight}; }
 };
 typedef std::shared_ptr<Embedding> EmbeddingPtr;
