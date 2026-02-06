@@ -28,6 +28,7 @@ add_library (weed STATIC
     src/modules/gru.cpp
     src/modules/linear.cpp
     src/modules/lstm.cpp
+    src/modules/module.cpp
     src/ops/abs.cpp
     src/ops/clamp.cpp
     src/ops/commuting.cpp

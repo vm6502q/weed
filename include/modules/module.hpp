@@ -15,13 +15,15 @@
 #include "tensors/parameter.hpp"
 
 namespace Weed {
+struct Module;
+typedef std::shared_ptr<Module> ModulePtr;
 /**
  * Composable module with forward function and parameters for autograd
  * optimization
  */
 struct Module {
-  ModuleType type;
-  Module(ModuleType t) : type(t) {}
+  ModuleType mtype;
+  Module(ModuleType t) : mtype(t) {}
   virtual TensorPtr forward(const TensorPtr) = 0;
   virtual TensorPtr forward(const BaseTensorPtr t) {
     return forward(std::dynamic_pointer_cast<Tensor>(t));
@@ -32,6 +34,19 @@ struct Module {
   virtual void train() {}
   virtual void eval() {}
   virtual ~Module() {}
+  /**
+   * Serialize storage to ostream
+   */
+  virtual void save(std::ostream &) const;
+  /**
+   * Load serialized storage from istream
+   */
+  static ModulePtr load(std::istream &);
+  static void write_module_type(std::ostream &out, const ModuleType &x) {
+    out.write(reinterpret_cast<const char *>(&x), sizeof(ModuleType));
+  }
+  static void read_module_type(std::istream &in, ModuleType &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(ModuleType));
+  }
 };
-typedef std::shared_ptr<Module> ModulePtr;
 } // namespace Weed
