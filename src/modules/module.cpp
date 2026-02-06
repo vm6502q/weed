@@ -12,6 +12,7 @@
 #include "modules/module.hpp"
 #include "common/serializer.hpp"
 
+#include "modules/linear.hpp"
 #include "modules/sequential.hpp"
 
 namespace Weed {
@@ -34,6 +35,25 @@ ModulePtr Module::load(std::istream &is) {
       mv.push_back(load(is));
     }
     return std::make_shared<Sequential>(mv);
+  }
+  case ModuleType::LINEAR_T: {
+    tcapint in_features, out_features;
+    Serializer::read_tcapint(is, in_features);
+    Serializer::read_tcapint(is, out_features);
+    ParameterPtr weight = Parameter::load(is);
+    bool is_bias;
+    Serializer::read_bool(is, is_bias);
+    ParameterPtr bias = nullptr;
+    if (is_bias) {
+      bias = Parameter::load(is);
+    }
+    LinearPtr l = std::make_shared<Linear>();
+    l->in_features = in_features;
+    l->out_features = out_features;
+    l->weight = weight;
+    l->bias = bias;
+
+    return l;
   }
   case ModuleType::NONE_MODULE_TYPE:
   default:

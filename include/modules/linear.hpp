@@ -18,12 +18,13 @@ namespace Weed {
  * Linear module to train $y = xW^T + b$
  */
 struct Linear : public Module {
-  ParameterPtr weight; // (in_features, out_features)
-  ParameterPtr bias;   // (1, out_features) or null
-
   tcapint in_features;
   tcapint out_features;
 
+  ParameterPtr weight; // (in_features, out_features)
+  ParameterPtr bias;   // (1, out_features) or null
+
+  Linear() : Module(LINEAR_T){};
   Linear(tcapint in_f, tcapint out_f, bool use_bias = true,
          DType dtype = DType::REAL,
          DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1,
@@ -31,6 +32,10 @@ struct Linear : public Module {
 
   TensorPtr forward(const TensorPtr x) override;
   std::vector<ParameterPtr> parameters() override;
+  /**
+   * Serialize storage to ostream
+   */
+  void save(std::ostream &) const;
 };
 typedef std::shared_ptr<Linear> LinearPtr;
 } // namespace Weed

@@ -21,6 +21,12 @@ namespace Weed {
  * Static methods for serialization and de-serialization
  */
 struct Serializer {
+  static void write_bool(std::ostream &out, const bool &x) {
+    out.write(reinterpret_cast<const char *>(&x), sizeof(bool));
+  }
+  static void read_bool(std::istream &in, bool &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(bool));
+  }
   static void write_tcapint(std::ostream &out, const tcapint &x) {
     out.write(reinterpret_cast<const char *>(&x), sizeof(tcapint));
   }
