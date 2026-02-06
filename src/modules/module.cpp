@@ -88,6 +88,14 @@ ModulePtr Module::load(std::istream &is) {
 
     return l;
   }
+  case ModuleType::GRU_T:
+    throw std::domain_error(
+        "Can't serialize GRU! (This layer depends on transient state; are you "
+        "sure you want transient state saved in your model?)");
+  case ModuleType::LSTM_T:
+    throw std::domain_error(
+        "Can't serialize LSTM! (This layer depends on transient state; are you "
+        "sure you want transient state saved in your model?)");
   case ModuleType::NONE_MODULE_TYPE:
   default:
     throw std::domain_error("Can't recognize StorageType in Storage::load!");
