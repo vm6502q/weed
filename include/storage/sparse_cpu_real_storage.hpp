@@ -24,6 +24,7 @@ struct SparseCpuRealStorage : SparseCpuStorage<real1> {
       : SparseCpuStorage<real1>(REAL_CPU_SPARSE, n) {}
   StoragePtr Upcast(const DType &dt) override;
   StoragePtr gpu(const int64_t &did = -1) override;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<SparseCpuRealStorage> SparseCpuRealStoragePtr;
 } // namespace Weed

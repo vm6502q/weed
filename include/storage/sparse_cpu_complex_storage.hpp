@@ -26,6 +26,7 @@ struct SparseCpuComplexStorage : SparseCpuStorage<complex> {
     return SparseCpuStorage<complex>::get_ptr();
   }
   StoragePtr gpu(const int64_t &did = -1) override;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<SparseCpuComplexStorage> SparseCpuComplexStoragePtr;
 } // namespace Weed

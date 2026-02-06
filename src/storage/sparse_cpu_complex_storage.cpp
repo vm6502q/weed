@@ -10,6 +10,7 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "storage/sparse_cpu_complex_storage.hpp"
+#include "common/serializer.hpp"
 #if ENABLE_GPU
 #include "storage/gpu_complex_storage.hpp"
 #endif
@@ -32,5 +33,13 @@ StoragePtr SparseCpuComplexStorage::gpu(const int64_t &did) {
 #else
   return get_ptr();
 #endif
+}
+void SparseCpuComplexStorage::save(std::ostream &os) const {
+  Storage::save(os);
+  Serializer::write_tcapint(os, (tcapint)(data.size()));
+  for (auto it = data.begin(); it != data.end(); ++it) {
+    Serializer::write_tcapint(os, it->first);
+    Serializer::write_complex(os, it->second);
+  }
 }
 } // namespace Weed

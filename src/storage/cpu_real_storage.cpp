@@ -31,7 +31,6 @@ StoragePtr CpuRealStorage::gpu(const int64_t &did) {
   return get_ptr();
 #endif
 }
-
 StoragePtr CpuRealStorage::Upcast(const DType &dt) {
   if (dt != DType::COMPLEX) {
     return get_ptr();
@@ -43,7 +42,6 @@ StoragePtr CpuRealStorage::Upcast(const DType &dt) {
 
   return n;
 }
-
 void CpuRealStorage::save(std::ostream &os) const {
   Storage::save(os);
   for (tcapint i = 0U; i < size; ++i) {

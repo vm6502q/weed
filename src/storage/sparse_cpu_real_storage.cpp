@@ -10,6 +10,7 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "storage/sparse_cpu_real_storage.hpp"
+#include "common/serializer.hpp"
 #include "storage/sparse_cpu_complex_storage.hpp"
 #if ENABLE_GPU
 #include "storage/gpu_real_storage.hpp"
@@ -33,7 +34,6 @@ StoragePtr SparseCpuRealStorage::gpu(const int64_t &did) {
   return get_ptr();
 #endif
 }
-
 StoragePtr SparseCpuRealStorage::Upcast(const DType &dt) {
   if (dt == DType::REAL) {
     return get_ptr();
@@ -46,5 +46,13 @@ StoragePtr SparseCpuRealStorage::Upcast(const DType &dt) {
   }
 
   return n;
+}
+void SparseCpuRealStorage::save(std::ostream &os) const {
+  Storage::save(os);
+  Serializer::write_tcapint(os, (tcapint)(data.size()));
+  for (auto it = data.begin(); it != data.end(); ++it) {
+    Serializer::write_tcapint(os, it->first);
+    Serializer::write_real(os, it->second);
+  }
 }
 } // namespace Weed
