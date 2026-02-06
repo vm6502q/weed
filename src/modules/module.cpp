@@ -98,7 +98,7 @@ ModulePtr Module::load(std::istream &is) {
         "sure you want transient state saved in your model?)");
   case ModuleType::NONE_MODULE_TYPE:
   default:
-    throw std::domain_error("Can't recognize StorageType in Storage::load!");
+    throw std::domain_error("Can't recognize ModuleType in Module::load!");
   }
 
   return nullptr;
