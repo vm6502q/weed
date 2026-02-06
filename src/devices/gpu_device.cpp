@@ -369,6 +369,14 @@ void GpuDevice::UpcastRealBuffer(BufferPtr buffer_in, BufferPtr buffer_out,
             std::vector<BufferPtr>{buffer_in, buffer_out});
 }
 
+real1 GpuDevice::GetInt(BufferPtr buffer, const tcapint &idx) {
+  symint v;
+  EventVecPtr waitVec = ResetWaitEvents();
+  DISPATCH_BLOCK_READ(waitVec, *buffer, sizeof(symint) * idx, sizeof(symint),
+                      &v);
+
+  return v;
+}
 real1 GpuDevice::GetReal(BufferPtr buffer, const tcapint &idx) {
   real1 v;
   EventVecPtr waitVec = ResetWaitEvents();

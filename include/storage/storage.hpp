@@ -95,7 +95,7 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   /**
    * Serialize storage to ostream
    */
-  // virtual void save(std::ostream&) const = 0;
+  virtual void save(std::ostream &) const;
 
   /**
    * Load serialized storage from istream
