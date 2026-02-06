@@ -266,14 +266,13 @@ set_target_properties (weed PROPERTIES
 # Install common headers
 install (FILES
     ${CMAKE_BINARY_DIR}/include/common/config.h
-    include/common/weed_functions.hpp
-    include/common/weed_types.hpp
-    include/common/complex16x2simd.hpp
-    include/common/complex8x2simd.hpp
+    include/common/half.hpp
     include/common/oclapi.hpp
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
-    include/common/half.hpp
+    include/common/serializer.hpp
+    include/common/weed_functions.hpp
+    include/common/weed_types.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/weed/common
     )
 
