@@ -9,8 +9,8 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "modules/module.hpp"
 #include "common/serializer.hpp"
+#include "modules/module.hpp"
 
 #include "modules/dropout.hpp"
 #include "modules/embedding.hpp"

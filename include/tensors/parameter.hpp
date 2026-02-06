@@ -40,6 +40,6 @@ struct Parameter : Tensor {
 
   void save(std::ostream &out) const;
   static ParameterPtr load(std::istream &in,
-                           DeviceTag dtag_override = DEFAULT_DEVICE);
+                           DeviceTag dtag_override = NONE_DEVICE);
 };
 } // namespace Weed

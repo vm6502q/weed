@@ -20,6 +20,7 @@
 #include "modules/tanh.hpp"
 #include "tensors/real_scalar.hpp"
 
+#include <fstream>
 #include <iostream> // For cout
 
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
@@ -68,9 +69,18 @@ int main() {
     ++epoch;
   }
 
+  // Can we save to disk?
+  std::ofstream o("xor.qml");
+  model.save(o);
+  o.close();
+
+  std::ifstream i("xor.qml");
+  ModulePtr m = Module::load(i);
+  i.close();
+
   std::cout << "In: [[0, 0], [1, 0], [0, 1], [1, 1]]" << std::endl;
 
-  TensorPtr y_pred = model.forward(x);
+  TensorPtr y_pred = m->forward(x);
   RealStorage &storage = *static_cast<RealStorage *>(y_pred->storage.get());
 
   std::cout << "Out: [";
