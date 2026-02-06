@@ -48,6 +48,8 @@ struct GpuIntStorage : public GpuStorage<symint> {
   }
 
   StoragePtr cpu() override;
+
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<GpuIntStorage> GpuIntStoragePtr;
 } // namespace Weed

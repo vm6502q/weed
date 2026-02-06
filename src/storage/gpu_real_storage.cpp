@@ -10,6 +10,7 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "storage/gpu_real_storage.hpp"
+#include "common/serializer.hpp"
 #include "storage/cpu_real_storage.hpp"
 #include "storage/gpu_complex_storage.hpp"
 
@@ -30,5 +31,21 @@ StoragePtr GpuRealStorage::Upcast(const DType &dt) {
   dev->UpcastRealBuffer(buffer, n->buffer, size);
 
   return n;
+}
+void GpuRealStorage::save(std::ostream &os) const {
+  Storage::save(os);
+  if (data) {
+    dev->LockSync(buffer, sizeof(real1) * size, data.get(), false);
+    for (tcapint i = 0U; i < size; ++i) {
+      Serializer::write_real(os, data.get()[i]);
+    }
+    dev->UnlockSync(buffer, data.get());
+  } else {
+    std::unique_ptr<real1[], void (*)(real1 *)> d(Alloc(size));
+    dev->LockSync(buffer, sizeof(real1) * size, d.get(), false);
+    for (tcapint i = 0U; i < size; ++i) {
+      Serializer::write_real(os, d.get()[i]);
+    }
+  }
 }
 } // namespace Weed

@@ -45,6 +45,8 @@ struct GpuRealStorage : public GpuStorage<real1> {
   StoragePtr Upcast(const DType &dt) override;
 
   StoragePtr cpu() override;
+
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<GpuRealStorage> GpuRealStoragePtr;
 } // namespace Weed
