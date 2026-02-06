@@ -22,7 +22,7 @@ void Parameter::save(std::ostream &out) const {
   }
   storage->save(out);
 }
-ParameterPtr Parameter::load(std::istream &in, DeviceTag dtag_override) {
+ParameterPtr Parameter::load(std::istream &in) {
   tcapint offset;
   Serializer::read_tcapint(in, offset);
 
@@ -39,13 +39,8 @@ ParameterPtr Parameter::load(std::istream &in, DeviceTag dtag_override) {
 
   StoragePtr storage = Storage::load(in);
 
-  const DeviceTag dtag =
-      (dtag_override != NONE_DEVICE) ? dtag_override : storage->device;
-
-  storage->device = dtag;
-
-  ParameterPtr p =
-      std::make_shared<Parameter>(shape, stride, storage->dtype, dtag);
+  ParameterPtr p = std::make_shared<Parameter>(shape, stride, storage->dtype,
+                                               storage->device);
   p->storage = storage;
 
   return p;
