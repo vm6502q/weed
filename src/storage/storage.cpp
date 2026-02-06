@@ -43,13 +43,6 @@ StoragePtr Storage::load(std::istream &is) {
     }
     return std::make_shared<CpuRealStorage>(v);
   }
-  case StorageType::REAL_GPU_DENSE: {
-    std::vector<real1> v(size);
-    for (tcapint i = 0U; i < size; ++i) {
-      Serializer::read_real(is, v[i]);
-    }
-    return std::make_shared<GpuRealStorage>(v);
-  }
   case StorageType::COMPLEX_CPU_DENSE: {
     std::vector<complex> v(size);
     for (tcapint i = 0U; i < size; ++i) {
@@ -57,26 +50,12 @@ StoragePtr Storage::load(std::istream &is) {
     }
     return std::make_shared<CpuComplexStorage>(v);
   }
-  case StorageType::COMPLEX_GPU_DENSE: {
-    std::vector<complex> v(size);
-    for (tcapint i = 0U; i < size; ++i) {
-      Serializer::read_complex(is, v[i]);
-    }
-    return std::make_shared<GpuComplexStorage>(v);
-  }
   case StorageType::INT_CPU_DENSE: {
     std::vector<symint> v(size);
     for (tcapint i = 0U; i < size; ++i) {
       Serializer::read_symint(is, v[i]);
     }
     return std::make_shared<CpuIntStorage>(v);
-  }
-  case StorageType::INT_GPU_DENSE: {
-    std::vector<symint> v(size);
-    for (tcapint i = 0U; i < size; ++i) {
-      Serializer::read_symint(is, v[i]);
-    }
-    return std::make_shared<GpuIntStorage>(v);
   }
   case StorageType::REAL_CPU_SPARSE: {
     tcapint ksize;
@@ -104,6 +83,29 @@ StoragePtr Storage::load(std::istream &is) {
     }
     return std::make_shared<SparseCpuComplexStorage>(s, size);
   }
+#if ENABLE_GPU
+  case StorageType::REAL_GPU_DENSE: {
+    std::vector<real1> v(size);
+    for (tcapint i = 0U; i < size; ++i) {
+      Serializer::read_real(is, v[i]);
+    }
+    return std::make_shared<GpuRealStorage>(v);
+  }
+  case StorageType::COMPLEX_GPU_DENSE: {
+    std::vector<complex> v(size);
+    for (tcapint i = 0U; i < size; ++i) {
+      Serializer::read_complex(is, v[i]);
+    }
+    return std::make_shared<GpuComplexStorage>(v);
+  }
+  case StorageType::INT_GPU_DENSE: {
+    std::vector<symint> v(size);
+    for (tcapint i = 0U; i < size; ++i) {
+      Serializer::read_symint(is, v[i]);
+    }
+    return std::make_shared<GpuIntStorage>(v);
+  }
+#endif
   case StorageType::NONE_STORAGE_TYPE:
   default:
     throw std::domain_error("Can't recognize StorageType in Storage::load!");
