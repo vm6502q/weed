@@ -27,6 +27,7 @@ struct CpuIntStorage : CpuStorage<symint> {
     throw std::domain_error("Don't up-cast integer type (for symbol tables)!");
   }
   StoragePtr gpu(const int64_t &did = -1) override;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<CpuIntStorage> CpuIntStoragePtr;
 } // namespace Weed
