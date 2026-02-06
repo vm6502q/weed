@@ -15,7 +15,17 @@
 
 namespace Weed {
 /**
- * Back-end device types available in Weed
+ * Storage types for serialization
  */
-enum DeviceTag { NONE_DEVICE = 0, DEFAULT_DEVICE = 1, CPU = 2, GPU = 3 };
+enum StorageType {
+  NONE_STORAGE_TYPE = 0,
+  REAL_CPU_DENSE = 1,
+  REAL_GPU_DENSE = 2,
+  COMPLEX_CPU_DENSE = 3,
+  COMPLEX_GPU_DENSE = 4,
+  INT_CPU_DENSE = 5,
+  INT_GPU_DENSE = 6,
+  REAL_CPU_SPARSE = 7,
+  COMPLEX_CPU_SPARSE = 8
+};
 } // namespace Weed

@@ -48,6 +48,7 @@ add_library (weed STATIC
     src/storage/cpu_real_storage.cpp
     src/storage/sparse_cpu_complex_storage.cpp
     src/storage/sparse_cpu_real_storage.cpp
+    src/storage/storage.cpp
     src/tensors/tensor.cpp
     )
 set_property(TARGET weed PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -288,6 +289,7 @@ install (FILES
     include/devices/queue_item.hpp
     include/enums/device_tag.hpp
     include/enums/dtype.hpp
+    include/enums/storage_type.hpp
     include/modules/dropout.hpp
     include/modules/embedding.hpp
     include/modules/gru.hpp

@@ -90,5 +90,15 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    * Migrate storage to GPU
    */
   virtual StoragePtr gpu(const int64_t &did = -1) = 0;
+
+  /**
+   * Serialize storage to ostream
+   */
+  // virtual void save(std::ostream&) const = 0;
+
+  /**
+   * Load serialized storage from istream
+   */
+  static StoragePtr load(std::istream &);
 };
 } // namespace Weed
