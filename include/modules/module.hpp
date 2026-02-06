@@ -31,8 +31,18 @@ struct Module {
   virtual std::vector<ParameterPtr> parameters() {
     return std::vector<ParameterPtr>();
   }
-  virtual void train() {}
-  virtual void eval() {}
+  virtual void train() {
+    std::vector<ParameterPtr> params = parameters();
+    for (const auto &p : params) {
+      p->train();
+    }
+  }
+  virtual void eval() {
+    std::vector<ParameterPtr> params = parameters();
+    for (const auto &p : params) {
+      p->eval();
+    }
+  }
   virtual ~Module() {}
   /**
    * Serialize storage to ostream

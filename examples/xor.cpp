@@ -78,6 +78,8 @@ int main() {
   ModulePtr m = Module::load(i);
   i.close();
 
+  m->eval();
+
   std::cout << "In: [[0, 0], [1, 0], [0, 1], [1, 1]]" << std::endl;
 
   TensorPtr y_pred = m->forward(x);

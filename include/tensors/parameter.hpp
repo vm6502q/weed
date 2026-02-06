@@ -38,6 +38,9 @@ struct Parameter : Tensor {
             const int64_t &did = -1)
       : Tensor(val, shp, strd, true, dtag, did) {}
 
+  void train() { requires_grad = true; }
+  void eval() { requires_grad = false; }
+
   void save(std::ostream &out) const;
   static ParameterPtr load(std::istream &in);
 };

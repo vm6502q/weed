@@ -32,8 +32,14 @@ struct Dropout : public Module {
     }
   }
 
-  void train() override { training = true; }
-  void eval() override { training = false; }
+  void train() override {
+    Module::train();
+    training = true;
+  }
+  void eval() override {
+    Module::eval();
+    training = false;
+  }
 
   TensorPtr forward(const TensorPtr x) override;
 
