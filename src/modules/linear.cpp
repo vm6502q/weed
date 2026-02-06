@@ -17,7 +17,7 @@
 namespace Weed {
 Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, DType dtype,
                DeviceTag device, int64_t device_id, bool init_rand)
-    : in_features(in_f), out_features(out_f) {
+    : Module(LINEAR_T), in_features(in_f), out_features(out_f) {
 
   const std::vector<tcapint> shape{in_f, out_f};
   const std::vector<tcapint> stride{1U, in_f};

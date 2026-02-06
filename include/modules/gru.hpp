@@ -27,7 +27,7 @@ struct GRU : public Module {
   std::vector<TensorPtr> state;
 
   GRU(tcapint in, tcapint hid, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE)
-      : input_dim(in), hidden_dim(hid),
+      : Module(GRU_T), input_dim(in), hidden_dim(hid),
         W_x(in, 3 * hid, true, DType::REAL, dtag),
         W_h(hid, 3 * hid, true, DType::REAL, dtag), state{Tensor::zeros(
                                                         {hidden_dim})} {}

@@ -9,16 +9,11 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#pragma once
-
-#include "modules/module.hpp"
+#include "tensors/parameter.hpp"
 
 namespace Weed {
-/**
- * Convenience wrapper on sigmoid as a module
- */
-struct Tanh : public Module {
-  Tanh() : Module(TANH_T) {}
-  TensorPtr forward(const TensorPtr x) override { return Tensor::tanh(x); }
-};
+void Parameter::save(std::ostream &out) const {}
+ParameterPtr Parameter::load(std::istream &in, DeviceTag dtag_override) {
+  return nullptr;
+}
 } // namespace Weed

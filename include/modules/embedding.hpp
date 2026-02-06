@@ -26,7 +26,7 @@ struct Embedding : public Module {
   Embedding(const tcapint &vocab, const tcapint &dim,
             const DType &dtype = DType::REAL,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
-      : num_embeddings(vocab), embedding_dim(dim),
+      : Module(EMBEDDING_T), num_embeddings(vocab), embedding_dim(dim),
         weight(std::make_shared<Parameter>(std::vector<tcapint>{vocab, dim},
                                            std::vector<tcapint>{1, vocab},
                                            dtype, dtag, did)) {}

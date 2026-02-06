@@ -28,6 +28,10 @@ StoragePtr Storage::load(std::istream &is) {
   is >> stype_char;
   const StorageType stype = (StorageType)stype_char;
 
+  uint64_t size_i64;
+  is >> size_i64;
+  // const tcapint size = (tcapint)size_i64;
+
   switch (stype) {
   case StorageType::REAL_CPU_DENSE:
     break;

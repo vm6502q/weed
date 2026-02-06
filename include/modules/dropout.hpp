@@ -22,7 +22,8 @@ struct Dropout : public Module {
   bool training;
   TensorPtr mask;
 
-  Dropout(real1 prob) : p(prob), training(true), mask(nullptr) {
+  Dropout(real1 prob)
+      : Module(DROPOUT_T), p(prob), training(true), mask(nullptr) {
     if ((p < ZERO_R1) || (p >= ONE_R1)) {
       throw std::invalid_argument(
           "Dropout probability must be at least 0.0 and cannot be greater than "

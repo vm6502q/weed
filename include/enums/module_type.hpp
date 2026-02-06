@@ -11,14 +11,23 @@
 
 #pragma once
 
-#include "modules/module.hpp"
+#include "config.h"
 
 namespace Weed {
 /**
- * Convenience wrapper on sigmoid as a module
+ * Module types for serialization
  */
-struct Tanh : public Module {
-  Tanh() : Module(TANH_T) {}
-  TensorPtr forward(const TensorPtr x) override { return Tensor::tanh(x); }
+enum ModuleType {
+  NONE_MODULE_TYPE = 0,
+  SEQUENTIAL_T = 1,
+  LINEAR_T = 2,
+  RELU_T = 3,
+  SIGMOID_T = 4,
+  TANH_T = 5,
+  DROPOUT_T = 6,
+  LAYERNORM_T = 7,
+  EMBEDDING_T = 8,
+  GRU_T = 9,
+  LSTM_T = 10
 };
 } // namespace Weed

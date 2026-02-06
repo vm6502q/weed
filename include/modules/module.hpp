@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "enums/module_type.hpp"
 #include "tensors/parameter.hpp"
 
 namespace Weed {
@@ -19,6 +20,8 @@ namespace Weed {
  * optimization
  */
 struct Module {
+  ModuleType type;
+  Module(ModuleType t) : type(t) {}
   virtual TensorPtr forward(const TensorPtr) = 0;
   virtual TensorPtr forward(const BaseTensorPtr t) {
     return forward(std::dynamic_pointer_cast<Tensor>(t));

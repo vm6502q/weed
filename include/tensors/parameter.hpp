@@ -14,6 +14,9 @@
 #include "tensors/tensor.hpp"
 
 namespace Weed {
+struct Parameter;
+typedef std::shared_ptr<Parameter> ParameterPtr;
+
 /**
  * A Parameter is simply a tensor that always requires gradient calculation and
  * "lives" on a module"
@@ -34,6 +37,9 @@ struct Parameter : Tensor {
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
             const int64_t &did = -1)
       : Tensor(val, shp, strd, true, dtag, did) {}
+
+  void save(std::ostream &out) const;
+  static ParameterPtr load(std::istream &in,
+                           DeviceTag dtag_override = DEFAULT_DEVICE);
 };
-typedef std::shared_ptr<Parameter> ParameterPtr;
 } // namespace Weed

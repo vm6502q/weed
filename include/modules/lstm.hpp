@@ -37,7 +37,7 @@ struct LSTM : public Module {
   std::vector<LSTMState> state;
 
   LSTM(tcapint in, tcapint hid, DeviceTag dtag = DEFAULT_DEVICE)
-      : input_dim(in), hidden_dim(hid),
+      : Module(LSTM_T), input_dim(in), hidden_dim(hid),
         W_x(in, 4 * hid, true, DType::REAL, dtag),
         W_h(hid, 4 * hid, true, DType::REAL, dtag),
         state{LSTMState{Tensor::zeros(std::vector<tcapint>{hidden_dim}),
