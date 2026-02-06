@@ -14,6 +14,7 @@
 
 #include "modules/dropout.hpp"
 #include "modules/embedding.hpp"
+#include "modules/layernorm.hpp"
 #include "modules/linear.hpp"
 #include "modules/relu.hpp"
 #include "modules/sequential.hpp"
@@ -77,6 +78,15 @@ ModulePtr Module::load(std::istream &is) {
     e->weight = Parameter::load(is);
 
     return e;
+  }
+  case ModuleType::LAYERNORM_T: {
+    LayerNormPtr l = std::make_shared<LayerNorm>();
+    Serializer::read_tcapint(is, l->features);
+    Serializer::read_real(is, l->eps);
+    l->gamma = Parameter::load(is);
+    l->beta = Parameter::load(is);
+
+    return l;
   }
   case ModuleType::NONE_MODULE_TYPE:
   default:

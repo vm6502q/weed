@@ -26,6 +26,7 @@ add_library (weed STATIC
     src/modules/dropout.cpp
     src/modules/embedding.cpp
     src/modules/gru.cpp
+    src/modules/layernorm.cpp
     src/modules/linear.cpp
     src/modules/lstm.cpp
     src/modules/module.cpp

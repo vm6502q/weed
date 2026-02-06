@@ -24,6 +24,7 @@ struct LayerNorm : Module {
   ParameterPtr gamma; // scale
   ParameterPtr beta;  // shift
 
+  LayerNorm() : Module(LAYERNORM_T) {}
   LayerNorm(const tcapint &f, const real1 &e = FP_NORM_EPSILON,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE)
       : Module(LAYERNORM_T), features(f), eps(e) {
@@ -58,5 +59,8 @@ struct LayerNorm : Module {
   }
 
   std::vector<ParameterPtr> parameters() override { return {gamma, beta}; }
+
+  void save(std::ostream &) const;
 };
+typedef std::shared_ptr<LayerNorm> LayerNormPtr;
 } // namespace Weed
