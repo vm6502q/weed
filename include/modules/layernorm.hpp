@@ -60,7 +60,7 @@ struct LayerNorm : Module {
 
   std::vector<ParameterPtr> parameters() override { return {gamma, beta}; }
 
-  void save(std::ostream &) const;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<LayerNorm> LayerNormPtr;
 } // namespace Weed

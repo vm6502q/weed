@@ -11,6 +11,7 @@
 
 #include "modules/embedding.hpp"
 #include "autograd/node.hpp"
+#include "common/serializer.hpp"
 #include "ops/embedding.hpp"
 
 namespace Weed {
@@ -39,5 +40,11 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
   });
 
   return out;
+}
+void Embedding::save(std::ostream &os) const {
+  Module::save(os);
+  Serializer::write_tcapint(os, num_embeddings);
+  Serializer::write_tcapint(os, embedding_dim);
+  weight->save(os);
 }
 } // namespace Weed

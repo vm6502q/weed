@@ -35,7 +35,7 @@ struct Linear : public Module {
   /**
    * Serialize storage to ostream
    */
-  void save(std::ostream &) const;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<Linear> LinearPtr;
 } // namespace Weed

@@ -42,7 +42,7 @@ struct GRU : public Module {
 
   TensorPtr forward(const TensorPtr) override;
 
-  void save(std::ostream &) const;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<GRU> GRUPtr;
 } // namespace Weed

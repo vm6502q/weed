@@ -40,6 +40,8 @@ struct Embedding : public Module {
   }
   TensorPtr forward(const SymbolTensorPtr t);
   std::vector<ParameterPtr> parameters() override { return {weight}; }
+
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<Embedding> EmbeddingPtr;
 } // namespace Weed

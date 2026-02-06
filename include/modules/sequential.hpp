@@ -53,6 +53,6 @@ struct Sequential : public Module {
     return param_vector;
   }
 
-  void save(std::ostream &) const;
+  void save(std::ostream &) const override;
 };
 } // namespace Weed
