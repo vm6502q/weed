@@ -20,8 +20,10 @@ namespace Weed {
  * CPU-accessible storage for complex-value data type elements
  */
 struct CpuComplexStorage : CpuStorage<complex> {
-  CpuComplexStorage(const tcapint &n) : CpuStorage<complex>(n) {}
-  CpuComplexStorage(const std::vector<complex> &i) : CpuStorage<complex>(i) {}
+  CpuComplexStorage(const tcapint &n)
+      : CpuStorage<complex>(COMPLEX_CPU_DENSE, n) {}
+  CpuComplexStorage(const std::vector<complex> &i)
+      : CpuStorage<complex>(COMPLEX_CPU_DENSE, i) {}
   StoragePtr Upcast(const DType &dt) override {
     return TypedStorage<complex>::get_ptr();
   }

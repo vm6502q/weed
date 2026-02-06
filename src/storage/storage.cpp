@@ -22,16 +22,17 @@
 
 namespace Weed {
 void Storage::save(std::ostream &os) const {
+  write_storage_type(os, stype);
   write_tcapint(os, size);
   // Needs the inheriting struct to do the rest
 }
 
 StoragePtr Storage::load(std::istream &is) {
-  tcapint size;
-  read_tcapint(is, size);
-
   StorageType stype;
   read_storage_type(is, stype);
+
+  tcapint size;
+  read_tcapint(is, size);
 
   switch (stype) {
   case StorageType::REAL_CPU_DENSE: {

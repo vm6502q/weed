@@ -27,8 +27,9 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
   GpuDevicePtr dev;
   BufferPtr buffer;
 
-  GpuStorage(const tcapint &n, const int64_t &did, const bool &alloc = true)
-      : TypedStorage<T>(DeviceTag::GPU, n), data(nullptr, [](T *) {}) {
+  GpuStorage(const StorageType &stp, const tcapint &n, const int64_t &did,
+             const bool &alloc = true)
+      : TypedStorage<T>(stp, DeviceTag::GPU, n), data(nullptr, [](T *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(T) * TypedStorage<T>::size);
     if (alloc) {
@@ -36,8 +37,9 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
     }
   }
 
-  GpuStorage(const std::vector<T> &val, const int64_t &did)
-      : TypedStorage<T>(DeviceTag::GPU, val.size()),
+  GpuStorage(const StorageType &stp, const std::vector<T> &val,
+             const int64_t &did)
+      : TypedStorage<T>(stp, DeviceTag::GPU, val.size()),
         data(TypedStorage<T>::Alloc(val.size())) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(T) * TypedStorage<T>::size);

@@ -19,8 +19,9 @@ namespace Weed {
  */
 struct SparseCpuRealStorage : SparseCpuStorage<real1> {
   SparseCpuRealStorage(const RealSparseVector &v, const tcapint &n)
-      : SparseCpuStorage<real1>(v, n) {}
-  SparseCpuRealStorage(const tcapint &n) : SparseCpuStorage<real1>(n) {}
+      : SparseCpuStorage<real1>(REAL_CPU_SPARSE, v, n) {}
+  SparseCpuRealStorage(const tcapint &n)
+      : SparseCpuStorage<real1>(REAL_CPU_SPARSE, n) {}
   StoragePtr Upcast(const DType &dt) override;
   StoragePtr gpu(const int64_t &did = -1) override;
 };

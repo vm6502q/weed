@@ -20,8 +20,9 @@ namespace Weed {
  * CPU-accessible storage for integer-value data type elements
  */
 struct CpuIntStorage : CpuStorage<symint> {
-  CpuIntStorage(const tcapint &n) : CpuStorage<symint>(n) {}
-  CpuIntStorage(const std::vector<symint> &i) : CpuStorage<symint>(i) {}
+  CpuIntStorage(const tcapint &n) : CpuStorage<symint>(INT_CPU_DENSE, n) {}
+  CpuIntStorage(const std::vector<symint> &i)
+      : CpuStorage<symint>(INT_CPU_DENSE, i) {}
   StoragePtr Upcast(const DType &dt) override {
     throw std::domain_error("Don't up-cast integer type (for symbol tables)!");
   }

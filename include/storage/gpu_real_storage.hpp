@@ -23,9 +23,9 @@ namespace Weed {
  */
 struct GpuRealStorage : public GpuStorage<real1> {
   GpuRealStorage(const tcapint &n, int64_t did, const bool &alloc = true)
-      : GpuStorage<real1>(n, did, alloc) {}
+      : GpuStorage<real1>(REAL_GPU_DENSE, n, did, alloc) {}
   GpuRealStorage(const std::vector<real1> &val, const int64_t &did = -1)
-      : GpuStorage<real1>(val, did) {}
+      : GpuStorage<real1>(REAL_GPU_DENSE, val, did) {}
 
   void FillZeros() override { dev->ClearRealBuffer(buffer, size); }
   void FillOnes() override { dev->FillOnesReal(buffer, size); }

@@ -21,10 +21,11 @@ template <typename T> struct SparseCpuStorage : TypedStorage<T> {
   std::unordered_map<tcapint, T> data;
   T default_value;
 
-  SparseCpuStorage(const std::unordered_map<tcapint, T> &v, const tcapint &n)
-      : TypedStorage<T>(DeviceTag::CPU, n), data(v), default_value() {}
-  SparseCpuStorage(const tcapint &n)
-      : TypedStorage<T>(DeviceTag::CPU, n), data(), default_value() {}
+  SparseCpuStorage(const StorageType &stp,
+                   const std::unordered_map<tcapint, T> &v, const tcapint &n)
+      : TypedStorage<T>(stp, DeviceTag::CPU, n), data(v), default_value() {}
+  SparseCpuStorage(const StorageType &stp, const tcapint &n)
+      : TypedStorage<T>(stp, DeviceTag::CPU, n), data(), default_value() {}
 
   bool is_sparse() const override { return default_value == T(); }
 

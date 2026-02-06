@@ -18,8 +18,8 @@ namespace Weed {
  * Type-specific Storage template
  */
 template <typename T> struct TypedStorage : Storage {
-  TypedStorage(const DeviceTag &dtg, const tcapint &n)
-      : Storage(dtg, get_dtype(), n) {}
+  TypedStorage(const StorageType &stp, const DeviceTag &dtg, const tcapint &n)
+      : Storage(stp, dtg, get_dtype(), n) {}
 
   static DType get_dtype() {
     if (std::is_same<complex, T>::value) {

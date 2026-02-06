@@ -26,6 +26,10 @@ typedef std::shared_ptr<Storage> StoragePtr;
  */
 struct Storage : public std::enable_shared_from_this<Storage> {
   /**
+   * Type of storage
+   */
+  StorageType stype;
+  /**
    * GPU device ID, if applicable
    */
   DeviceTag device;
@@ -38,8 +42,9 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    */
   tcapint size;
 
-  Storage(const DeviceTag &dtg, const DType &dtp, const tcapint &n)
-      : device(dtg), dtype(dtp), size(n) {
+  Storage(const StorageType &stp, const DeviceTag &dtg, const DType &dtp,
+          const tcapint &n)
+      : stype(stp), device(dtg), dtype(dtp), size(n) {
     if (!size) {
       throw std::invalid_argument("Storage must have size of at least 1!");
     }

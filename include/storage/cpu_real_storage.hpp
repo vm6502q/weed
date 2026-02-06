@@ -20,8 +20,9 @@ namespace Weed {
  * CPU-accessible storage for real-value data type elements
  */
 struct CpuRealStorage : CpuStorage<real1> {
-  CpuRealStorage(const tcapint &n) : CpuStorage<real1>(n) {}
-  CpuRealStorage(const std::vector<real1> &i) : CpuStorage<real1>(i) {}
+  CpuRealStorage(const tcapint &n) : CpuStorage<real1>(REAL_CPU_DENSE, n) {}
+  CpuRealStorage(const std::vector<real1> &i)
+      : CpuStorage<real1>(REAL_CPU_DENSE, i) {}
   StoragePtr Upcast(const DType &dt) override;
   StoragePtr gpu(const int64_t &did = -1) override;
 };
