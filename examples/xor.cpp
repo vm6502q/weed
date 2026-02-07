@@ -43,8 +43,7 @@ int main() {
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<Linear>(2, 4), std::make_shared<Tanh>(),
-      std::make_shared<Linear>(4, 1), std::make_shared<Sigmoid>(),
-      std::make_shared<MigrateGpu>(), std::make_shared<MigrateCpu>()};
+      std::make_shared<Linear>(4, 1), std::make_shared<Sigmoid>()};
 
   Sequential model(mv);
 
