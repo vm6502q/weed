@@ -9,33 +9,18 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "modules/softmax.hpp"
+#include "modules/logsoftmax.hpp"
 #include "common/serializer.hpp"
 
 namespace Weed {
-TensorPtr Softmax::forward(const TensorPtr x) {
-  // Normalize axis
-  tcapint ax = axis;
-  if (ax < 0) {
-    ax += x->shape.size();
-  }
-
-  // m = max(x, axis)
+TensorPtr LogSoftmax::forward(const TensorPtr x) {
+  tcapint ax = axis < 0 ? axis + x->shape.size() : axis;
   TensorPtr m = Tensor::max(x, ax);
-
-  // x_shifted = x - m
   TensorPtr x_shifted = x - m;
-
-  // ex = exp(x_shifted)
-  TensorPtr ex = Tensor::exp(x_shifted);
-
-  // denom = sum(ex, axis)
-  TensorPtr denom = Tensor::sum(ex, ax);
-
-  // softmax = ex / denom
-  return ex / denom;
+  TensorPtr logsum = Tensor::log(Tensor::sum(Tensor::exp(x_shifted), ax));
+  return x_shifted - logsum;
 }
-void Softmax::save(std::ostream &os) const {
+void LogSoftmax::save(std::ostream &os) const {
   Serializer::write_tcapint(os, axis);
 }
 } // namespace Weed

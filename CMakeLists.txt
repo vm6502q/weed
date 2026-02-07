@@ -28,6 +28,7 @@ add_library (weed STATIC
     src/modules/gru.cpp
     src/modules/layernorm.cpp
     src/modules/linear.cpp
+    src/modules/logsoftmax.cpp
     src/modules/lstm.cpp
     src/modules/migrate_cpu.cpp
     src/modules/migrate_gpu.cpp
@@ -309,6 +310,7 @@ install (FILES
     include/modules/embedding.hpp
     include/modules/gru.hpp
     include/modules/linear.hpp
+    include/modules/logsoftmax.hpp
     include/modules/lstm.hpp
     include/modules/migrate_cpu.hpp
     include/modules/migrate_gpu.hpp
