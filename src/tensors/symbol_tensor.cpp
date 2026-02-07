@@ -12,7 +12,9 @@
 #include "tensors/symbol_tensor.hpp"
 
 #include "storage/cpu_int_storage.hpp"
+#if ENABLE_GPU
 #include "storage/gpu_int_storage.hpp"
+#endif
 
 #include <thread>
 
