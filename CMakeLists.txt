@@ -306,8 +306,8 @@ install (FILES
     include/modules/gru.hpp
     include/modules/linear.hpp
     include/modules/lstm.hpp
-    include/modules/migrate_cpu.cpp
-    include/modules/migrate_gpu.cpp
+    include/modules/migrate_cpu.hpp
+    include/modules/migrate_gpu.hpp
     include/modules/module.hpp
     include/modules/relu.hpp
     include/modules/sequential.hpp
