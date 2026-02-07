@@ -12,6 +12,7 @@
 // "Qrack::QInterface."
 #include "modules/module.hpp"
 #include "storage/cpu_storage.hpp"
+#include "tensors/symbol_tensor.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -151,6 +152,48 @@ MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
       }
       x = std::make_shared<Tensor>(v, sh, st);
     }
+  } catch (const std::exception &ex) {
+    std::cout << ex.what() << std::endl;
+    meta_error = 2;
+  }
+
+  try {
+    module_results[mid]->t = module_results[mid]->m->forward(x);
+  } catch (const std::exception &ex) {
+    std::cout << ex.what() << std::endl;
+    module_results[mid]->error = 1;
+  }
+}
+
+MICROSOFT_QUANTUM_DECL void forward_int(_In_ uintw mid, _In_ uintw dtype,
+                                        _In_ uintw n,
+                                        _In_reads_(n) uintw *shape,
+                                        _In_reads_(n) uintw *stride,
+                                        _In_ intw *d) {
+  MODULE_LOCK_GUARD_VOID(mid);
+
+  SymbolTensorPtr x;
+  try {
+    std::vector<tcapint> sh(n);
+    std::vector<tcapint> st(n);
+    for (size_t i = 0U; i < n; ++i) {
+      sh[i] = (tcapint)shape[i];
+      st[i] = (tcapint)stride[i];
+    }
+
+    tcapint max_index = 0U;
+    for (size_t i = 0U; i < sh.size(); ++i) {
+      max_index += (sh[i] - 1U) * st[i];
+    }
+    if (!sh.empty()) {
+      ++max_index;
+    }
+
+    std::vector<symint> v(max_index);
+    for (size_t i = 0U; i < max_index; ++i) {
+      v[i] = (symint)d[i];
+    }
+    x = std::make_shared<SymbolTensor>(v, sh, st);
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     meta_error = 2;

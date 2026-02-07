@@ -81,7 +81,7 @@ SymbolTensor::SymbolTensor(const std::vector<tcapint> &shp,
   }
 }
 
-SymbolTensor::SymbolTensor(const std::vector<tcapint> &val,
+SymbolTensor::SymbolTensor(const std::vector<symint> &val,
                            const std::vector<tcapint> &shp,
                            const std::vector<tcapint> &strd, const bool &rg,
                            const DeviceTag &_dtag, const int64_t &did)
