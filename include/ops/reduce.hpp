@@ -20,6 +20,17 @@ namespace Weed {
 void reduce(const tcapint &index, const Tensor &a, Tensor &out);
 void reduce_grad(const tcapint &index, Tensor &din, const Tensor &a,
                  const Tensor &dout);
-void reduce_broadcast(const std::vector<tcapint> stride, const Tensor &a,
-                      Tensor &out);
+
+/**
+ * Maximum over a tensor index
+ */
+void max(const tcapint &index, const Tensor &a, Tensor &out);
+
+/**
+ * Minimum over a tensor index
+ */
+void min(const tcapint &index, const Tensor &a, Tensor &out);
+
+void match_grad(const tcapint &index, Tensor &din, const Tensor &a,
+                const Tensor &dout, const Tensor &out);
 } // namespace Weed

@@ -23,6 +23,7 @@
 #include "modules/relu.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
+#include "modules/softmax.hpp"
 #include "modules/tanh.hpp"
 
 namespace Weed {
@@ -118,6 +119,11 @@ ModulePtr Module::load(std::istream &is) {
   }
   case ModuleType::MIGRATE_GPU: {
     return std::make_shared<MigrateGpu>();
+  }
+  case ModuleType::SOFTMAX: {
+    tcapint axis;
+    Serializer::read_tcapint(is, axis);
+    return std::make_shared<Softmax>(axis);
   }
   case ModuleType::NONE_MODULE_TYPE:
   default:

@@ -11,27 +11,19 @@
 
 #pragma once
 
-#include "config.h"
+#include "modules/module.hpp"
 
 namespace Weed {
 /**
- * Module types for serialization
+ * Softmax activation
  */
-enum ModuleType {
-  NONE_MODULE_TYPE = 0,
-  SEQUENTIAL_T = 1,
-  LINEAR_T = 2,
-  RELU_T = 3,
-  SIGMOID_T = 4,
-  TANH_T = 5,
-  DROPOUT_T = 6,
-  LAYERNORM_T = 7,
-  EMBEDDING_T = 8,
-  GRU_T = 9,
-  LSTM_T = 10,
-  MIGRATE_CPU = 11,
-  MIGRATE_GPU = 12,
-  SOFTMAX = 13,
-  LOGSOFTMAX = 14
+struct Softmax : public Module {
+  tcapint axis;
+
+  explicit Softmax(const tcapint &axis_ = -1) : Module(SOFTMAX), axis(axis_) {}
+
+  TensorPtr forward(const TensorPtr x) override;
+  void save(std::ostream &) const override;
 };
+typedef std::shared_ptr<Softmax> SoftmaxPtr;
 } // namespace Weed

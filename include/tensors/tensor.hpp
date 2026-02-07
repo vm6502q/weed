@@ -296,6 +296,16 @@ struct Tensor : public BaseTensor {
   static void make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis);
 
   /**
+   * Maximum of all elements by axis (with autograd)
+   */
+  static TensorPtr max(TensorPtr a, const tcapint &axis);
+  /**
+   * Minimum of all elements by axis (with autograd)
+   */
+  static TensorPtr min(TensorPtr a, const tcapint &axis);
+  static void make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis);
+
+  /**
    * Absolute value (with autograd)
    */
   static TensorPtr abs(TensorPtr a);
