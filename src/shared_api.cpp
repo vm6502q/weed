@@ -246,8 +246,7 @@ MICROSOFT_QUANTUM_DECL void get_result(_In_ uintw mid, double *d) {
   const StoragePtr sp = t->storage->cpu();
   const size_t max_lcv = sp->size;
   if (sp->dtype == DType::COMPLEX) {
-    const CpuStorage<complex> &s =
-        *static_cast<CpuStorage<complex> *>(sp.get());
+    ComplexStorage &s = *static_cast<ComplexStorage *>(sp.get());
     for (size_t i = 0U; i < max_lcv; ++i) {
       size_t j = i << 1U;
       const complex v = s[i];
@@ -255,7 +254,7 @@ MICROSOFT_QUANTUM_DECL void get_result(_In_ uintw mid, double *d) {
       d[j + 1] = v.imag();
     }
   } else {
-    const CpuStorage<real1> &s = *static_cast<CpuStorage<real1> *>(sp.get());
+    RealStorage &s = *static_cast<RealStorage *>(sp.get());
     for (size_t i = 0U; i < max_lcv; ++i) {
       d[i] = s[i];
     }
