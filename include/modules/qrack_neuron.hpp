@@ -35,8 +35,12 @@ struct QrackNeuron : public Module {
       throw std::invalid_argument(
           "Input size mismatch in QrackNeuron::forward!");
     }
-    neuron.SetSimulator(q);
     neuron.SetIndices(c, t);
+
+    return forward(q);
+  }
+  TensorPtr forward(Qrack::QInterfacePtr q) override {
+    neuron.SetSimulator(q);
 
     return forward();
   }

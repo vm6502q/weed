@@ -35,6 +35,10 @@ struct Module {
     throw std::domain_error(
         "Only quantum Module instances apply forward() with QInterface!");
   }
+  virtual TensorPtr forward(Qrack::QInterfacePtr q) {
+    throw std::domain_error(
+        "Only quantum Module instances apply forward() with QInterface!");
+  }
   virtual TensorPtr forward() {
     throw std::domain_error(
         "Only quantum Module instances apply forward() with no parameters!");
