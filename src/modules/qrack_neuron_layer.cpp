@@ -78,7 +78,7 @@ QrackNeuronLayer::QrackNeuronLayer(
   }
 
   for (const auto &output_id : output_indices) {
-    for (size_t k = lowest_combo; k < (highest_combo + 1); ++k) {
+    for (size_t k = lowest_combo; k < (highest_combo + 1U); ++k) {
       for_each_combination(
           input_q, k, [&](const std::vector<bitLenInt> &combo) {
             Qrack::QNeuron qn(prototype, combo, output_id);
@@ -103,12 +103,16 @@ QrackNeuronLayer::QrackNeuronLayer(
 }
 
 TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
+  if (x->storage->dtype != DType::REAL) {
+    throw std::invalid_argument("QrackNeuronLayer::forward(x) argument must be real-number!");
+  }
+
   WEED_CONST real1 init_phi = asin(ONE_R1 / 2);
 
   const size_t B = x->shape[0];
   TensorPtr out = Tensor::zeros(
       std::vector<tcapint>{(tcapint)B, (tcapint)(output_indices.size())},
-      requires_grad || x->requires_grad, x->storage->dtype, DeviceTag::CPU);
+      requires_grad || x->requires_grad, DType::REAL, DeviceTag::CPU);
   TensorPtr in = std::make_shared<Tensor>(*(x.get()));
 
   in->storage = in->storage->cpu();
@@ -116,20 +120,19 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
   CpuRealStorage *pi = static_cast<CpuRealStorage *>(in->storage.get());
   CpuRealStorage *po = static_cast<CpuRealStorage *>(out->storage.get());
 
-  for (size_t b = 0; b < B; ++b) {
+  for (size_t b = 0U; b < B; ++b) {
     auto sim = prototype->Clone();
 
     // Load classical inputs
     for (size_t i = 0; i < input_indices.size(); ++i) {
-      real1 v = (*pi)[in->offset + b * in->stride[0U] + i * in->stride[1U]];
+      const real1 v = (*pi)[in->offset + b * in->stride[0U] + i * in->stride[1U]];
       sim->RY(PI_R1 * v, input_indices[i]);
     }
 
     post_init_fn(sim);
 
-    for (size_t o = 0; o < output_indices.size(); ++o) {
+    for (size_t o = 0U; o < output_indices.size(); ++o) {
       real1 phi = init_phi;
-
       for (auto &neuron : neurons) {
         if (neuron->neuron.GetOutputIndex() == output_indices[o]) {
           TensorPtr d = neuron->forward(sim);
@@ -138,7 +141,7 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
         }
       }
 
-      real1 p = std::max(std::sin(phi), real1(0));
+      const real1 p = std::max(std::sin(phi), ZERO_R1);
       po->write(out->offset + b * out->stride[0U] + o * out->stride[1U], p);
     }
   }
