@@ -14,10 +14,12 @@
 
 namespace Weed {
 TensorPtr LogSoftmax::forward(const TensorPtr x) {
-  tcapint ax = axis < 0 ? axis + x->shape.size() : axis;
+  const tcapint ax = axis < 0 ? axis + x->shape.size() : axis;
+
   TensorPtr m = Tensor::max(x, ax);
   TensorPtr x_shifted = x - m;
   TensorPtr logsum = Tensor::log(Tensor::sum(Tensor::exp(x_shifted), ax));
+
   return x_shifted - logsum;
 }
 void LogSoftmax::save(std::ostream &os) const {

@@ -15,21 +15,11 @@
 namespace Weed {
 TensorPtr Softmax::forward(const TensorPtr x) {
   // Normalize axis
-  tcapint ax = axis;
-  if (ax < 0) {
-    ax += x->shape.size();
-  }
+  const tcapint ax = axis < 0 ? axis + x->shape.size() : axis;
 
-  // m = max(x, axis)
   TensorPtr m = Tensor::max(x, ax);
-
-  // x_shifted = x - m
   TensorPtr x_shifted = x - m;
-
-  // ex = exp(x_shifted)
   TensorPtr ex = Tensor::exp(x_shifted);
-
-  // denom = sum(ex, axis)
   TensorPtr denom = Tensor::sum(ex, ax);
 
   // softmax = ex / denom
