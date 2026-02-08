@@ -15,8 +15,6 @@
 #include "autograd/bci_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
-#include "modules/migrate_cpu.hpp"
-#include "modules/migrate_gpu.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
 #include "modules/tanh.hpp"
