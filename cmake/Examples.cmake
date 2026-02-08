@@ -18,11 +18,10 @@ configure_file(examples/data/Heart_Attack_Data_Set.csv examples/data/Heart_Attac
 configure_file(examples/data/LICENSE.txt examples/data/LICENSE.txt COPYONLY)
 
 # if (QRACK_LIB)
-#     message("Qrack lib: ${QRACK_LIB}")
 #     add_executable (xor_qrack
 #         examples/xor_qrack.cpp
 #         )
 #     set_target_properties(xor_qrack PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
 #     target_link_libraries (xor_qrack weed)
 #     target_compile_options (xor_qrack PUBLIC ${EXAMPLE_COMPILE_OPTS})
-# endif (QRACK_LIB)
+#  endif (QRACK_LIB)

@@ -59,14 +59,14 @@ namespace Weed {
 const tlenint PSTRIDEPOW_DEFAULT =
     (tlenint)(getenv("WEED_PSTRIDEPOW")
                   ? std::stoi(std::string(getenv("WEED_PSTRIDEPOW")))
-                  : PSTRIDEPOW);
+                  : WEED_PSTRIDEPOW);
 const tcapint GSTRIDE =
     (tcapint)(getenv("WEED_GSTRIDE")
                   ? std::stoi(std::string(getenv("WEED_GSTRIDE")))
                   : ((1 << PSTRIDEPOW_DEFAULT) *
                      std::thread::hardware_concurrency()));
 #else
-const tlenint PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
+const tlenint PSTRIDEPOW_DEFAULT = WEED_PSTRIDEPOW;
 const tcapint GSTRIDE =
     (1 << PSTRIDEPOW_DEFAULT) * std::thread::hardware_concurrency();
 #endif

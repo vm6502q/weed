@@ -30,9 +30,9 @@ namespace Weed {
 const tlenint PSTRIDEPOW_DEFAULT =
     (tlenint)(getenv("WEED_PSTRIDEPOW")
                   ? std::stoi(std::string(getenv("WEED_PSTRIDEPOW")))
-                  : PSTRIDEPOW);
+                  : WEED_PSTRIDEPOW);
 #else
-const tlenint PSTRIDEPOW_DEFAULT = PSTRIDEPOW;
+const tlenint PSTRIDEPOW_DEFAULT = WEED_PSTRIDEPOW;
 #endif
 
 ParallelFor::ParallelFor()

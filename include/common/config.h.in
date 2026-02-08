@@ -1,17 +1,12 @@
 #pragma once
 
 #cmakedefine ENABLE_ENV_VARS 1
-#cmakedefine ENABLE_FMA 1
-#cmakedefine ENABLE_INTRINSICS 1
 #cmakedefine ENABLE_OPENCL 1
-#cmakedefine ENABLE_CUDA 1
 #cmakedefine ENABLE_OOO_OCL 1
 #cmakedefine ENABLE_PTHREAD 1
-#cmakedefine ENABLE_ASYNC 1
-#cmakedefine ENABLE_SNUCL 1
-#cmakedefine FPPOW @FPPOW@
-#cmakedefine PSTRIDEPOW @PSTRIDEPOW@
-#cmakedefine TCAPPOW @TCAPPOW@
+#cmakedefine WEED_FPPOW @WEED_FPPOW@
+#cmakedefine WEED_PSTRIDEPOW @WEED_PSTRIDEPOW@
+#cmakedefine WEED_TCAPPOW @WEED_TCAPPOW@
 #cmakedefine OPENCL_V3 @OPENCL_V3@
 #cmakedefine CPP_STD @CPP_STD@
 
