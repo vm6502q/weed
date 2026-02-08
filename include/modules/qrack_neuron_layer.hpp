@@ -19,7 +19,6 @@
 #include "modules/qrack_neuron.hpp"
 
 namespace Weed {
-
 struct QrackNeuronLayer : public Module {
   Qrack::QInterfacePtr prototype;
   std::vector<bitLenInt> input_indices;
@@ -27,8 +26,8 @@ struct QrackNeuronLayer : public Module {
   std::vector<bitLenInt> output_indices;
   Qrack::QNeuronActivationFn activation_fn;
   std::function<void(Qrack::QInterfacePtr)> post_init_fn;
-
   std::vector<QrackNeuronPtr> neurons;
+  std::vector<ParameterPtr> param_vector;
 
   QrackNeuronLayer(
       const size_t &input_q, const size_t &output_q, const size_t &hidden_q,
@@ -42,9 +41,9 @@ struct QrackNeuronLayer : public Module {
       const bool &pg = true, const bool &tn = true, const bool &hy = true,
       const bool &oc = true, const bool &hp = false, const bool &sp = false);
 
+  std::vector<ParameterPtr> parameters() override { return param_vector; }
+
   TensorPtr forward(const TensorPtr x) override;
 };
-
 typedef std::shared_ptr<QrackNeuronLayer> QrackNeuronLayerPtr;
-
 } // namespace Weed

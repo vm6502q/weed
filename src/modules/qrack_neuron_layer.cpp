@@ -95,6 +95,11 @@ QrackNeuronLayer::QrackNeuronLayer(
   for (const auto &output_id : output_indices) {
     prototype->H(output_id);
   }
+
+  for (const auto &n : neurons) {
+    const std::vector<ParameterPtr> p = n->parameters();
+    param_vector.insert(param_vector.end(), p.begin(), p.end());
+  }
 }
 
 TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {

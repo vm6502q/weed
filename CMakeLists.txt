@@ -83,8 +83,8 @@ if (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
         test/benchmarks.cpp
         )
 
-    target_link_libraries (unittest ${WEED_LIBS})
-    target_link_libraries (benchmarks ${WEED_LIBS})
+    target_link_libraries (unittest weed)
+    target_link_libraries (benchmarks weed)
 endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 
 # Included after the library and other modules have been declared
@@ -95,11 +95,11 @@ include ("cmake/EnvVars.cmake")
 include ("cmake/FpMath.cmake")
 include ("cmake/Pstridepow.cmake")
 include ("cmake/TCapPow.cmake")
+include ("cmake/Qrack.cmake")
 if (ENABLE_EXAMPLES)
     include ("cmake/Examples.cmake")
 endif (ENABLE_EXAMPLES)
 include ("cmake/OpenCL.cmake" )
-include ("cmake/Qrack.cmake")
 
 message ("C++ standard year is (at least): ${CPP_STD}")
 message ("Tensor capacity power is: ${TCAPPOW}")
@@ -260,7 +260,7 @@ endif (NOT PACK_DEBIAN)
 
 add_library (weed_shared SHARED src/shared_api.cpp)
 set_property(TARGET weed_shared PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_link_libraries (weed_shared ${WEED_LIBS})
+target_link_libraries (weed_shared weed)
 target_compile_options (weed_shared PUBLIC ${WEED_COMPILE_OPTS})
 set_target_properties (weed_shared PROPERTIES VERSION ${PROJECT_VERSION})
 
@@ -268,7 +268,7 @@ set_target_properties (weed_shared PROPERTIES VERSION ${PROJECT_VERSION})
 add_executable (weed_cl_precompile
     src/weed_cl_precompile.cpp
     )
-target_link_libraries (weed_cl_precompile ${WEED_LIBS})
+target_link_libraries (weed_cl_precompile weed)
 target_compile_options (weed_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
 install(TARGETS weed_cl_precompile RUNTIME DESTINATION bin BUNDLE DESTINATION bin PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 

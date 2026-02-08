@@ -33,6 +33,10 @@ struct QrackNeuron : public Module {
               const Qrack::QNeuronActivationFn &activation =
                   Qrack::QNeuronActivationFn::Sigmoid);
 
+  std::vector<ParameterPtr> parameters() override {
+    return std::vector<ParameterPtr>{angles};
+  }
+
   TensorPtr forward(TensorPtr x) override {
     throw std::domain_error("QrackNeuron acts forward() on Qrack::QInterface "
                             "simulators, not Weed::Tensor!");

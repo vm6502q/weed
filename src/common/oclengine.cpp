@@ -17,6 +17,8 @@
 #include <regex>
 #include <sstream>
 
+namespace Weed {
+
 #if TCAPPOW < 4
 #include "qheader_uint8cl.hpp"
 #elif TCAPPOW < 5
@@ -38,15 +40,6 @@
 #endif
 
 #include "qenginecl.hpp"
-
-#if ENABLE_ALU
-#include "qheader_alucl.hpp"
-#if ENABLE_BCD
-#include "qheader_bcdcl.hpp"
-#endif
-#endif
-
-namespace Weed {
 
 /// "Weed::OCLEngine" manages the single OpenCL context
 
