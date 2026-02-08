@@ -52,7 +52,9 @@ TensorPtr QrackNeuron::forward() {
           const DeviceTag dtag =
               Tensor::get_dtag_by_presidence({angles->grad, out->grad});
           TensorPtr dx = angles->grad->cast(dtag);
-          TensorPtr dout = out->grad->cast(dtag);
+          TensorPtr dout =
+              std::make_shared<Tensor>(*(out->grad->cast(dtag).get()));
+
           dx->storage = dx->storage->cpu();
           dout->storage = dout->storage->cpu();
 
@@ -65,19 +67,19 @@ TensorPtr QrackNeuron::forward() {
 
           const tcapint max_lcv = angles->get_broadcast_size();
           for (size_t i = 0U; i < max_lcv; ++i) {
-            real1 theta = data[i];
+            const real1 theta = data[i];
 
             // +π/2
             data[i] = theta + SineShift;
-            real1 p_plus = neuron.Predict(data, true, false);
+            const real1 p_plus = neuron.Predict(data, true, false);
             neuron.Unpredict(data, true);
 
             // -π/2
             data[i] = theta - SineShift;
-            real1 p_minus = neuron.Predict(data, true, false);
+            const real1 p_minus = neuron.Predict(data, true, false);
             neuron.Unpredict(data, true);
 
-            real1 grad = (p_plus - p_minus) / 2;
+            const real1 grad = (p_plus - p_minus) / 2;
             dxo.add(i, grad * upstream);
 
             data[i] = theta;
