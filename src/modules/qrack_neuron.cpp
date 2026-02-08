@@ -53,9 +53,11 @@ TensorPtr QrackNeuron::forward() {
         std::make_shared<Node>(std::vector<TensorPtr>{angles}, [this, out]() {
           const DeviceTag dtag =
               Tensor::get_dtag_by_presidence({angles->grad, out->grad});
-          TensorPtr dx = angles->grad->cast(dtag);
-          TensorPtr dout =
-              std::make_shared<Tensor>(*(out->grad->cast(dtag).get()));
+          TensorPtr dxc = angles->grad->cast(dtag);
+          TensorPtr doc = out->grad->cast(dtag);
+
+          TensorPtr dx = std::make_shared<Tensor>(*(dxc.get()));
+          TensorPtr dout = std::make_shared<Tensor>(*(doc.get()));
 
           dx->storage = dx->storage->cpu();
           dout->storage = dout->storage->cpu();
