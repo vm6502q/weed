@@ -43,6 +43,17 @@ struct QrackNeuronLayer : public Module {
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 
+  void train() override {
+    for (const QrackNeuronPtr &n : neurons) {
+      n->train();
+    }
+  }
+  void eval() override {
+    for (const QrackNeuronPtr &n : neurons) {
+      n->eval();
+    }
+  }
+
   TensorPtr forward(const TensorPtr x) override;
 };
 typedef std::shared_ptr<QrackNeuronLayer> QrackNeuronLayerPtr;
