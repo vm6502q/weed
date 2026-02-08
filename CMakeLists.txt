@@ -90,8 +90,6 @@ endif (NOT ENABLE_EMIT_LLVM AND NOT PACK_DEBIAN)
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
 option (ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
-include ("cmake/Boost.cmake")
-include ("cmake/Complex_x2.cmake")
 include ("cmake/CppStd.cmake")
 include ("cmake/EnvVars.cmake")
 include ("cmake/FpMath.cmake")
@@ -101,6 +99,7 @@ if (ENABLE_EXAMPLES)
     include ("cmake/Examples.cmake")
 endif (ENABLE_EXAMPLES)
 include ("cmake/OpenCL.cmake" )
+include ("cmake/Qrack.cmake")
 
 message ("C++ standard year is (at least): ${CPP_STD}")
 message ("Tensor capacity power is: ${TCAPPOW}")
@@ -317,6 +316,7 @@ install (FILES
     include/modules/migrate_gpu.hpp
     include/modules/module.hpp
     include/modules/relu.hpp
+    include/modules/qrack_neuron.hpp
     include/modules/sequential.hpp
     include/modules/sigmoid.hpp
     include/modules/softmax.hpp

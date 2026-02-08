@@ -40,7 +40,7 @@ int main() {
   const tcapint col_count = 13U;
 
   std::vector<real1> tmp = doc.GetColumn<real1>("sex");
-  features.insert(features.end(), tmp.begin(), tmp.end()); 
+  features.insert(features.end(), tmp.begin(), tmp.end());
   tmp = doc.GetColumn<real1>("cp");
   features.insert(features.end(), tmp.begin(), tmp.end());
   tmp = doc.GetColumn<real1>("trestbps");
@@ -66,12 +66,16 @@ int main() {
 
   std::vector<real1> target = doc.GetColumn<real1>("target");
 
-  TensorPtr x = std::make_shared<Tensor>(features, std::vector<tcapint>{row_count, col_count}, std::vector<tcapint>{1, row_count});
-  TensorPtr y = std::make_shared<Tensor>(target, std::vector<tcapint>{row_count, 1}, std::vector<tcapint>{1, 0U});
+  TensorPtr x = std::make_shared<Tensor>(
+      features, std::vector<tcapint>{row_count, col_count},
+      std::vector<tcapint>{1, row_count});
+  TensorPtr y = std::make_shared<Tensor>(
+      target, std::vector<tcapint>{row_count, 1}, std::vector<tcapint>{1, 0U});
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(col_count, col_count << 1U), std::make_shared<Tanh>(),
-      std::make_shared<Linear>(col_count << 1U, 1), std::make_shared<Sigmoid>()};
+      std::make_shared<Linear>(col_count, col_count << 1U),
+      std::make_shared<Tanh>(), std::make_shared<Linear>(col_count << 1U, 1),
+      std::make_shared<Sigmoid>()};
 
   Sequential model(mv);
 

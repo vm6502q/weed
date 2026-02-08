@@ -11,28 +11,21 @@
 
 #pragma once
 
-#include "config.h"
+#include "modules/module.hpp"
+#include "qrack/qneuron.hpp"
+#include "tensors/tensor.hpp"
 
 namespace Weed {
-/**
- * Module types for serialization
- */
-enum ModuleType {
-  NONE_MODULE_TYPE = 0,
-  SEQUENTIAL_T = 1,
-  LINEAR_T = 2,
-  RELU_T = 3,
-  SIGMOID_T = 4,
-  TANH_T = 5,
-  DROPOUT_T = 6,
-  LAYERNORM_T = 7,
-  EMBEDDING_T = 8,
-  GRU_T = 9,
-  LSTM_T = 10,
-  MIGRATE_CPU = 11,
-  MIGRATE_GPU = 12,
-  SOFTMAX = 13,
-  LOGSOFTMAX = 14,
-  QRACK_NEURON = 15
+struct QrackNeuron : public Module {
+  Qrack::QNeuron neuron;
+  ParameterPtr angles;
+  real1 *data;
+  real1 denom;
+
+  QrackNeuron(Qrack::QNeuron &qn);
+  QrackNeuron(Qrack::QNeuron &qn, const std::vector<real1> &init_angles);
+
+  TensorPtr forward() override;
 };
+typedef std::shared_ptr<QrackNeuron> QrackNeuronPtr;
 } // namespace Weed

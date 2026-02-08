@@ -194,6 +194,7 @@ WEED_CONST real1 REAL1_EPSILON = (real1)7.965459555662261e-59;
 WEED_CONST real1 ADAM_BETA1_DEFAULT = (real1)0.9;
 WEED_CONST real1 ADAM_BETA2_DEFAULT = (real1)0.999;
 WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
+#define SineShift M_PI_2
 
 #if ENABLE_CUDA
 #if FPPOW < 5
@@ -233,7 +234,6 @@ WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
 #define REAL1_EPSILON_CUDA REAL1_EPSILON
 #define PI_R1_CUDA PI_R1
 #endif
-#define SineShift M_PI_2
 typedef std::shared_ptr<void> BufferPtr;
 #endif
 

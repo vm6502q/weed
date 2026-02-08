@@ -24,6 +24,10 @@ typedef std::shared_ptr<Module> ModulePtr;
 struct Module {
   ModuleType mtype;
   Module(ModuleType t) : mtype(t) {}
+  virtual TensorPtr forward() {
+    throw std::domain_error(
+        "Only quantum Module instances apply forward() with no parameters!");
+  }
   virtual TensorPtr forward(const TensorPtr) = 0;
   virtual TensorPtr forward(const BaseTensorPtr t) {
     return forward(std::dynamic_pointer_cast<Tensor>(t));
