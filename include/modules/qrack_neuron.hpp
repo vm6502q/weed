@@ -11,6 +11,10 @@
 
 #pragma once
 
+#if !QRACK_AVAILABLE
+#error Qrack files were included without Qrack available.
+#endif
+
 #include "modules/module.hpp"
 #include "qrack/qneuron.hpp"
 #include "tensors/tensor.hpp"
@@ -25,6 +29,17 @@ struct QrackNeuron : public Module {
   QrackNeuron(Qrack::QNeuron &qn);
   QrackNeuron(Qrack::QNeuron &qn, const std::vector<real1> &init_angles);
 
+  TensorPtr forward(Qrack::QInterfacePtr q, const std::vector<bitLenInt> &c,
+                    const bitLenInt &t) override {
+    if (c.size() != neuron.GetInputCount()) {
+      throw std::invalid_argument(
+          "Input size mismatch in QrackNeuron::forward!");
+    }
+    neuron.SetSimulator(q);
+    neuron.SetIndices(c, t);
+
+    return forward();
+  }
   TensorPtr forward() override;
 };
 typedef std::shared_ptr<QrackNeuron> QrackNeuronPtr;

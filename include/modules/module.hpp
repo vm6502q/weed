@@ -14,6 +14,10 @@
 #include "enums/module_type.hpp"
 #include "tensors/parameter.hpp"
 
+#if QRACK_AVAILABLE
+#include "qrack/qfactory.hpp"
+#endif
+
 namespace Weed {
 struct Module;
 typedef std::shared_ptr<Module> ModulePtr;
@@ -24,10 +28,18 @@ typedef std::shared_ptr<Module> ModulePtr;
 struct Module {
   ModuleType mtype;
   Module(ModuleType t) : mtype(t) {}
+#if QRACK_AVAILABLE
+  virtual TensorPtr forward(Qrack::QInterfacePtr q,
+                            const std::vector<bitLenInt> &c,
+                            const bitLenInt &t) {
+    throw std::domain_error(
+        "Only quantum Module instances apply forward() with QInterface!");
+  }
   virtual TensorPtr forward() {
     throw std::domain_error(
         "Only quantum Module instances apply forward() with no parameters!");
   }
+#endif
   virtual TensorPtr forward(const TensorPtr) = 0;
   virtual TensorPtr forward(const BaseTensorPtr t) {
     return forward(std::dynamic_pointer_cast<Tensor>(t));

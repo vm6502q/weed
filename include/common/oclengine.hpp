@@ -14,7 +14,7 @@
 #include "oclapi.hpp"
 
 #if !ENABLE_OPENCL
-#error OpenCL has not been enabled
+#error GPU files were included without OpenCL enabled.
 #endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)

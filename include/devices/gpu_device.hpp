@@ -15,7 +15,7 @@
 #include "queue_item.hpp"
 
 #if !ENABLE_GPU
-#error GPU files were included without either OpenCL and CUDA enabled.
+#error GPU files were included without OpenCL enabled.
 #endif
 
 #define WEED_GPU_SINGLETON (OCLEngine::Instance())
