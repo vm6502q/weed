@@ -152,6 +152,18 @@ struct Tensor : public BaseTensor {
                   const tcapint &length);
 
   /**
+   * Transpose this tensor (if it has two indices)
+   */
+  TensorPtr transpose() { return transpose(*this); }
+
+  /**
+   * Transpose this tensor (between the two specified indices)
+   */
+  TensorPtr transpose(const tcapint &i, const tcapint &j) {
+    return transpose(*this, i, j);
+  }
+
+  /**
    * Tensor initialized with 0
    */
   static TensorPtr zeros(const std::vector<tcapint> &shape,
@@ -268,7 +280,12 @@ struct Tensor : public BaseTensor {
   /**
    * If the tensor has exactly two indices, transpose them
    */
-  static TensorPtr transpose(const TensorPtr a);
+  static TensorPtr transpose(const Tensor &a);
+
+  /**
+   * If the tensor has exactly two indices, transpose them
+   */
+  static TensorPtr transpose(const Tensor &a, tcapint i, tcapint j);
 
   /**
    * Sum of all elements (with autograd)

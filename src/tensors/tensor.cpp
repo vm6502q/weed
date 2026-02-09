@@ -469,13 +469,13 @@ void Tensor::backward(TensorPtr loss) {
   }
 }
 
-TensorPtr Tensor::transpose(const TensorPtr a) {
-  if (a->shape.size() > 2U) {
+TensorPtr Tensor::transpose(const Tensor &a) {
+  if (a.shape.size() > 2U) {
     throw std::invalid_argument("Tensor::transpose is only for 2D tensors (and "
                                 "vectors and covectors)!");
   }
 
-  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+  TensorPtr out = std::make_shared<Tensor>(a);
 
   if (out->shape.size() == 1U) {
     // Treat input as column vector, and transpose to row vector
@@ -487,6 +487,26 @@ TensorPtr Tensor::transpose(const TensorPtr a) {
 
   std::swap(out->shape[0U], out->shape[1U]);
   std::swap(out->stride[0U], out->stride[1U]);
+
+  return out;
+}
+
+TensorPtr Tensor::transpose(const Tensor &a, tcapint i, tcapint j) {
+  while (i < 0U) {
+    i += a.shape.size();
+  }
+  while (j < 0U) {
+    j += a.shape.size();
+  }
+
+  TensorPtr out = std::make_shared<Tensor>(a);
+
+  if (i == j) {
+    return out;
+  }
+
+  std::swap(out->shape[i], out->shape[j]);
+  std::swap(out->stride[i], out->stride[j]);
 
   return out;
 }
@@ -1055,7 +1075,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
-      TensorPtr bt = transpose(b)->cast(dtag);
+      TensorPtr bt = transpose(*(b.get()))->cast(dtag);
       const DType &dt = get_dtype_by_presidence({b, out_grad});
       TensorPtr tmp = Tensor::allocate_like(*(a_grad.get()), dt, false,
                                             IS_SPARSE(out_grad));
@@ -1066,7 +1086,7 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     }
     if (b->requires_grad) {
       TensorPtr b_grad = b->grad->cast(dtag);
-      TensorPtr at = transpose(a)->cast(dtag);
+      TensorPtr at = transpose(*(a.get()))->cast(dtag);
       const DType &dt = get_dtype_by_presidence({a, out_grad});
       TensorPtr tmp = Tensor::allocate_like(*(b_grad.get()), dt, false,
                                             IS_SPARSE(out_grad));
