@@ -15,7 +15,7 @@
 
 namespace Weed {
 /**
- * Convenience wrapper on sigmoid as a module
+ * Convenience wrapper on tanh as a module
  */
 struct Tanh : public Module {
   Tanh() : Module(TANH_T) {}

@@ -18,6 +18,10 @@
 #include "modules/multihead_attention.hpp"
 
 namespace Weed {
+/**
+ * Single layer of a transformer model, which can be composed with Sequential to
+ * build deep transformers
+ */
 struct TransformerEncoderLayer : public Module {
   tcapint d_model;
   tcapint d_ff;

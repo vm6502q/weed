@@ -19,6 +19,11 @@
 #include "modules/qrack_neuron.hpp"
 
 namespace Weed {
+/**
+ * QNN layer based on quantum perceptron model (which cannot be automatically
+ * serialized due to reliance on auxiliary quantum simulator and
+ * post-initialization function pointer)
+ */
 struct QrackNeuronLayer : public Module {
   Qrack::QInterfacePtr prototype;
   std::vector<bitLenInt> input_indices;

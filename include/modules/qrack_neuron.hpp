@@ -20,6 +20,10 @@
 #include "tensors/tensor.hpp"
 
 namespace Weed {
+/**
+ * Quantum perceptron model (which cannot be automatically serialized due to
+ * reliance on auxiliary quantum simulator)
+ */
 struct QrackNeuron : public Module {
   Qrack::QNeuronPtr neuron;
   Qrack::QNeuronActivationFn activation_fn;

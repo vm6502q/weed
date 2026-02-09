@@ -15,6 +15,9 @@
 #include "modules/module.hpp"
 
 namespace Weed {
+/**
+ * Attention mechanism used by transformer models
+ */
 struct MultiHeadAttention : public Module {
   tcapint d_model;
   tcapint num_heads;

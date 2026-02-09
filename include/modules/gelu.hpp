@@ -15,7 +15,7 @@
 
 namespace Weed {
 /**
- * Convenience wrapper on ReLU as a module
+ * Convenience wrapper on GeLU as a module
  */
 struct GeLU : public Module {
   GeLU() : Module(GELU_T) {}
