@@ -25,6 +25,8 @@ struct MultiHeadAttention : public Module {
   LinearPtr W_v;
   LinearPtr W_o;
 
+  std::vector<ParameterPtr> param_vector;
+
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
                      DeviceTag dtag = DEFAULT_DEVICE)
@@ -41,18 +43,17 @@ struct MultiHeadAttention : public Module {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
     }
-  }
 
-  std::vector<ParameterPtr> parameters() override {
-    auto p = W_q->parameters();
+    param_vector = W_q->parameters();
     auto add = [&](const std::vector<ParameterPtr> &q) {
-      p.insert(p.end(), q.begin(), q.end());
+      param_vector.insert(param_vector.end(), q.begin(), q.end());
     };
     add(W_k->parameters());
     add(W_v->parameters());
     add(W_o->parameters());
-    return p;
   }
+
+  std::vector<ParameterPtr> parameters() override { return param_vector; }
 
   void train() override {
     W_q->train();

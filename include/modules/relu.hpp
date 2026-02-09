@@ -21,4 +21,5 @@ struct ReLU : public Module {
   ReLU() : Module(RELU_T) {}
   TensorPtr forward(const TensorPtr x) override { return Tensor::relu(x); }
 };
+typedef std::shared_ptr<ReLU> ReLUPtr;
 } // namespace Weed

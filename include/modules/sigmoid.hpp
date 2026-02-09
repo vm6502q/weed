@@ -21,4 +21,5 @@ struct Sigmoid : public Module {
   Sigmoid() : Module(SIGMOID_T) {}
   TensorPtr forward(const TensorPtr x) override { return Tensor::sigmoid(x); }
 };
+typedef std::shared_ptr<Sigmoid> SigmoidPtr;
 } // namespace Weed

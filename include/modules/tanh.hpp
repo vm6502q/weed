@@ -21,4 +21,5 @@ struct Tanh : public Module {
   Tanh() : Module(TANH_T) {}
   TensorPtr forward(const TensorPtr x) override { return Tensor::tanh(x); }
 };
+typedef std::shared_ptr<Tanh> TanhPtr;
 } // namespace Weed

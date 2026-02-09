@@ -34,6 +34,7 @@ add_library (weed STATIC
     src/modules/module.cpp
     src/modules/multihead_attention.cpp
     src/modules/sequential.cpp
+    src/modules/transformer_encoder_layer.cpp
     src/ops/abs.cpp
     src/ops/clamp.cpp
     src/ops/commuting.cpp
@@ -252,6 +253,7 @@ install (FILES
     include/modules/sigmoid.hpp
     include/modules/softmax.hpp
     include/modules/tanh.hpp
+    include/modules/transformer_encoder_layer.hpp
     include/ops/abs.hpp
     include/ops/clamp.hpp
     include/ops/commuting.hpp
