@@ -38,6 +38,10 @@ struct QrackNeuron : public Module {
     return std::vector<ParameterPtr>{angles};
   }
 
+  void save(std::ostream &) const override {
+    throw std::domain_error("Can't serialize QrackNeuron or quantum objects!");
+  }
+
   TensorPtr forward(TensorPtr x) override {
     throw std::domain_error("QrackNeuron acts forward() on Qrack::QInterface "
                             "simulators, not Weed::Tensor!");

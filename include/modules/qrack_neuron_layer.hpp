@@ -57,6 +57,10 @@ struct QrackNeuronLayer : public Module {
     requires_grad = false;
   }
 
+  void save(std::ostream &) const override {
+    throw std::domain_error("Can't serialize QrackNeuron or quantum objects!");
+  }
+
   TensorPtr forward(const TensorPtr x) override;
 };
 typedef std::shared_ptr<QrackNeuronLayer> QrackNeuronLayerPtr;
