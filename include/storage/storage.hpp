@@ -107,18 +107,30 @@ struct Storage : public std::enable_shared_from_this<Storage> {
    */
   static StoragePtr load(std::istream &);
 
+  /**
+   * Static helper function for storage serialization to ostream
+   */
   static void write_storage_type(std::ostream &out, const StorageType &x) {
     out.write(reinterpret_cast<const char *>(&x), sizeof(StorageType));
   }
 
+  /**
+   * Static helper function for storage de-serialization from istream
+   */
   static void read_storage_type(std::istream &in, StorageType &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(StorageType));
   }
 
+  /**
+   * Static helper function for storage serialization to ostream
+   */
   static void write_device_tag(std::ostream &out, const DeviceTag &x) {
     out.write(reinterpret_cast<const char *>(&x), sizeof(DeviceTag));
   }
 
+  /**
+   * Static helper function for storage de-serialization from istream
+   */
   static void read_device_tag(std::istream &in, DeviceTag &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(DeviceTag));
   }

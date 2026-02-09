@@ -15,7 +15,7 @@
 
 namespace Weed {
 /**
- * CPU-accessible storage for real data type elements
+ * CPU-accessible sparse storage for real-value data type elements
  */
 template <typename T> struct SparseCpuStorage : TypedStorage<T> {
   std::unordered_map<tcapint, T> data;

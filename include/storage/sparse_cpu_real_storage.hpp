@@ -15,7 +15,7 @@
 
 namespace Weed {
 /**
- * CPU-accessible storage for real data type elements
+ * CPU-accessible sparse storage for real-value data type elements
  */
 struct SparseCpuRealStorage : SparseCpuStorage<real1> {
   SparseCpuRealStorage(const RealSparseVector &v, const tcapint &n)
