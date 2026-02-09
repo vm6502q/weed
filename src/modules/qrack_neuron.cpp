@@ -23,8 +23,7 @@ QrackNeuron::QrackNeuron(Qrack::QNeuronPtr qn,
   if (init_rand) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    real1_s lim = (real1_s)(0.5 / std::sqrt(sz));
-    std::uniform_real_distribution<real1_s> dis(-lim, lim);
+    std::uniform_real_distribution<real1_s> dis(-PI_R1, PI_R1);
     std::vector<real1> init;
     init.reserve(sz);
     for (size_t n = 0; n < sz; ++n) {
