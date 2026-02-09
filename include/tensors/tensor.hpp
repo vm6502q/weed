@@ -152,6 +152,13 @@ struct Tensor : public BaseTensor {
                   const tcapint &length);
 
   /**
+   * Reshape tensor
+   */
+  TensorPtr reshape(const std::vector<tcapint> &s) {
+    return Tensor::reshape(*this, s);
+  }
+
+  /**
    * Transpose this tensor (if it has two indices)
    */
   TensorPtr transpose() { return transpose(*this); }
@@ -159,7 +166,7 @@ struct Tensor : public BaseTensor {
   /**
    * Transpose this tensor (between the two specified indices)
    */
-  TensorPtr transpose(const tcapint &i, const tcapint &j) {
+  TensorPtr transpose(const symint &i, const symint &j) {
     return transpose(*this, i, j);
   }
 
@@ -278,14 +285,19 @@ struct Tensor : public BaseTensor {
   static void backward(const TensorPtr loss);
 
   /**
+   * Reshape the tensor
+   */
+  static TensorPtr reshape(const Tensor &a, const std::vector<tcapint> &s);
+
+  /**
    * If the tensor has exactly two indices, transpose them
    */
   static TensorPtr transpose(const Tensor &a);
 
   /**
-   * If the tensor has exactly two indices, transpose them
+   * Transpose the two tensor indices
    */
-  static TensorPtr transpose(const Tensor &a, tcapint i, tcapint j);
+  static TensorPtr transpose(const Tensor &a, symint i, symint j);
 
   /**
    * Sum of all elements (with autograd)

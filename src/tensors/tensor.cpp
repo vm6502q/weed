@@ -469,6 +469,25 @@ void Tensor::backward(TensorPtr loss) {
   }
 }
 
+TensorPtr Tensor::reshape(const Tensor &a, const std::vector<tcapint> &s) {
+  if (!a.is_contiguous()) {
+    throw std::invalid_argument(
+        "Tensor::reshape() requires contiguous tensor!");
+  }
+
+  TensorPtr out = std::make_shared<Tensor>(a);
+  out->shape = s;
+  out->stride = full_contiguous_stride(s);
+
+  if (a.get_size() != out->get_size()) {
+    throw std::invalid_argument(
+        "Tensor::reshape() sizes do not match! (If you have broadcast indices, "
+        "try removing them, reshaping, and adding them back.)");
+  }
+
+  return out;
+}
+
 TensorPtr Tensor::transpose(const Tensor &a) {
   if (a.shape.size() > 2U) {
     throw std::invalid_argument("Tensor::transpose is only for 2D tensors (and "
@@ -491,11 +510,11 @@ TensorPtr Tensor::transpose(const Tensor &a) {
   return out;
 }
 
-TensorPtr Tensor::transpose(const Tensor &a, tcapint i, tcapint j) {
-  while (i < 0U) {
+TensorPtr Tensor::transpose(const Tensor &a, symint i, symint j) {
+  while (i < 0) {
     i += a.shape.size();
   }
-  while (j < 0U) {
+  while (j < 0) {
     j += a.shape.size();
   }
 
