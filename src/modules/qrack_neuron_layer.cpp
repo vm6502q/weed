@@ -109,7 +109,7 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
         "QrackNeuronLayer::forward(x) argument must be real-number!");
   }
 
-  WEED_CONST real1 init_phi = asin(ONE_R1 / 2);
+  const real1 init_phi = asin(ONE_R1 / 2);
 
   const size_t B = x->shape[0];
   TensorPtr out = Tensor::zeros(
