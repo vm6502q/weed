@@ -54,6 +54,19 @@ struct MultiHeadAttention : public Module {
     return p;
   }
 
+  void train() override {
+    W_q->train();
+    W_k->train();
+    W_v->train();
+    W_o->train();
+  }
+  void eval() override {
+    W_q->eval();
+    W_k->eval();
+    W_v->eval();
+    W_o->eval();
+  }
+
   TensorPtr forward(const TensorPtr x) override;
 
   void save(std::ostream &) const override;

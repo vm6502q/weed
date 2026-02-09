@@ -51,6 +51,15 @@ struct LSTM : public Module {
     return px;
   }
 
+  void train() override {
+    W_x->train();
+    W_h->train();
+  }
+  void eval() override {
+    W_x->eval();
+    W_h->eval();
+  }
+
   TensorPtr forward(const TensorPtr) override;
 
   void save(std::ostream &) const override;
