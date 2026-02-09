@@ -3,8 +3,7 @@ set(QRACK_INCLUDE "/usr/local/include")
 
 find_library(QRACK_LIB
     NAMES qrack libqrack
-    PATHS "${QRACK_DIR}"
-    NO_DEFAULT_PATH)
+    PATHS "${QRACK_DIR}")
 
 if (QRACK_LIB)
     message(STATUS "Found Qrack library: ${QRACK_LIB}")
