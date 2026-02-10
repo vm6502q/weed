@@ -37,6 +37,10 @@
 #include "modules/transformer_encoder_layer.hpp"
 #include "modules/variance.hpp"
 
+#if QRACK_AVAILABLE
+#include "modules/qrack_neuron_layer.hpp"
+#endif
+
 namespace Weed {
 void Module::save(std::ostream &os) const {
   write_module_type(os, mtype);
@@ -212,6 +216,34 @@ ModulePtr Module::load(std::istream &is) {
     Serializer::read_tcapint(is, d_model);
     return std::make_shared<PositionalEncoding>(max_seq_len, d_model);
   }
+#if QRACK_AVAILABLE
+  case QRACK_NEURON_LAYER_T: {
+    tcapint input_q, output_q, hidden_q;
+    Serializer::read_tcapint(is, input_q);
+    Serializer::read_tcapint(is, hidden_q);
+    Serializer::read_tcapint(is, output_q);
+    tcapint lowest_combo, highest_combo;
+    Serializer::read_tcapint(is, lowest_combo);
+    Serializer::read_tcapint(is, highest_combo);
+    Qrack::QNeuronActivationFn activation_fn;
+    Serializer::read_qneuron_activation_fn(is, activation_fn);
+    QuantumFunctionType pre_qfn;
+    Serializer::read_quantum_fn(is, pre_qfn);
+    QuantumFunctionType post_qfn;
+    Serializer::read_quantum_fn(is, post_qfn);
+
+    QrackNeuronLayerPtr qnl = std::make_shared<QrackNeuronLayer>(
+        input_q, output_q, hidden_q, lowest_combo, highest_combo, activation_fn,
+        pre_qfn, post_qfn);
+
+    for (size_t i = 0U; i < qnl->neurons.size(); ++i) {
+      qnl->neurons[i]->angles =
+          std::dynamic_pointer_cast<Parameter>(Parameter::load(is));
+    }
+
+    return qnl;
+  }
+#endif
   case ModuleType::NONE_MODULE_TYPE:
   default:
     throw std::domain_error("Can't recognize ModuleType in Module::load!");

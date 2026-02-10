@@ -111,4 +111,5 @@ TensorPtr QrackNeuron::forward() {
 
   return out;
 }
+void QrackNeuron::save(std::ostream &os) const { angles->save(os); }
 } // namespace Weed

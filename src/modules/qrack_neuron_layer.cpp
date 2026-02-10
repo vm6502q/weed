@@ -52,17 +52,49 @@ inline void for_each_combination(
   }
 }
 
+std::function<void(Qrack::QInterfacePtr)>
+QrackNeuronLayer::choose_quantum_fn(QuantumFunctionType fn) {
+  switch (fn) {
+  case NONE_QFN:
+    return [](Qrack::QInterfacePtr s) {};
+  case BELL_GHZ_QFN:
+    return [&](Qrack::QInterfacePtr s) {
+      s->H(input_indices[0U]);
+      for (size_t i = 1U; i < input_indices.size(); ++i) {
+        s->CNOT(i - 1U, i);
+      }
+    };
+  case CUSTOM_QFN:
+  default:
+    throw std::invalid_argument("Can't recognize QuantumFunctionType in "
+                                "QrackNeuronLayer::choose_quantum_fn!");
+  }
+}
+
 QrackNeuronLayer::QrackNeuronLayer(
     const size_t &input_q, const size_t &output_q, const size_t &hidden_q,
     const size_t &lowest_combo, const size_t &highest_combo,
     const Qrack::QNeuronActivationFn &activation,
+    const QuantumFunctionType pre_fn, const QuantumFunctionType post_fn,
+    const std::function<void(Qrack::QInterfacePtr)> &pre_init,
     const std::function<void(Qrack::QInterfacePtr)> &post_init,
     const real1_f &nw, const bool &md, const bool &sd, const bool &sh,
     const bool &bdt, const bool &pg, const bool &tn, const bool &hy,
     const bool &oc, const bool &hp, const bool &sp)
-    : Module(QRACK_NEURON_LAYER_T), input_indices(input_q),
-      hidden_indices(hidden_q), output_indices(output_q),
-      activation_fn(activation), post_init_fn(post_init), requires_grad(true) {
+    : Module(QRACK_NEURON_LAYER_T), lowest_cmb(lowest_combo),
+      highest_cmb(highest_combo), activation_fn(activation), pre_qfn(pre_fn),
+      post_qfn(post_fn), input_indices(input_q), hidden_indices(hidden_q),
+      output_indices(output_q), requires_grad(true) {
+
+  if (pre_init && (pre_fn != CUSTOM_QFN)) {
+    throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
+                                "pre_init without pre_fn = CUSTOM_QFN!");
+  }
+  if (post_init && (post_fn != CUSTOM_QFN)) {
+    throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
+                                "pre_init without pre_fn = CUSTOM_QFN!");
+  }
+
   const bitLenInt num_qubits = input_q + output_q + hidden_q;
   prototype = Qrack::CreateArrangedLayersFull(
       nw, md, sd, sh, bdt, pg, tn, hy, oc, num_qubits, Qrack::ZERO_BCI, nullptr,
@@ -101,6 +133,14 @@ QrackNeuronLayer::QrackNeuronLayer(
     const std::vector<ParameterPtr> p = n->parameters();
     param_vector.insert(param_vector.end(), p.begin(), p.end());
   }
+
+  if (pre_init) {
+    pre_init(prototype);
+  } else {
+    choose_quantum_fn(pre_qfn)(prototype);
+  }
+
+  post_init_fn = post_init ? post_init : choose_quantum_fn(post_qfn);
 }
 
 TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
@@ -151,5 +191,25 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
   }
 
   return out;
+}
+
+void QrackNeuronLayer::save(std::ostream &os) const {
+  if ((pre_qfn == CUSTOM_QFN) || (post_qfn == CUSTOM_QFN)) {
+    throw std::domain_error("Can't serialize QrackNeuronLayer with custom "
+                            "pre-or-post-initialization functions!");
+  }
+
+  Module::save(os);
+  Serializer::write_tcapint(os, (tcapint)(input_indices.size()));
+  Serializer::write_tcapint(os, (tcapint)(hidden_indices.size()));
+  Serializer::write_tcapint(os, (tcapint)(output_indices.size()));
+  Serializer::write_tcapint(os, (tcapint)lowest_cmb);
+  Serializer::write_tcapint(os, (tcapint)highest_cmb);
+  Serializer::write_qneuron_activation_fn(os, activation_fn);
+  Serializer::write_quantum_fn(os, pre_qfn);
+  Serializer::write_quantum_fn(os, post_qfn);
+  for (size_t i = 0U; i < neurons.size(); ++i) {
+    neurons[i]->save(os);
+  }
 }
 } // namespace Weed

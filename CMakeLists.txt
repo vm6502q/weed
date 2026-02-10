@@ -237,6 +237,7 @@ install (FILES
     include/enums/dtype.hpp
     include/enums/module_type.hpp
     include/enums/storage_type.hpp
+    include/enums/quantum_function_type.hpp
     include/modules/dropout.hpp
     include/modules/embedding.hpp
     include/modules/gru.hpp

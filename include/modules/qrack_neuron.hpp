@@ -30,7 +30,6 @@ struct QrackNeuron : public Module {
   ParameterPtr angles;
   real1 *data;
 
-  QrackNeuron() : Module(QRACK_NEURON_T) {}
   QrackNeuron(Qrack::QNeuronPtr qn,
               const Qrack::QNeuronActivationFn &activation =
                   Qrack::QNeuronActivationFn::Sigmoid,
@@ -41,10 +40,6 @@ struct QrackNeuron : public Module {
 
   std::vector<ParameterPtr> parameters() override {
     return std::vector<ParameterPtr>{angles};
-  }
-
-  void save(std::ostream &) const override {
-    throw std::domain_error("Can't serialize QrackNeuron or quantum objects!");
   }
 
   TensorPtr forward(TensorPtr x) override {
@@ -67,6 +62,7 @@ struct QrackNeuron : public Module {
     return forward();
   }
   TensorPtr forward() override;
+  void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<QrackNeuron> QrackNeuronPtr;
 } // namespace Weed

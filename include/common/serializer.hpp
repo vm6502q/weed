@@ -14,7 +14,9 @@
 #include "common/weed_types.hpp"
 #include "enums/device_tag.hpp"
 #include "enums/dtype.hpp"
+#include "enums/quantum_function_type.hpp"
 #include "enums/storage_type.hpp"
+#include "qrack/qneuron.hpp"
 
 namespace Weed {
 /**
@@ -54,6 +56,22 @@ struct Serializer {
     read_real(in, r);
     read_real(in, i);
     z = complex(r, i);
+  }
+  static void write_qneuron_activation_fn(std::ostream &out,
+                                          const Qrack::QNeuronActivationFn &x) {
+    out.write(reinterpret_cast<const char *>(&x),
+              sizeof(Qrack::QNeuronActivationFn));
+  }
+  static void read_qneuron_activation_fn(std::istream &in,
+                                         Qrack::QNeuronActivationFn &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(Qrack::QNeuronActivationFn));
+  }
+  static void write_quantum_fn(std::ostream &out,
+                               const QuantumFunctionType &x) {
+    out.write(reinterpret_cast<const char *>(&x), sizeof(QuantumFunctionType));
+  }
+  static void read_quantum_fn(std::istream &in, QuantumFunctionType &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(QuantumFunctionType));
   }
 };
 } // namespace Weed

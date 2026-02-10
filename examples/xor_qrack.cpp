@@ -16,6 +16,7 @@
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
 #include "modules/qrack_neuron_layer.hpp"
+#include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
 #include "tensors/real_scalar.hpp"
 
@@ -38,15 +39,13 @@ int main() {
       std::vector<real1>{R(0), R(1), R(1), R(0)}, std::vector<tcapint>{4, 1},
       std::vector<tcapint>{1, 0}, false, DeviceTag::CPU);
 
-  QrackNeuronLayerPtr q = std::make_shared<QrackNeuronLayer>(2, 1, 0, 2, 2);
-  q->prototype->H(0);
-  q->prototype->AntiCNOT(0, 1);
+  const std::vector<ModulePtr> mv = {
+      std::make_shared<QrackNeuronLayer>(2, 1, 0, 2, 2),
+      std::make_shared<Linear>(1, 1), std::make_shared<Sigmoid>()};
 
-  LinearPtr l = std::make_shared<Linear>(1, 1, false);
+  Sequential model(mv);
 
-  std::vector<ParameterPtr> params = q->parameters();
-  const std::vector<ParameterPtr> tmp_p = l->parameters();
-  params.insert(params.end(), tmp_p.begin(), tmp_p.end());
+  std::vector<ParameterPtr> params = model.parameters();
 
   Adam opt(R(0.1));
   opt.register_parameters(params);
@@ -55,9 +54,7 @@ int main() {
   real1 loss_r = ONE_R1;
 
   while ((epoch <= 2000) && (loss_r > 0.01)) {
-    TensorPtr tmp = q->forward(x);
-    tmp = tmp - Tensor::mean(tmp);
-    TensorPtr y_pred = Tensor::sigmoid(l->forward(tmp));
+    TensorPtr y_pred = model.forward(x);
     TensorPtr loss = bci_loss(y_pred, y);
 
     Tensor::backward(loss);
@@ -72,14 +69,20 @@ int main() {
     ++epoch;
   }
 
-  q->eval();
-  l->eval();
+  // Can we save to disk?
+  std::ofstream o("xor.qml");
+  model.save(o);
+  o.close();
+
+  std::ifstream i("xor.qml");
+  ModulePtr m = Module::load(i);
+  i.close();
+
+  m->eval();
 
   std::cout << "In: [[0, 0], [1, 0], [0, 1], [1, 1]]" << std::endl;
 
-  TensorPtr tmp = q->forward(x);
-  tmp = tmp - Tensor::mean(tmp);
-  TensorPtr y_pred = Tensor::sigmoid(l->forward(tmp));
+  TensorPtr y_pred = m->forward(x);
   RealStorage &storage = *static_cast<RealStorage *>(y_pred->storage.get());
 
   std::cout << "Out: [";
