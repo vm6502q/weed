@@ -40,6 +40,7 @@
 
 #if QRACK_AVAILABLE
 #include "modules/qrack_neuron_layer.hpp"
+#include "storage/cpu_real_storage.hpp"
 #endif
 
 namespace Weed {
@@ -241,7 +242,10 @@ ModulePtr Module::load(std::istream &is) {
         post_qfn, activation_fn);
 
     for (size_t i = 0U; i < qnl->neurons.size(); ++i) {
-      qnl->neurons[i]->angles = Parameter::load(is);
+      const auto &n = qnl->neurons[i];
+      n->angles = Parameter::load(is);
+      n->data =
+          static_cast<CpuRealStorage *>(n->angles->storage.get())->data.get();
     }
 
     qnl->update_param_vector();
