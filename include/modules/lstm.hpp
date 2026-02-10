@@ -39,8 +39,10 @@ struct LSTM : public Module {
   LSTM() : Module(LSTM_T) {}
   LSTM(tcapint in, tcapint hid, DeviceTag dtag = DEFAULT_DEVICE)
       : Module(LSTM_T), input_dim(in), hidden_dim(hid),
-        W_x(std::make_shared<Linear>(in, 4 * hid, true, DType::REAL, dtag)),
-        W_h(std::make_shared<Linear>(hid, 4 * hid, true, DType::REAL, dtag)),
+        W_x(std::make_shared<Linear>(in, 4 * hid, true, true, DType::REAL,
+                                     dtag)),
+        W_h(std::make_shared<Linear>(hid, 4 * hid, true, true, DType::REAL,
+                                     dtag)),
         state{Tensor::zeros(std::vector<tcapint>{hidden_dim}),
               Tensor::zeros(std::vector<tcapint>{hidden_dim})} {}
 

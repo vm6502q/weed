@@ -24,8 +24,10 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     : Module(TRANSFORMER_ENCODER_LAYER_T), d_model(d_model_), d_ff(d_ff_),
       num_heads(num_heads_), self_attn(std::make_shared<MultiHeadAttention>(
                                  d_model_, num_heads_, dtag)),
-      ff1(std::make_shared<Linear>(d_model_, d_ff_, true, DType::REAL, dtag)),
-      ff2(std::make_shared<Linear>(d_ff_, d_model_, true, DType::REAL, dtag)),
+      ff1(std::make_shared<Linear>(d_model_, d_ff_, true, true, DType::REAL,
+                                   dtag)),
+      ff2(std::make_shared<Linear>(d_ff_, d_model_, true, true, DType::REAL,
+                                   dtag)),
       norm1(std::make_shared<LayerNorm>(d_model_, dtag)),
       norm2(std::make_shared<LayerNorm>(d_model_, dtag)) {
   switch (afn) {

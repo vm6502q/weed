@@ -29,8 +29,10 @@ struct GRU : public Module {
   GRU() : Module(GRU_T) {}
   GRU(tcapint in, tcapint hid, DeviceTag dtag = DeviceTag::DEFAULT_DEVICE)
       : Module(GRU_T), input_dim(in), hidden_dim(hid),
-        W_x(std::make_shared<Linear>(in, 3 * hid, true, DType::REAL, dtag)),
-        W_h(std::make_shared<Linear>(hid, 3 * hid, true, DType::REAL, dtag)),
+        W_x(std::make_shared<Linear>(in, 3 * hid, true, true, DType::REAL,
+                                     dtag)),
+        W_h(std::make_shared<Linear>(hid, 3 * hid, true, true, DType::REAL,
+                                     dtag)),
         state(Tensor::zeros({hidden_dim})) {}
 
   std::vector<ParameterPtr> parameters() override {

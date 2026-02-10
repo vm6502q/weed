@@ -35,14 +35,14 @@ struct MultiHeadAttention : public Module {
                      DeviceTag dtag = DEFAULT_DEVICE)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
         head_dim(d_model_ / num_heads_),
-        W_q(std::make_shared<Linear>(d_model_, d_model_, true, DType::REAL,
-                                     dtag)),
-        W_k(std::make_shared<Linear>(d_model_, d_model_, true, DType::REAL,
-                                     dtag)),
-        W_v(std::make_shared<Linear>(d_model_, d_model_, true, DType::REAL,
-                                     dtag)),
-        W_o(std::make_shared<Linear>(d_model_, d_model_, true, DType::REAL,
-                                     dtag)) {
+        W_q(std::make_shared<Linear>(d_model_, d_model_, true, true,
+                                     DType::REAL, dtag)),
+        W_k(std::make_shared<Linear>(d_model_, d_model_, true, true,
+                                     DType::REAL, dtag)),
+        W_v(std::make_shared<Linear>(d_model_, d_model_, true, true,
+                                     DType::REAL, dtag)),
+        W_o(std::make_shared<Linear>(d_model_, d_model_, true, true,
+                                     DType::REAL, dtag)) {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
     }

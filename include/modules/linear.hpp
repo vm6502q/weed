@@ -26,9 +26,8 @@ struct Linear : public Module {
 
   Linear() : Module(LINEAR_T){};
   Linear(tcapint in_f, tcapint out_f, bool use_bias = true,
-         DType dtype = DType::REAL,
-         DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1,
-         bool init_rand = true);
+         bool init_rand = true, DType dtype = DType::REAL,
+         DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1);
 
   TensorPtr forward(const TensorPtr x) override;
   std::vector<ParameterPtr> parameters() override;

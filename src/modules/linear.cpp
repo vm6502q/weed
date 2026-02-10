@@ -16,8 +16,8 @@
 #include <random>
 
 namespace Weed {
-Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, DType dtype,
-               DeviceTag device, int64_t device_id, bool init_rand)
+Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, bool init_rand,
+               DType dtype, DeviceTag device, int64_t device_id)
     : Module(LINEAR_T), in_features(in_f), out_features(out_f) {
 
   const std::vector<tcapint> shape{in_f, out_f};
