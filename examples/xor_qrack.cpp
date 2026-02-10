@@ -70,11 +70,11 @@ int main() {
   }
 
   // Can we save to disk?
-  std::ofstream o("xor.qml");
+  std::ofstream o("xor_qrack.qml");
   model.save(o);
   o.close();
 
-  std::ifstream i("xor.qml");
+  std::ifstream i("xor_qrack.qml");
   ModulePtr m = Module::load(i);
   i.close();
 
