@@ -268,7 +268,7 @@ struct Tensor : public BaseTensor {
   /**
    * Reshape the tensor
    */
-  static TensorPtr reshape(const TensorPtr a, const std::vector<tcapint> &s);
+  static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s);
 
   /**
    * If the tensor has exactly two indices, transpose them

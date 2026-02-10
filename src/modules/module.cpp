@@ -20,10 +20,14 @@
 #include "modules/linear.hpp"
 #include "modules/logsoftmax.hpp"
 #include "modules/lstm.hpp"
+#include "modules/max.hpp"
+#include "modules/mean.hpp"
 #include "modules/migrate_cpu.hpp"
 #include "modules/migrate_gpu.hpp"
+#include "modules/min.hpp"
 #include "modules/multihead_attention.hpp"
 #include "modules/relu.hpp"
+#include "modules/reshape.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
 #include "modules/softmax.hpp"
@@ -137,11 +141,35 @@ ModulePtr Module::load(std::istream &is) {
     Serializer::read_symint(is, axis);
     return std::make_shared<LogSoftmax>(axis);
   }
+  case ModuleType::MEAN_T: {
+    symint axis;
+    Serializer::read_symint(is, axis);
+    return std::make_shared<Mean>(axis);
+  }
+  case ModuleType::MAX_T: {
+    symint axis;
+    Serializer::read_symint(is, axis);
+    return std::make_shared<Max>(axis);
+  }
+  case ModuleType::MIN_T: {
+    symint axis;
+    Serializer::read_symint(is, axis);
+    return std::make_shared<Min>(axis);
+  }
+  case ModuleType::RESHAPE_T: {
+    tcapint sz;
+    Serializer::read_tcapint(is, sz);
+    std::vector<symint> shape(sz);
+    for (tcapint i = 0U; i < sz; ++i) {
+      Serializer::read_symint(is, shape[i]);
+    }
+    return std::make_shared<Reshape>(shape);
+  }
   case ModuleType::MULTIHEAD_ATTENTION_T: {
     MultiHeadAttentionPtr m = std::make_shared<MultiHeadAttention>();
-    Serializer::read_tcapint(is, m->d_model);
-    Serializer::read_tcapint(is, m->num_heads);
-    Serializer::read_tcapint(is, m->head_dim);
+    Serializer::read_symint(is, m->d_model);
+    Serializer::read_symint(is, m->num_heads);
+    Serializer::read_symint(is, m->head_dim);
     m->W_q = std::dynamic_pointer_cast<Linear>(Linear::load(is));
     m->W_k = std::dynamic_pointer_cast<Linear>(Linear::load(is));
     m->W_v = std::dynamic_pointer_cast<Linear>(Linear::load(is));

@@ -19,9 +19,9 @@ namespace Weed {
  * Attention mechanism used by transformer models
  */
 struct MultiHeadAttention : public Module {
-  tcapint d_model;
-  tcapint num_heads;
-  tcapint head_dim;
+  symint d_model;
+  symint num_heads;
+  symint head_dim;
 
   LinearPtr W_q;
   LinearPtr W_k;

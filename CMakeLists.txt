@@ -242,8 +242,11 @@ install (FILES
     include/modules/linear.hpp
     include/modules/logsoftmax.hpp
     include/modules/lstm.hpp
+    include/modules/max.hpp
+    include/modules/mean.hpp
     include/modules/migrate_cpu.hpp
     include/modules/migrate_gpu.hpp
+    include/modules/min.hpp
     include/modules/module.hpp
     include/modules/multihead_attention.hpp
     include/modules/relu.hpp

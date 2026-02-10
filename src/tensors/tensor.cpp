@@ -469,21 +469,57 @@ void Tensor::backward(TensorPtr loss) {
   }
 }
 
-TensorPtr Tensor::reshape(const TensorPtr a, const std::vector<tcapint> &s) {
+TensorPtr Tensor::reshape(const TensorPtr a, const std::vector<symint> &s) {
   if (!a->is_contiguous()) {
     throw std::invalid_argument(
         "Tensor::reshape() requires contiguous tensor!");
   }
 
-  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-  out->shape = s;
-  out->stride = full_contiguous_stride(s);
+  const tcapint total = a->get_size();
 
-  if (a->get_size() != out->get_size()) {
-    throw std::invalid_argument(
-        "Tensor::reshape() sizes do not match! (If you have broadcast indices, "
-        "try removing them, reshaping, and adding them back.)");
+  // Resolve -1
+  std::vector<tcapint> resolved;
+  resolved.reserve(s.size());
+  for (size_t i = 0U; i < s.size(); ++i) {
+    resolved.push_back((tcapint)s[i]);
   }
+
+  symint infer_index = -1;
+  tcapint known_product = 1U;
+
+  for (size_t i = 0U; i < s.size(); ++i) {
+    if (s[i] < 0) {
+      if (infer_index != -1) {
+        throw std::invalid_argument(
+            "Tensor::reshape(): only one -1 dimension allowed");
+      }
+      infer_index = (symint)i;
+    } else {
+      known_product *= s[i];
+    }
+  }
+
+  if (infer_index >= 0) {
+    if ((!known_product) || (total % known_product)) {
+      throw std::invalid_argument(
+          "Tensor::reshape(): cannot infer dimension size");
+    }
+    resolved[infer_index] = total / known_product;
+  }
+
+  // Final size check
+  tcapint new_size = 1;
+  for (tcapint d : resolved) {
+    new_size *= d;
+  }
+
+  if (new_size != total) {
+    throw std::invalid_argument("Tensor::reshape(): sizes do not match");
+  }
+
+  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+  out->shape = resolved;
+  out->stride = full_contiguous_stride(resolved);
 
   return out;
 }

@@ -16,8 +16,8 @@ namespace Weed {
 TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // x: (B, T, d_model)
   const auto &sh = x->shape;
-  const tcapint B = sh[0];
-  const tcapint T = sh[1];
+  const symint B = sh[0];
+  const symint T = sh[1];
 
   TensorPtr Q = W_q->forward(x);
   TensorPtr K = W_k->forward(x);
@@ -57,9 +57,9 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
 }
 void MultiHeadAttention::save(std::ostream &os) const {
   Module::save(os);
-  Serializer::write_tcapint(os, d_model);
-  Serializer::write_tcapint(os, num_heads);
-  Serializer::write_tcapint(os, head_dim);
+  Serializer::write_symint(os, d_model);
+  Serializer::write_symint(os, num_heads);
+  Serializer::write_symint(os, head_dim);
   W_q->save(os);
   W_k->save(os);
   W_v->save(os);
