@@ -28,13 +28,13 @@ int benchmarkSamples = 100;
 int benchmarkDepth = -1;
 DeviceTag TEST_DTAG;
 
-#if ENABLE_OPENCL
+#if WEED_ENABLE_OPENCL
 #define WEED_GPU_SINGLETON (OCLEngine::Instance())
-#elif ENABLE_CUDA
+#elif WEED_ENABLE_CUDA
 #define WEED_GPU_SINGLETON (CUDAEngine::Instance())
 #endif
 
-#define SHOW_OCL_BANNER() WEED_GPU_SINGLETON.GetDeviceCount();
+#define SHOW_OCL_BANNER() WEED_GPU_SINGLETON.InitOCL();
 
 int main(int argc, char *argv[]) {
   Catch::Session session;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     gpu = true;
   }
 
-#if ENABLE_OPENCL || ENABLE_CUDA
+#if ENABLE_GPU
   SHOW_OCL_BANNER();
 #endif
 
