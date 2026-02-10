@@ -33,20 +33,27 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(T) * TypedStorage<T>::size);
     if (alloc) {
-      buffer = MakeBuffer(n);
+      if (dev->device_context->use_host_mem) {
+        data = TypedStorage<T>::Alloc(n);
+        buffer = MakeBuffer(n, data.get());
+      } else {
+        buffer = MakeBuffer(n, nullptr);
+      }
     }
   }
 
   GpuStorage(const StorageType &stp, const std::vector<T> &val,
              const int64_t &did)
       : TypedStorage<T>(stp, DeviceTag::GPU, val.size()),
-        data(TypedStorage<T>::Alloc(val.size())) {
+        data(nullptr, [](T *) {}) {
     dev = OCLEngine::Instance().GetWeedDevice(did);
     AddAlloc(sizeof(T) * TypedStorage<T>::size);
-    std::copy(val.begin(), val.end(), data.get());
-    buffer = MakeBuffer(val.size());
-    if (!(dev->device_context->use_host_mem)) {
-      data = nullptr;
+    if (dev->device_context->use_host_mem) {
+      data = TypedStorage<T>::Alloc(val.size());
+      std::copy(val.begin(), val.end(), data.get());
+      buffer = MakeBuffer(val.size(), data.get());
+    } else {
+      buffer = MakeBuffer(val.size(), (void *)val.data());
     }
   }
 
@@ -57,22 +64,24 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
   void AddAlloc(const size_t &sz) { dev->AddAlloc(sz); }
   void SubtractAlloc(const size_t &sz) { dev->SubtractAlloc(sz); }
 
-  BufferPtr MakeBuffer(const tcapint &n) {
+  BufferPtr MakeBuffer(const tcapint &n, void *d) {
     if (dev->device_context->use_host_mem) {
-      if (!data) {
-        data = TypedStorage<T>::Alloc(n);
+      if (!d) {
+        throw std::invalid_argument(
+            "Must supply host pointer to GpuStorage::MakeBuffer if using host "
+            "memory!");
       }
 
       return dev->MakeBuffer(CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
-                             sizeof(T) * n, data.get());
+                             sizeof(T) * n, d);
     }
 
-    if (!data) {
+    if (!d) {
       return dev->MakeBuffer(CL_MEM_READ_WRITE, sizeof(T) * n);
     }
 
     return dev->MakeBuffer(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
-                           sizeof(T) * n, data.get());
+                           sizeof(T) * n, d);
   }
 
   T operator[](const tcapint &idx) const = 0;
