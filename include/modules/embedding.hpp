@@ -29,7 +29,7 @@ struct Embedding : public Module {
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE, int64_t did = -1)
       : Module(EMBEDDING_T), num_embeddings(vocab), embedding_dim(dim),
         weight(std::make_shared<Parameter>(std::vector<tcapint>{vocab, dim},
-                                           std::vector<tcapint>{1, vocab},
+                                           std::vector<tcapint>{1, vocab}, true,
                                            dtype, dtag, did)) {}
   using Module::forward;
   TensorPtr forward(const TensorPtr) override {

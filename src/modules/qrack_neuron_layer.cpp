@@ -114,7 +114,7 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
   const size_t B = x->shape[0];
   TensorPtr out = Tensor::zeros(
       std::vector<tcapint>{(tcapint)B, (tcapint)(output_indices.size())},
-      requires_grad || x->requires_grad, DType::REAL, DeviceTag::CPU);
+      requires_grad || x->requires_grad, true, DType::REAL, DeviceTag::CPU);
   TensorPtr in = std::make_shared<Tensor>(*(x.get()));
 
   in->storage = in->storage->cpu();

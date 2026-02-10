@@ -113,9 +113,8 @@ void Tensor::make_gradient(const bool &force_sparse) {
     }
   }
 
-  grad = Tensor::make_gradient(shape, storage->dtype, dtag,
-                               storage->get_device_id(),
-                               force_sparse || storage->is_sparse());
+  grad = Tensor::make_gradient(shape, force_sparse || storage->is_sparse(),
+                               storage->dtype, dtag, storage->get_device_id());
 }
 
 TensorPtr Tensor::allocate_scalar_like(const Tensor &orig, const bool &rg) {
@@ -144,13 +143,12 @@ TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
   const DeviceTag dtag = orig.storage->device;
   const int64_t did = orig.storage->get_device_id();
 
-  return std::make_shared<Tensor>(shp, strd, rg, dt, dtag, did, s);
+  return std::make_shared<Tensor>(shp, strd, rg, s, dt, dtag, did);
 }
 
 Tensor::Tensor(const std::vector<tcapint> &shp,
-               const std::vector<tcapint> &strd, const bool &rg,
-               const DType &dtype, const DeviceTag &_dtag, const int64_t &did,
-               const bool &s)
+               const std::vector<tcapint> &strd, const bool &rg, const bool &s,
+               const DType &dtype, const DeviceTag &_dtag, const int64_t &did)
     : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
       freeze(shp.size(), false) {
 

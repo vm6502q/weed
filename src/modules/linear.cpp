@@ -53,15 +53,15 @@ Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, DType dtype,
           std::make_shared<Parameter>(init, shape, stride, device, device_id);
     }
   } else {
-    weight =
-        std::make_shared<Parameter>(shape, stride, dtype, device, device_id);
+    weight = std::make_shared<Parameter>(shape, stride, true, dtype, device,
+                                         device_id);
     weight->storage->FillZeros();
   }
 
   if (use_bias) {
     bias = std::make_shared<Parameter>(std::vector<tcapint>{out_f},
-                                       std::vector<tcapint>{1U}, dtype, device,
-                                       device_id);
+                                       std::vector<tcapint>{1U}, true, dtype,
+                                       device, device_id);
     bias->storage->FillZeros();
   } else {
     bias = nullptr;

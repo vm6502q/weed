@@ -23,10 +23,10 @@ typedef std::shared_ptr<Parameter> ParameterPtr;
  */
 struct Parameter : Tensor {
   Parameter(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
-            const DType &dtype = DType::REAL,
+            const bool &s = true, const DType &dtype = DType::REAL,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-            const int64_t &did = -1, const bool &s = true)
-      : Tensor(shp, strd, true, DType::REAL, dtag, did, s) {}
+            const int64_t &did = -1)
+      : Tensor(shp, strd, true, s, DType::REAL, dtag, did) {}
   Parameter(const std::vector<real1> &val, const std::vector<tcapint> &shp,
             const std::vector<tcapint> &strd,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,

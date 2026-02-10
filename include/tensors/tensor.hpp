@@ -38,9 +38,10 @@ struct Tensor : public BaseTensor {
 
   Tensor() {}
   Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
-         const bool &rg = false, const DType &dtype = DType::REAL,
+         const bool &rg = false, const bool &s = true,
+         const DType &dtype = DType::REAL,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-         const int64_t &did = -1, const bool &s = true);
+         const int64_t &did = -1);
   Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
          const std::vector<tcapint> &strd, const bool &rg = false,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
@@ -167,12 +168,12 @@ struct Tensor : public BaseTensor {
    * Tensor initialized with 0
    */
   static TensorPtr zeros(const std::vector<tcapint> &shape,
-                         const bool &rg = false,
+                         const bool &rg = false, const bool &s = true,
                          const DType &dtype = DType::REAL,
                          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-                         const int64_t &did = -1, const bool &s = true) {
+                         const int64_t &did = -1) {
     TensorPtr z = std::make_shared<Tensor>(shape, full_contiguous_stride(shape),
-                                           rg, dtype, dtag, did, s);
+                                           rg, s, dtype, dtag, did);
     z->storage->FillZeros();
 
     return z;
@@ -182,12 +183,12 @@ struct Tensor : public BaseTensor {
    * Tensor initialized with 1
    */
   static TensorPtr ones_like(const std::vector<tcapint> &shape,
-                             const bool &rg = false,
+                             const bool &rg = false, const bool &s = true,
                              const DType &dtype = DType::REAL,
                              const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-                             const int64_t &did = -1, const bool &s = true) {
+                             const int64_t &did = -1) {
     TensorPtr z = std::make_shared<Tensor>(shape, full_contiguous_stride(shape),
-                                           rg, dtype, dtag, did, s);
+                                           rg, s, dtype, dtag, did);
     z->storage->FillOnes();
 
     return z;
@@ -232,13 +233,13 @@ struct Tensor : public BaseTensor {
   /**
    * Make a gradient tensor (static)
    */
-  static TensorPtr make_gradient(const std::vector<tcapint> &shp,
+  static TensorPtr make_gradient(const std::vector<tcapint> &shp, const bool &s,
                                  const DType &dtype, const DeviceTag &dtag,
-                                 const int64_t did, const bool &s) {
+                                 const int64_t did) {
     // This must be reduced along broadcast dimensions
     // during the backward() step.
     TensorPtr g = std::make_shared<Tensor>(shp, full_contiguous_stride(shp),
-                                           false, dtype, dtag, did, s);
+                                           false, s, dtype, dtag, did);
     g->storage->FillZeros();
 
     return g;

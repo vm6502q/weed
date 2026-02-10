@@ -39,8 +39,8 @@ ParameterPtr Parameter::load(std::istream &in) {
 
   StoragePtr storage = Storage::load(in);
 
-  ParameterPtr p = std::make_shared<Parameter>(shape, stride, storage->dtype,
-                                               storage->device);
+  ParameterPtr p = std::make_shared<Parameter>(shape, stride, true,
+                                               storage->dtype, storage->device);
   p->storage = storage;
 
   return p;

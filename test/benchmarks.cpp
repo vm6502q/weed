@@ -33,11 +33,11 @@ TEST_CASE("test_random_real_mul") {
 
     TensorPtr x = std::make_shared<Tensor>(std::vector<tcapint>{p},
                                            std::vector<tcapint>{1U}, false,
-                                           DType::REAL, TEST_DTAG, -1, sparse);
+                                           sparse, DType::REAL, TEST_DTAG, -1);
     x->storage->FillOnes();
     TensorPtr y = std::make_shared<Tensor>(std::vector<tcapint>{p},
                                            std::vector<tcapint>{1U}, false,
-                                           DType::REAL, TEST_DTAG, -1, sparse);
+                                           sparse, DType::REAL, TEST_DTAG, -1);
     y->storage->FillOnes();
 
     const auto start = std::chrono::high_resolution_clock::now();
