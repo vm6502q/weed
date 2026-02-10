@@ -229,20 +229,19 @@ ModulePtr Module::load(std::istream &is) {
     tcapint lowest_combo, highest_combo;
     Serializer::read_tcapint(is, lowest_combo);
     Serializer::read_tcapint(is, highest_combo);
-    Qrack::QNeuronActivationFn activation_fn;
-    Serializer::read_qneuron_activation_fn(is, activation_fn);
     QuantumFunctionType pre_qfn;
     Serializer::read_quantum_fn(is, pre_qfn);
     QuantumFunctionType post_qfn;
     Serializer::read_quantum_fn(is, post_qfn);
+    Qrack::QNeuronActivationFn activation_fn;
+    Serializer::read_qneuron_activation_fn(is, activation_fn);
 
     QrackNeuronLayerPtr qnl = std::make_shared<QrackNeuronLayer>(
-        input_q, output_q, hidden_q, lowest_combo, highest_combo, activation_fn,
-        pre_qfn, post_qfn);
+        input_q, output_q, hidden_q, lowest_combo, highest_combo, pre_qfn,
+        post_qfn, activation_fn);
 
     for (size_t i = 0U; i < qnl->neurons.size(); ++i) {
-      qnl->neurons[i]->angles =
-          std::dynamic_pointer_cast<Parameter>(Parameter::load(is));
+      qnl->neurons[i]->angles = Parameter::load(is);
     }
 
     qnl->update_param_vector();

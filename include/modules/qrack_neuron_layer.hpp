@@ -28,9 +28,9 @@ namespace Weed {
 struct QrackNeuronLayer : public Module {
   size_t lowest_cmb;
   size_t highest_cmb;
-  Qrack::QNeuronActivationFn activation_fn;
   QuantumFunctionType pre_qfn;
   QuantumFunctionType post_qfn;
+  Qrack::QNeuronActivationFn activation_fn;
 
   Qrack::QInterfacePtr prototype;
   std::vector<bitLenInt> input_indices;
@@ -44,10 +44,10 @@ struct QrackNeuronLayer : public Module {
   QrackNeuronLayer(
       const size_t &input_q, const size_t &output_q, const size_t &hidden_q,
       const size_t &lowest_combo, const size_t &highest_combo,
-      const Qrack::QNeuronActivationFn &activation =
-          Qrack::QNeuronActivationFn::Sigmoid,
       const QuantumFunctionType pre_fn = BELL_GHZ_QFN,
       const QuantumFunctionType post_fn = NONE_QFN,
+      const Qrack::QNeuronActivationFn &activation =
+          Qrack::QNeuronActivationFn::Sigmoid,
       const std::function<void(Qrack::QInterfacePtr)> &pre_init = nullptr,
       const std::function<void(Qrack::QInterfacePtr)> &post_init = nullptr,
       const real1_f &nw = ZERO_R1, const bool &md = false,
@@ -56,6 +56,7 @@ struct QrackNeuronLayer : public Module {
       const bool &oc = true, const bool &hp = false, const bool &sp = false);
 
   void update_param_vector() {
+    param_vector.clear();
     for (const auto &n : neurons) {
       const std::vector<ParameterPtr> p = n->parameters();
       param_vector.insert(param_vector.end(), p.begin(), p.end());

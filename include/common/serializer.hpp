@@ -57,6 +57,13 @@ struct Serializer {
     read_real(in, i);
     z = complex(r, i);
   }
+  static void write_quantum_fn(std::ostream &out,
+                               const QuantumFunctionType &x) {
+    out.write(reinterpret_cast<const char *>(&x), sizeof(QuantumFunctionType));
+  }
+  static void read_quantum_fn(std::istream &in, QuantumFunctionType &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(QuantumFunctionType));
+  }
   static void write_qneuron_activation_fn(std::ostream &out,
                                           const Qrack::QNeuronActivationFn &x) {
     out.write(reinterpret_cast<const char *>(&x),
@@ -65,13 +72,6 @@ struct Serializer {
   static void read_qneuron_activation_fn(std::istream &in,
                                          Qrack::QNeuronActivationFn &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(Qrack::QNeuronActivationFn));
-  }
-  static void write_quantum_fn(std::ostream &out,
-                               const QuantumFunctionType &x) {
-    out.write(reinterpret_cast<const char *>(&x), sizeof(QuantumFunctionType));
-  }
-  static void read_quantum_fn(std::istream &in, QuantumFunctionType &x) {
-    in.read(reinterpret_cast<char *>(&x), sizeof(QuantumFunctionType));
   }
 };
 } // namespace Weed

@@ -85,17 +85,17 @@ QrackNeuronLayer::choose_quantum_fn(QuantumFunctionType fn) {
 QrackNeuronLayer::QrackNeuronLayer(
     const size_t &input_q, const size_t &output_q, const size_t &hidden_q,
     const size_t &lowest_combo, const size_t &highest_combo,
-    const Qrack::QNeuronActivationFn &activation,
     const QuantumFunctionType pre_fn, const QuantumFunctionType post_fn,
+    const Qrack::QNeuronActivationFn &activation,
     const std::function<void(Qrack::QInterfacePtr)> &pre_init,
     const std::function<void(Qrack::QInterfacePtr)> &post_init,
     const real1_f &nw, const bool &md, const bool &sd, const bool &sh,
     const bool &bdt, const bool &pg, const bool &tn, const bool &hy,
     const bool &oc, const bool &hp, const bool &sp)
     : Module(QRACK_NEURON_LAYER_T), lowest_cmb(lowest_combo),
-      highest_cmb(highest_combo), activation_fn(activation), pre_qfn(pre_fn),
-      post_qfn(post_fn), input_indices(input_q), hidden_indices(hidden_q),
-      output_indices(output_q), requires_grad(true) {
+      highest_cmb(highest_combo), pre_qfn(pre_fn), post_qfn(post_fn),
+      activation_fn(activation), input_indices(input_q),
+      hidden_indices(hidden_q), output_indices(output_q), requires_grad(true) {
 
   if (pre_init && (pre_fn != CUSTOM_QFN)) {
     throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
@@ -214,9 +214,9 @@ void QrackNeuronLayer::save(std::ostream &os) const {
   Serializer::write_tcapint(os, (tcapint)(hidden_indices.size()));
   Serializer::write_tcapint(os, (tcapint)lowest_cmb);
   Serializer::write_tcapint(os, (tcapint)highest_cmb);
-  Serializer::write_qneuron_activation_fn(os, activation_fn);
   Serializer::write_quantum_fn(os, pre_qfn);
   Serializer::write_quantum_fn(os, post_qfn);
+  Serializer::write_qneuron_activation_fn(os, activation_fn);
 
   for (size_t i = 0U; i < neurons.size(); ++i) {
     neurons[i]->angles->save(os);

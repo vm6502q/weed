@@ -41,8 +41,7 @@ int main() {
       std::vector<tcapint>{1, 0}, false, DeviceTag::CPU);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<QrackNeuronLayer>(
-          2, 1, 0, 2, 2, Qrack::QNeuronActivationFn::Sigmoid, ALT_BELL_GHZ_QFN),
+      std::make_shared<QrackNeuronLayer>(2, 1, 0, 2, 2, ALT_BELL_GHZ_QFN),
       std::make_shared<MeanCenter>(),
       std::make_shared<Linear>(1, 1, false, false),
       std::make_shared<Sigmoid>()};
@@ -86,7 +85,7 @@ int main() {
 
   std::cout << "In: [[0, 0], [1, 0], [0, 1], [1, 1]]" << std::endl;
 
-  TensorPtr y_pred = m->forward(x);
+  TensorPtr y_pred = model.forward(x);
   RealStorage &storage = *static_cast<RealStorage *>(y_pred->storage.get());
 
   std::cout << "Out: [";
