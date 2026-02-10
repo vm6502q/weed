@@ -39,7 +39,7 @@ TensorPtr Dropout::forward(const TensorPtr x) {
   mask = std::make_shared<Tensor>(m, x->shape, x->stride);
 
   // y = x * mask / (1 - p)
-  return (x * mask) / (ONE_R1 - p);
+  return (x * mask) / real1(ONE_R1 - p);
 }
 void Dropout::save(std::ostream &os) const {
   Serializer::write_real(os, p);

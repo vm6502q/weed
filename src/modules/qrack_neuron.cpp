@@ -56,14 +56,15 @@ TensorPtr QrackNeuron::forward() {
   // x is angles tensor
 
   // Save simulator state
-  const real1 pre_prob = neuron->GetSimulator()->Prob(neuron->GetOutputIndex());
-  const real1 post_prob = neuron->Predict(data, true, false, activation_fn);
-  const real1 delta = std::asin(post_prob) - std::asin(pre_prob);
-  const real1 denom =
-      std::max(std::sqrt(std::max(ONE_R1 - post_prob * post_prob, ZERO_R1)),
-               FP_NORM_EPSILON);
+  const real1_f pre_prob =
+      neuron->GetSimulator()->Prob(neuron->GetOutputIndex());
+  const real1_f post_prob = neuron->Predict(data, true, false, activation_fn);
+  const real1_f delta = std::asin(post_prob) - std::asin(pre_prob);
+  const real1_f denom =
+      std::max(std::sqrt(std::max(ONE_R1 - post_prob * post_prob, real1_f(0))),
+               real1_f(FP_NORM_EPSILON));
 
-  TensorPtr out = std::make_shared<Tensor>(delta, angles->requires_grad);
+  TensorPtr out = std::make_shared<Tensor>(real1(delta), angles->requires_grad);
 
   if (angles->requires_grad) {
     out->make_gradient();
@@ -80,7 +81,7 @@ TensorPtr QrackNeuron::forward() {
 
           neuron->Unpredict(data, true, activation_fn);
 
-          const real1 upstream = doo[0U] / denom;
+          const real1_f upstream = doo[0U] / denom;
 
           const tcapint max_lcv = angles->get_broadcast_size();
           for (size_t i = 0U; i < max_lcv; ++i) {
@@ -88,18 +89,18 @@ TensorPtr QrackNeuron::forward() {
 
             // +π/2
             data[i] = theta + SineShift;
-            const real1 p_plus =
+            const real1_f p_plus =
                 neuron->Predict(data, true, false, activation_fn);
             neuron->Unpredict(data, true, activation_fn);
 
             // -π/2
             data[i] = theta - SineShift;
-            const real1 p_minus =
+            const real1_f p_minus =
                 neuron->Predict(data, true, false, activation_fn);
             neuron->Unpredict(data, true, activation_fn);
 
-            const real1 grad = (p_plus - p_minus) / 2;
-            dxo.add(i, grad * upstream);
+            const real1_f grad = (p_plus - p_minus) / 2;
+            dxo.add(i, real1(grad * upstream));
 
             data[i] = theta;
           }

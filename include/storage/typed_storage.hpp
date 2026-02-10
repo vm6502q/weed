@@ -54,12 +54,12 @@ template <typename T> struct TypedStorage : Storage {
   /**
    * Fill the entire Storage with 0
    */
-  void FillZeros() { FillValue((T)ZERO_R1); }
+  void FillZeros() { FillValue(T()); }
 
   /**
    * Fill the entire Storage with 1
    */
-  void FillOnes() { FillValue((T)ONE_R1); }
+  void FillOnes() { FillValue(T(real1(1))); }
 
   /**
    * Fill the entire Storage with specified real value

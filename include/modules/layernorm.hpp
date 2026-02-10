@@ -25,15 +25,15 @@ struct LayerNorm : Module {
   ParameterPtr beta;  // shift
 
   LayerNorm() : Module(LAYERNORM_T) {}
-  LayerNorm(const tcapint &f, const real1 &e = FP_NORM_EPSILON,
-            const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE)
+  LayerNorm(const tcapint &f, const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
+            const real1 &e = FP_NORM_EPSILON)
       : Module(LAYERNORM_T), features(f), eps(e) {
-    gamma = std::make_shared<Parameter>(std::vector<real1>(f, ZERO_R1),
+    gamma = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
                                         std::vector<tcapint>{f},
                                         std::vector<tcapint>{1}, dtag);
     gamma->storage->FillOnes();
 
-    beta = std::make_shared<Parameter>(std::vector<real1>(f, ZERO_R1),
+    beta = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
                                        std::vector<tcapint>{f},
                                        std::vector<tcapint>{1}, dtag);
     beta->storage->FillZeros();
@@ -50,7 +50,7 @@ struct LayerNorm : Module {
     TensorPtr var = Tensor::mean(xc * xc, 1);
 
     // normalized by sqrt(σ² + eps)
-    TensorPtr y = xc / ((var + eps) ^ (ONE_R1 / 2));
+    TensorPtr y = xc / ((var + eps) ^ real1(0.5f));
 
     // affine transform
     y = y * gamma + beta;

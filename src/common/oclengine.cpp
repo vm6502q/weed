@@ -238,13 +238,13 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path,
                      (long unsigned int)qheader_uint64_cl_len});
 #endif
 
-#if WEED_TCAPPOW < 5
+#if WEED_FPPOW < 5
   sources.push_back(
       {(const char *)qheader_half_cl, (long unsigned int)qheader_half_cl_len});
-#elif WEED_TCAPPOW < 6
+#elif WEED_FPPOW < 6
   sources.push_back({(const char *)qheader_float_cl,
                      (long unsigned int)qheader_float_cl_len});
-#elif WEED_TCAPPOW < 7
+#elif WEED_FPPOW < 7
   sources.push_back({(const char *)qheader_double_cl,
                      (long unsigned int)qheader_double_cl_len});
 #else

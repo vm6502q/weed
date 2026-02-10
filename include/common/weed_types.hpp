@@ -129,7 +129,18 @@ typedef std::unique_ptr<complex[], void (*)(complex *)> ComplexPtr;
 #define bitsInByte 8U
 #define WEED_ALIGN_SIZE 64U
 
-#if WEED_FPPOW < 6
+#if (WEED_FPPOW > 4) || defined(__arm__)
+#define WEED_CONST constexpr
+#else
+#define WEED_CONST const
+#endif
+
+#if WEED_FPPOW < 5
+WEED_CONST real1 ZERO_R1_F = real1(0.0f);
+WEED_CONST real1 QUARTER_R1_F = real1(0.25f);
+WEED_CONST real1 HALF_R1_F = real1(0.5f);
+WEED_CONST real1 ONE_R1_F = real1(1.0f);
+#elif WEED_FPPOW < 6
 #define ZERO_R1_F 0.0f
 #define QUARTER_R1_F 0.25f
 #define HALF_R1_F 0.5f
@@ -139,12 +150,6 @@ typedef std::unique_ptr<complex[], void (*)(complex *)> ComplexPtr;
 #define QUARTER_R1_F 0.25
 #define HALF_R1_F 0.5
 #define ONE_R1_F 1.0
-#endif
-
-#if (WEED_FPPOW > 4) || defined(__arm__)
-#define WEED_CONST constexpr
-#else
-#define WEED_CONST const
 #endif
 
 #define REAL1_DEFAULT_ARG -999.0f
