@@ -21,7 +21,7 @@
 
 #include <set>
 #include <vector>
-#if CPP_STD >= 20
+#if WEED_CPP_STD >= 20
 #include <bit>
 #endif
 
@@ -29,10 +29,10 @@ namespace Weed {
 inline tlenint log2Gpu(tcapint n) {
 // Source:
 // https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
-#if CPP_STD >= 20
+#if WEED_CPP_STD >= 20
   return std::bit_width(n) - 1U;
 #elif ENABLE_INTRINSICS && defined(_WIN32) && !defined(__CYGWIN__)
-#if UINTPOW < 6
+#if WEED_TCAPPOW < 6
   return (tlenint)(bitsInByte * sizeof(unsigned int) -
                    _lzcnt_u32((unsigned int)n) - 1U);
 #else
@@ -40,7 +40,7 @@ inline tlenint log2Gpu(tcapint n) {
                    _lzcnt_u64((unsigned long long)n) - 1U);
 #endif
 #elif ENABLE_INTRINSICS && !defined(__APPLE__)
-#if UINTPOW < 6
+#if WEED_TCAPPOW < 6
   return (tlenint)(bitsInByte * sizeof(unsigned int) -
                    __builtin_clz((unsigned int)n) - 1U);
 #else

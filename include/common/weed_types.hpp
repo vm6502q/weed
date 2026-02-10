@@ -72,7 +72,7 @@ typedef __fp16 real1;
 typedef float real1_f;
 typedef float real1_s;
 #else
-#if (CPP_STD >= 23) && __has_include(<stdfloat>)
+#if (WEED_CPP_STD >= 23) && __has_include(<stdfloat>)
 #include <stdfloat>
 #endif
 #if defined(__STDCPP_FLOAT16_T__)
@@ -99,7 +99,7 @@ typedef double real1;
 typedef double real1_f;
 typedef double real1_s;
 #else
-#if (CPP_STD >= 23) && __has_include(<stdfloat>)
+#if (WEED_CPP_STD >= 23) && __has_include(<stdfloat>)
 #include <stdfloat>
 #endif
 #if defined(__STDCPP_FLOAT128_T__)
@@ -191,47 +191,6 @@ WEED_CONST real1 ADAM_BETA1_DEFAULT = (real1)0.9;
 WEED_CONST real1 ADAM_BETA2_DEFAULT = (real1)0.999;
 WEED_CONST real1 ADAM_EPSILON_DEFAULT = (real1)1e-8;
 #define SineShift M_PI_2
-
-#if ENABLE_CUDA
-#if WEED_FPPOW < 5
-#include <cuda_fp16.h>
-#define qCudaReal1 __half
-#define qCudaReal2 __half2
-#define qCudaReal4 __half2 *
-#define qCudaCmplx __half2
-#define qCudaCmplx2 __half2 *
-#define qCudaReal1_f float
-#define make_qCudaCmplx make_half2
-#define ZERO_R1_CUDA ((qCudaReal1)0.0f)
-#define REAL1_EPSILON_CUDA ((qCudaReal1)0.000000477f)
-#define PI_R1_CUDA M_PI
-#elif WEED_FPPOW < 6
-#define qCudaReal1 float
-#define qCudaReal2 float2
-#define qCudaReal4 float4
-#define qCudaCmplx float2
-#define qCudaCmplx2 float4
-#define qCudaReal1_f float
-#define make_qCudaCmplx make_float2
-#define make_qCudaCmplx2 make_float4
-#define ZERO_R1_CUDA 0.0f
-#define REAL1_EPSILON_CUDA REAL1_EPSILON
-#define PI_R1_CUDA PI_R1
-#else
-#define qCudaReal1 double
-#define qCudaReal2 double2
-#define qCudaReal4 double4
-#define qCudaCmplx double2
-#define qCudaCmplx2 double4
-#define qCudaReal1_f double
-#define make_qCudaCmplx make_double2
-#define make_qCudaCmplx2 make_double4
-#define ZERO_R1_CUDA 0.0
-#define REAL1_EPSILON_CUDA REAL1_EPSILON
-#define PI_R1_CUDA PI_R1
-#endif
-typedef std::shared_ptr<void> BufferPtr;
-#endif
 
 typedef std::unordered_map<tcapint, real1> RealSparseVector;
 typedef std::unordered_map<tcapint, complex> ComplexSparseVector;
