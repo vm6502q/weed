@@ -41,7 +41,8 @@ int main() {
       std::vector<tcapint>{1, 0}, false, DeviceTag::CPU);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<QrackNeuronLayer>(2, 2, 0, 2, 2),
+      std::make_shared<QrackNeuronLayer>(
+          2, 2, 0, 2, 2, Qrack::QNeuronActivationFn::Sigmoid, ALT_BELL_GHZ_QFN),
       std::make_shared<MeanCenter>(), std::make_shared<Linear>(2, 1, false),
       std::make_shared<Sigmoid>()};
 

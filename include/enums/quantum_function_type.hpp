@@ -17,5 +17,10 @@ namespace Weed {
 /**
  * Quantum function types for serialization
  */
-enum QuantumFunctionType { CUSTOM_QFN = 0, NONE_QFN = 1, BELL_GHZ_QFN = 2 };
+enum QuantumFunctionType {
+  CUSTOM_QFN = 0,
+  NONE_QFN = 1,
+  BELL_GHZ_QFN = 2,
+  ALT_BELL_GHZ_QFN = 3
+};
 } // namespace Weed

@@ -61,7 +61,14 @@ QrackNeuronLayer::choose_quantum_fn(QuantumFunctionType fn) {
     return [&](Qrack::QInterfacePtr s) {
       s->H(input_indices[0U]);
       for (size_t i = 1U; i < input_indices.size(); ++i) {
-        s->CNOT(i - 1U, i);
+        s->CNOT(input_indices[i - 1U], input_indices[i]);
+      }
+    };
+  case ALT_BELL_GHZ_QFN:
+    return [&](Qrack::QInterfacePtr s) {
+      s->H(input_indices[0U]);
+      for (size_t i = 1U; i < input_indices.size(); ++i) {
+        s->AntiCNOT(input_indices[i - 1U], input_indices[i]);
       }
     };
   case CUSTOM_QFN:
