@@ -112,6 +112,14 @@ int main(int argc, char *argv[]) {
     TEST_DTAG = DeviceTag::GPU;
     num_failed = session.run();
   }
+
+  if (num_failed == 0) {
+    session.config().stream() << "################################### Default "
+                                 "###################################"
+                              << std::endl;
+    TEST_DTAG = DeviceTag::DEFAULT_DEVICE;
+    num_failed = session.run();
+  }
 #endif
 
   return num_failed;
