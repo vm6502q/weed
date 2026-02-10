@@ -15,6 +15,7 @@
 #include "autograd/bci_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
+#include "modules/mean_center.hpp"
 #include "modules/qrack_neuron_layer.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"

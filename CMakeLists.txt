@@ -246,6 +246,7 @@ install (FILES
     include/modules/lstm.hpp
     include/modules/max.hpp
     include/modules/mean.hpp
+    include/modules/mean_center.hpp
     include/modules/migrate_cpu.hpp
     include/modules/migrate_gpu.hpp
     include/modules/min.hpp

@@ -129,10 +129,7 @@ QrackNeuronLayer::QrackNeuronLayer(
     prototype->H(output_id);
   }
 
-  for (const auto &n : neurons) {
-    const std::vector<ParameterPtr> p = n->parameters();
-    param_vector.insert(param_vector.end(), p.begin(), p.end());
-  }
+  update_param_vector();
 
   if (pre_init) {
     pre_init(prototype);
@@ -200,16 +197,18 @@ void QrackNeuronLayer::save(std::ostream &os) const {
   }
 
   Module::save(os);
+
   Serializer::write_tcapint(os, (tcapint)(input_indices.size()));
-  Serializer::write_tcapint(os, (tcapint)(hidden_indices.size()));
   Serializer::write_tcapint(os, (tcapint)(output_indices.size()));
+  Serializer::write_tcapint(os, (tcapint)(hidden_indices.size()));
   Serializer::write_tcapint(os, (tcapint)lowest_cmb);
   Serializer::write_tcapint(os, (tcapint)highest_cmb);
   Serializer::write_qneuron_activation_fn(os, activation_fn);
   Serializer::write_quantum_fn(os, pre_qfn);
   Serializer::write_quantum_fn(os, post_qfn);
+
   for (size_t i = 0U; i < neurons.size(); ++i) {
-    neurons[i]->save(os);
+    neurons[i]->angles->save(os);
   }
 }
 } // namespace Weed

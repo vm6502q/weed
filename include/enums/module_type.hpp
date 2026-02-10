@@ -44,7 +44,7 @@ enum ModuleType {
   RESHAPE_T = 23,
   VARIANCE_T = 24,
   STDDEV_T = 25,
-  POSITIONAL_ENCODING_T = 26
-
+  POSITIONAL_ENCODING_T = 26,
+  MEAN_CENTER_T = 27
 };
 } // namespace Weed

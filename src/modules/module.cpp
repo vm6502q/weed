@@ -22,6 +22,7 @@
 #include "modules/lstm.hpp"
 #include "modules/max.hpp"
 #include "modules/mean.hpp"
+#include "modules/mean_center.hpp"
 #include "modules/migrate_cpu.hpp"
 #include "modules/migrate_gpu.hpp"
 #include "modules/min.hpp"
@@ -138,6 +139,9 @@ ModulePtr Module::load(std::istream &is) {
   case ModuleType::MIGRATE_GPU_T: {
     return std::make_shared<MigrateGpu>();
   }
+  case ModuleType::MEAN_CENTER_T: {
+    return std::make_shared<MeanCenter>();
+  }
   case ModuleType::SOFTMAX_T: {
     symint axis;
     Serializer::read_symint(is, axis);
@@ -220,8 +224,8 @@ ModulePtr Module::load(std::istream &is) {
   case QRACK_NEURON_LAYER_T: {
     tcapint input_q, output_q, hidden_q;
     Serializer::read_tcapint(is, input_q);
-    Serializer::read_tcapint(is, hidden_q);
     Serializer::read_tcapint(is, output_q);
+    Serializer::read_tcapint(is, hidden_q);
     tcapint lowest_combo, highest_combo;
     Serializer::read_tcapint(is, lowest_combo);
     Serializer::read_tcapint(is, highest_combo);
@@ -240,6 +244,8 @@ ModulePtr Module::load(std::istream &is) {
       qnl->neurons[i]->angles =
           std::dynamic_pointer_cast<Parameter>(Parameter::load(is));
     }
+
+    qnl->update_param_vector();
 
     return qnl;
   }

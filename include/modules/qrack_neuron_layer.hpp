@@ -55,6 +55,13 @@ struct QrackNeuronLayer : public Module {
       const bool &pg = true, const bool &tn = true, const bool &hy = true,
       const bool &oc = true, const bool &hp = false, const bool &sp = false);
 
+  void update_param_vector() {
+    for (const auto &n : neurons) {
+      const std::vector<ParameterPtr> p = n->parameters();
+      param_vector.insert(param_vector.end(), p.begin(), p.end());
+    }
+  }
+
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 
   void train() override {
