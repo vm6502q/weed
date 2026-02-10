@@ -88,14 +88,13 @@ QrackNeuronLayer::QrackNeuronLayer(
     const QuantumFunctionType pre_fn, const QuantumFunctionType post_fn,
     const Qrack::QNeuronActivationFn &activation,
     const std::function<void(Qrack::QInterfacePtr)> &pre_init,
-    const std::function<void(Qrack::QInterfacePtr)> &post_init,
-    const real1_f &nw, const bool &md, const bool &sd, const bool &sh,
-    const bool &bdt, const bool &pg, const bool &tn, const bool &hy,
-    const bool &oc, const bool &hp, const bool &sp)
+    const std::function<void(Qrack::QInterfacePtr)> &post_init, const bool &md,
+    const bool &sd, const bool &bdt, const bool &hp, const bool &sp)
     : Module(QRACK_NEURON_LAYER_T), lowest_cmb(lowest_combo),
       highest_cmb(highest_combo), pre_qfn(pre_fn), post_qfn(post_fn),
       activation_fn(activation), input_indices(input_q),
-      hidden_indices(hidden_q), output_indices(output_q), requires_grad(true) {
+      hidden_indices(hidden_q), output_indices(output_q), requires_grad(true),
+      _md(md), _sd(sd), _bdt(bdt), _hp(hp), _sp(sp) {
 
   if (pre_init && (pre_fn != CUSTOM_QFN)) {
     throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
@@ -108,8 +107,8 @@ QrackNeuronLayer::QrackNeuronLayer(
 
   const bitLenInt num_qubits = input_q + output_q + hidden_q;
   prototype = Qrack::CreateArrangedLayersFull(
-      nw, md, sd, sh, bdt, pg, tn, hy, oc, num_qubits, Qrack::ZERO_BCI, nullptr,
-      Qrack::CMPLX_DEFAULT_ARG, false, true, hp, sp);
+      false, md, sd, true, bdt, !sp, true, !sp, !sp, num_qubits,
+      Qrack::ZERO_BCI, nullptr, Qrack::CMPLX_DEFAULT_ARG, false, true, hp, sp);
   for (bitLenInt i = 0U; i < input_q; ++i) {
     input_indices[i] = i;
   }
@@ -217,6 +216,11 @@ void QrackNeuronLayer::save(std::ostream &os) const {
   Serializer::write_quantum_fn(os, pre_qfn);
   Serializer::write_quantum_fn(os, post_qfn);
   Serializer::write_qneuron_activation_fn(os, activation_fn);
+  Serializer::write_bool(os, _md);
+  Serializer::write_bool(os, _sd);
+  Serializer::write_bool(os, _bdt);
+  Serializer::write_bool(os, _hp);
+  Serializer::write_bool(os, _sp);
 
   for (size_t i = 0U; i < neurons.size(); ++i) {
     neurons[i]->angles->save(os);

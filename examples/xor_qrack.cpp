@@ -85,7 +85,7 @@ int main() {
 
   std::cout << "In: [[0, 0], [1, 0], [0, 1], [1, 1]]" << std::endl;
 
-  TensorPtr y_pred = model.forward(x);
+  TensorPtr y_pred = m->forward(x);
   RealStorage &storage = *static_cast<RealStorage *>(y_pred->storage.get());
 
   std::cout << "Out: [";

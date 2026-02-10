@@ -41,6 +41,12 @@ struct QrackNeuronLayer : public Module {
   std::vector<ParameterPtr> param_vector;
   bool requires_grad;
 
+  bool _md;
+  bool _sd;
+  bool _bdt;
+  bool _hp;
+  bool _sp;
+
   QrackNeuronLayer(
       const size_t &input_q, const size_t &output_q, const size_t &hidden_q,
       const size_t &lowest_combo, const size_t &highest_combo,
@@ -50,10 +56,8 @@ struct QrackNeuronLayer : public Module {
           Qrack::QNeuronActivationFn::Sigmoid,
       const std::function<void(Qrack::QInterfacePtr)> &pre_init = nullptr,
       const std::function<void(Qrack::QInterfacePtr)> &post_init = nullptr,
-      const real1_f &nw = ZERO_R1, const bool &md = false,
-      const bool &sd = true, const bool &sh = true, const bool &bdt = false,
-      const bool &pg = true, const bool &tn = true, const bool &hy = true,
-      const bool &oc = true, const bool &hp = false, const bool &sp = false);
+      const bool &md = false, const bool &sd = true, const bool &bdt = false,
+      const bool &hp = false, const bool &sp = false);
 
   void update_param_vector() {
     param_vector.clear();
