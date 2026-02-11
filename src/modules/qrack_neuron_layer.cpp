@@ -93,8 +93,7 @@ QrackNeuronLayer::QrackNeuronLayer(
     : Module(QRACK_NEURON_LAYER_T), lowest_cmb(lowest_combo),
       highest_cmb(highest_combo), pre_qfn(pre_fn), post_qfn(post_fn),
       activation_fn(activation), input_indices(input_q),
-      hidden_indices(hidden_q), output_indices(output_q), requires_grad(true),
-      _md(md), _sd(sd), _bdt(bdt), _hp(hp), _sp(sp) {
+      hidden_indices(hidden_q), output_indices(output_q), requires_grad(true) {
 
   if (pre_init && (pre_fn != CUSTOM_QFN)) {
     throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
@@ -109,6 +108,20 @@ QrackNeuronLayer::QrackNeuronLayer(
   prototype = Qrack::CreateArrangedLayersFull(
       false, md, sd, true, bdt, !sp, true, !sp, !sp, num_qubits,
       Qrack::ZERO_BCI, nullptr, Qrack::CMPLX_DEFAULT_ARG, false, true, hp, sp);
+  qrack_config_mask = md ? 1U : 0U;
+  if (sd) {
+    qrack_config_mask |= 2U;
+  }
+  if (bdt) {
+    qrack_config_mask |= 4U;
+  }
+  if (hp) {
+    qrack_config_mask |= 8U;
+  }
+  if (sp) {
+    qrack_config_mask |= 16U;
+  }
+
   for (bitLenInt i = 0U; i < input_q; ++i) {
     input_indices[i] = i;
   }
@@ -216,20 +229,7 @@ void QrackNeuronLayer::save(std::ostream &os) const {
   Serializer::write_quantum_fn(os, pre_qfn);
   Serializer::write_quantum_fn(os, post_qfn);
   Serializer::write_qneuron_activation_fn(os, activation_fn);
-  tcapint mask = _md ? 1U : 0U;
-  if (_sd) {
-    mask |= 2U;
-  }
-  if (_bdt) {
-    mask |= 4U;
-  }
-  if (_hp) {
-    mask |= 8U;
-  }
-  if (_sp) {
-    mask |= 16U;
-  }
-  Serializer::write_tcapint(os, mask);
+  Serializer::write_tcapint(os, qrack_config_mask);
 
   for (size_t i = 0U; i < neurons.size(); ++i) {
     neurons[i]->angles->save(os);

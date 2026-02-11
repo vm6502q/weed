@@ -41,11 +41,7 @@ struct QrackNeuronLayer : public Module {
   std::vector<ParameterPtr> param_vector;
   bool requires_grad;
 
-  bool _md;
-  bool _sd;
-  bool _bdt;
-  bool _hp;
-  bool _sp;
+  tcapint qrack_config_mask;
 
   QrackNeuronLayer(
       const size_t &input_q, const size_t &output_q, const size_t &hidden_q,
