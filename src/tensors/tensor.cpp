@@ -736,10 +736,10 @@ TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
     st[0U] = 0U;
   } else {
     const size_t p_stride = acp->stride[axis];
-    sh[axis] = 1U;
-    st[axis] = 0U;
-    const size_t o_stride = acp->stride[axis + 1] / p_stride;
-    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
+    sh.erase(sh.begin() + axis);
+    st.erase(st.begin() + axis);
+    const size_t o_stride = acp->stride[axis] / p_stride;
+    for (size_t j = axis; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
     }
   }
@@ -747,6 +747,8 @@ TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::reduce(axis, *(a.get()), *(out.get()));
+
+  out->unsqueeze(axis);
 
   if (rg) {
     make_sum_node(a, out, axis);
@@ -799,10 +801,10 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
     st[0U] = 0U;
   } else {
     const size_t p_stride = acp->stride[axis];
-    sh[axis] = 1U;
-    st[axis] = 0U;
-    const size_t o_stride = acp->stride[axis + 1] / p_stride;
-    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
+    sh.erase(sh.begin() + axis);
+    st.erase(st.begin() + axis);
+    const size_t o_stride = acp->stride[axis] / p_stride;
+    for (size_t j = axis; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
     }
   }
@@ -810,6 +812,8 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::max(axis, *(a.get()), *(out.get()));
+
+  out->unsqueeze(axis);
 
   if (rg) {
     make_match_node(a, out, axis);
@@ -830,10 +834,10 @@ TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
     st[0U] = 0U;
   } else {
     const size_t p_stride = acp->stride[axis];
-    sh[axis] = 1U;
-    st[axis] = 0U;
-    const size_t o_stride = acp->stride[axis + 1] / p_stride;
-    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
+    sh.erase(sh.begin() + axis);
+    st.erase(st.begin() + axis);
+    const size_t o_stride = acp->stride[axis] / p_stride;
+    for (size_t j = axis; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
     }
   }
@@ -841,6 +845,8 @@ TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::min(axis, *(a.get()), *(out.get()));
+
+  out->unsqueeze(axis);
 
   if (rg) {
     make_match_node(a, out, axis);
