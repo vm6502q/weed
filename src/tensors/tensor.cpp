@@ -748,9 +748,6 @@ TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::reduce(axis, *(a.get()), *(out.get()));
 
-  out->shape.insert(out->shape.begin() + axis, a->shape[axis]);
-  out->stride.insert(out->stride.begin() + axis, 0U);
-
   if (rg) {
     make_sum_node(a, out, axis);
   }
@@ -814,9 +811,6 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::max(axis, *(a.get()), *(out.get()));
 
-  out->shape.insert(out->shape.begin() + axis, a->shape[axis]);
-  out->stride.insert(out->stride.begin() + axis, 0U);
-
   if (rg) {
     make_match_node(a, out, axis);
   }
@@ -847,9 +841,6 @@ TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::min(axis, *(a.get()), *(out.get()));
-
-  out->shape.insert(out->shape.begin() + axis, a->shape[axis]);
-  out->stride.insert(out->stride.begin() + axis, 0U);
 
   if (rg) {
     make_match_node(a, out, axis);

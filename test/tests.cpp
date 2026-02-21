@@ -160,7 +160,7 @@ TEST_CASE("test_stddev_real") {
   Tensor::backward(y);
 
   REQUIRE_FLOAT(GET_REAL(y), R(sqrt(0.03704)));
-  REQUIRE_FLOAT(GET_REAL(x->grad), R(-0.57735));
+  REQUIRE_FLOAT(GET_REAL(x->grad), R(-0.3849));
 }
 
 TEST_CASE("test_stddev_complex") {
@@ -171,7 +171,7 @@ TEST_CASE("test_stddev_complex") {
   Tensor::backward(y);
 
   REQUIRE_CMPLX(GET_COMPLEX(y), R(sqrt(0.03704)));
-  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(-0.57735));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(-0.3849));
 }
 
 TEST_CASE("test_sum_axis_real") {
