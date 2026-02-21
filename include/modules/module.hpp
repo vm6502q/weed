@@ -13,6 +13,7 @@
 
 #include "enums/module_type.hpp"
 #include "tensors/parameter.hpp"
+#include "tensors/symbol_tensor.hpp"
 
 #if QRACK_AVAILABLE
 #include "qrack/qfactory.hpp"
@@ -66,8 +67,9 @@ struct Module {
    * Run inference on a symbolic, real, or complex Tensor (and setup gradient
    * nodes if in training mode)
    */
-  virtual TensorPtr forward(const BaseTensorPtr t) {
-    return forward(std::dynamic_pointer_cast<Tensor>(t));
+  virtual TensorPtr forward(const SymbolTensorPtr t) {
+    throw std::domain_error(
+        "Embedding::forward(x) takes a Tensor, not a SymbolTensor!");
   }
   /**
    * Get the trainable parameters of this module

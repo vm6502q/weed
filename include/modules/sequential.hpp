@@ -40,9 +40,21 @@ struct Sequential : public Module {
     }
   }
 
+  using Module::forward;
   TensorPtr forward(const TensorPtr x) override {
     TensorPtr tmp = x;
     for (size_t i = 0U; i < layers.size(); ++i) {
+      tmp = layers[i]->forward(tmp);
+    }
+
+    return tmp;
+  }
+  TensorPtr forward(const SymbolTensorPtr x) {
+    if (layers.empty()) {
+        return std::make_shared<Tensor>();
+    }
+    TensorPtr tmp = layers[0]->forward(x);
+    for (size_t i = 1U; i < layers.size(); ++i) {
       tmp = layers[i]->forward(tmp);
     }
 
@@ -53,4 +65,5 @@ struct Sequential : public Module {
 
   void save(std::ostream &) const override;
 };
+typedef std::shared_ptr<Sequential> SequentialPtr;
 } // namespace Weed
