@@ -468,11 +468,6 @@ void Tensor::backward(TensorPtr loss) {
 }
 
 TensorPtr Tensor::reshape(const TensorPtr a, const std::vector<symint> &s) {
-  if (!a->is_contiguous()) {
-    throw std::invalid_argument(
-        "Tensor::reshape() requires contiguous tensor!");
-  }
-
   const tcapint total = a->get_size();
 
   // Resolve -1
@@ -1181,7 +1176,7 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
     out_shape.push_back(N);
 
     TensorPtr out = allocate_like(out_shape, full_contiguous_stride(out_shape),
-                                  *(out.get()), dt, rg, s);
+                                  *(a3.get()), dt, rg, s);
 
     TensorPtr out3 = reshape(out, {batch, M, N});
 
