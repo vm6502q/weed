@@ -73,6 +73,16 @@ TensorPtr Linear::forward(const TensorPtr x) {
   // W: (in_features, out_features)
   // We want: x @ W → (B, out_features)
 
+  if (x->shape.size() > 2) {
+    symint B = x->shape[0];
+    symint T = x->shape[1];
+    symint D = x->shape[2];
+
+    auto x2d = Tensor::reshape(x, std::vector<symint>{B*T, D});
+
+    return forward(x);
+  }
+
   TensorPtr y = x >> weight;
 
   if (bias) {
