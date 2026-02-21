@@ -30,8 +30,6 @@
 #include <thread>
 #include <unordered_set>
 
-#include <iostream>
-
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 #define IS_SPARSE(a)                                                           \
   (a && a->storage->is_sparse() &&                                             \
@@ -329,30 +327,6 @@ std::vector<TensorPtr> Tensor::chunk(const size_t &chunks,
   return out;
 }
 
-// Contributed by Elara (the OpenAI custom GPT)
-TensorPtr Tensor::slice(const int64_t &axis_, const tcapint &start,
-                        const tcapint &length) {
-  int64_t axis = axis_;
-  if (axis < 0) {
-    axis += shape.size();
-  }
-  if (axis < 0 || axis >= (int64_t)shape.size()) {
-    throw std::invalid_argument("Tensor::slice: axis out of range");
-  }
-
-  if (start < 0 || length <= 0 || start + length > shape[axis]) {
-    throw std::invalid_argument("Tensor::slice: invalid range");
-  }
-
-  TensorPtr out =
-      std::make_shared<Tensor>(*this); // shallow copy (shared storage)
-
-  out->offset += start * stride[axis];
-  out->shape[axis] = length;
-
-  return out;
-}
-
 std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
   std::vector<TensorPtr> filtered;
   for (TensorPtr p : parents) {
@@ -583,6 +557,106 @@ TensorPtr Tensor::logsoftmax(const TensorPtr x, symint axis) {
   TensorPtr logsum = Tensor::log(Tensor::sum(Tensor::exp(x_shifted), axis));
 
   return x_shifted - logsum;
+}
+
+TensorPtr Tensor::slice(TensorPtr a, const int64_t &row) {
+  const bool rg = a->requires_grad;
+
+  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+
+  out->offset += row * a->stride[0U];
+  out->shape[0U] = 1U;
+
+  // Remove dimension BEFORE making grad node
+  out->shape.erase(out->shape.begin());
+  out->stride.erase(out->stride.begin());
+
+  if (rg) {
+    make_row_slice_node(a, out, row);
+  }
+
+  return out;
+}
+
+void Tensor::make_row_slice_node(TensorPtr a, TensorPtr out,
+                                 const tcapint &row) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out, row]() {
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+
+        TensorPtr a_grad = a->grad->cast(dtag);
+        TensorPtr out_grad = out->grad->cast(dtag);
+
+        a_grad->materialize_broadcast();
+
+        TensorPtr row_view = Tensor::slice(a_grad, row);
+
+        Weed::add_in_place(*(row_view.get()), *(out_grad.get()));
+
+        a->grad = a_grad;
+
+        a->reduce_grad_broadcast();
+      });
+}
+
+// Contributed by Elara (the OpenAI custom GPT)
+TensorPtr Tensor::slice(TensorPtr a, int64_t axis, const tcapint &start,
+                        const tcapint &length) {
+
+  while (axis < 0) {
+    axis += a->shape.size();
+  }
+
+  if (axis >= (int64_t)a->shape.size()) {
+    throw std::invalid_argument("Tensor::slice: axis out of range");
+  }
+
+  if (start < 0 || length <= 0 || start + length > a->shape[axis]) {
+    throw std::invalid_argument("Tensor::slice: invalid range");
+  }
+
+  const bool rg = a->requires_grad;
+  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+
+  out->offset += start * a->stride[axis];
+  out->shape[axis] = length;
+
+  if (rg) {
+    make_slice_node(a, out, axis, start);
+  }
+
+  return out;
+}
+
+void Tensor::make_slice_node(TensorPtr a, TensorPtr out, const int64_t &axis,
+                             const tcapint &start) {
+  out->make_gradient();
+  out->grad_node = std::make_shared<Node>(
+      std::vector<TensorPtr>{a}, [a, out, axis, start]() {
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+
+        TensorPtr a_grad = a->grad->cast(dtag);
+        TensorPtr out_grad = out->grad->cast(dtag);
+
+        a_grad->materialize_broadcast();
+
+        // Create zero tensor same shape as parent
+        TensorPtr tmp = allocate_like(*(a_grad.get()), a_grad->storage->dtype,
+                                      false, IS_SPARSE(out_grad));
+
+        // Create view into tmp matching slice region
+        TensorPtr tmp_slice = slice(tmp, axis, start, out_grad->shape[axis]);
+
+        // Copy gradient into correct region
+        Weed::add_in_place(*(tmp_slice.get()), *(out_grad.get()));
+
+        Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+
+        a->grad = a_grad;
+
+        a->reduce_grad_broadcast();
+      });
 }
 
 TensorPtr Tensor::sum(TensorPtr a) {
@@ -1025,6 +1099,7 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
         Weed::clamp_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()), lo,
                          hi);
         a->grad = a_grad;
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -1206,9 +1281,9 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
 
     // loop over batch
     for (symint i = 0; i < batch; ++i) {
-      TensorPtr ai = a3->slice(i);
-      TensorPtr bi = b3->slice(i);
-      TensorPtr oi = out3->slice(i);
+      TensorPtr ai = slice(a3, i);
+      TensorPtr bi = slice(b3, i);
+      TensorPtr oi = slice(out3, i);
 
       Weed::matmul(*(ai.get()), *(bi.get()), *(oi.get()));
 

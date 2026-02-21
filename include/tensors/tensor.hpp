@@ -159,27 +159,6 @@ struct Tensor : public BaseTensor {
   std::vector<TensorPtr> chunk(const size_t &chunks, const int64_t &axis = -1);
 
   /**
-   * A view into a contiguous sub-range of a Tensor along one axis
-   */
-  TensorPtr slice(const int64_t &axis, const tcapint &start,
-                  const tcapint &length);
-
-  /**
-   * A view into a Tensor along one row
-   */
-  TensorPtr slice(const int64_t &row) {
-    if (row >= shape[0U]) {
-      throw std::invalid_argument("Tensor::slice row is out-of-bounds!");
-    }
-    TensorPtr v = std::make_shared<Tensor>(*this);
-    v->offset += row * stride[0U];
-    v->shape.erase(v->shape.begin());
-    v->stride.erase(v->stride.begin());
-
-    return v;
-  }
-
-  /**
    * Remove all dimensions of size 1
    */
   TensorPtr squeeze() {
@@ -204,10 +183,11 @@ struct Tensor : public BaseTensor {
    */
   TensorPtr squeeze(int64_t axis) {
     while (axis < 0) {
-        axis += shape.size();
+      axis += shape.size();
     }
     if (shape[axis] != 1U) {
-      throw std::invalid_argument("Can only Tensor::squeeze() dimensions with size of 1!");
+      throw std::invalid_argument(
+          "Can only Tensor::squeeze() dimensions with size of 1!");
     }
 
     TensorPtr v = std::make_shared<Tensor>(*this);
@@ -226,7 +206,7 @@ struct Tensor : public BaseTensor {
    */
   TensorPtr unsqueeze(int64_t axis) {
     while (axis < 0) {
-        axis += shape.size();
+      axis += shape.size();
     }
 
     TensorPtr v = std::make_shared<Tensor>(*this);
@@ -374,6 +354,20 @@ struct Tensor : public BaseTensor {
    * Logarithmic softmax activation function
    */
   static TensorPtr logsoftmax(const TensorPtr x, symint axis);
+
+  /**
+   * A view into a Tensor along one row
+   */
+  static TensorPtr slice(TensorPtr a, const int64_t &row);
+  static void make_row_slice_node(TensorPtr a, TensorPtr out,
+                                  const tcapint &row);
+  /**
+   * A view into a contiguous sub-range of a Tensor along one axis
+   */
+  static TensorPtr slice(TensorPtr a, int64_t axis, const tcapint &start,
+                         const tcapint &length);
+  static void make_slice_node(TensorPtr a, TensorPtr out, const int64_t &axis,
+                              const tcapint &start);
 
   /**
    * Sum of all elements (with autograd)
