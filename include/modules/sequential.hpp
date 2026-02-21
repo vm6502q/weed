@@ -51,7 +51,7 @@ struct Sequential : public Module {
   }
   TensorPtr forward(const SymbolTensorPtr x) {
     if (layers.empty()) {
-        return std::make_shared<Tensor>();
+      return std::make_shared<Tensor>();
     }
     TensorPtr tmp = layers[0]->forward(x);
     for (size_t i = 1U; i < layers.size(); ++i) {

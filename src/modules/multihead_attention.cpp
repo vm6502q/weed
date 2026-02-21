@@ -14,20 +14,19 @@
 
 namespace Weed {
 TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
+  // x: (B, T, d_model)
   const auto &sh = x->shape;
   const symint B = sh[0];
   const symint T = sh[1];
 
-  TensorPtr x2d = Tensor::reshape(x, {B * T, d_model});
+  TensorPtr Q = W_q->forward(x);
+  TensorPtr K = W_k->forward(x);
+  TensorPtr V = W_v->forward(x);
 
-  TensorPtr Q = W_q->forward(x2d);
-  TensorPtr K = W_k->forward(x2d);
-  TensorPtr V = W_v->forward(x2d);
-
-  // Restore shape
-  Q = Tensor::reshape(Q, {B, T, d_model});
-  K = Tensor::reshape(K, {B, T, d_model});
-  V = Tensor::reshape(V, {B, T, d_model});
+  // (B, T, H, head_dim)
+  Q = Tensor::reshape(Q, {B, T, num_heads, head_dim});
+  K = Tensor::reshape(K, {B, T, num_heads, head_dim});
+  V = Tensor::reshape(V, {B, T, num_heads, head_dim});
 
   // (B, H, T, head_dim)
   Q = Tensor::transpose(Q, 1, 2);
