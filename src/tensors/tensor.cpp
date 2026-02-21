@@ -1020,6 +1020,8 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         a_grad->upcast(out_grad->storage->dtype);
+        a_grad->materialize_broadcast();
+        out_grad->match_shape(a_grad);
         Weed::clamp_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()), lo,
                          hi);
         a->grad = a_grad;
