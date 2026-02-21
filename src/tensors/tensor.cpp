@@ -124,7 +124,8 @@ TensorPtr Tensor::allocate_scalar_like(const Tensor &orig, const bool &rg) {
 
 TensorPtr Tensor::allocate_like(const Tensor &orig, const DType &dt,
                                 const bool &rg, const bool &s) {
-  TensorPtr n = allocate_like(orig.shape, orig.stride, orig, dt, rg, s);
+  TensorPtr n = allocate_like(orig.shape, full_contiguous_stride(orig.shape),
+                              orig, dt, rg, s);
   n->freeze = orig.freeze;
 
   return n;
@@ -673,6 +674,9 @@ TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::reduce(axis, *(a.get()), *(out.get()));
 
+  out->shape.insert(out->shape.begin() + axis, a->shape[axis]);
+  out->stride.insert(out->stride.begin() + axis, 0U);
+
   if (rg) {
     make_sum_node(a, out, axis);
   }
@@ -700,6 +704,18 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
       });
 }
 
+TensorPtr Tensor::mean(TensorPtr a, const tcapint &axis) {
+  return sum(a, axis) / (real1)(a->shape[axis]);
+}
+
+TensorPtr Tensor::variance(TensorPtr a) {
+  return ((a - mean(a)) ^ real1(2)) / (real1)(a->get_broadcast_size());
+}
+
+TensorPtr Tensor::variance(TensorPtr a, const tcapint &axis) {
+  return ((a - mean(a, axis)) ^ real1(2)) / (real1)(a->get_broadcast_size());
+}
+
 TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
   const bool rg = a->requires_grad;
 
@@ -723,6 +739,9 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::max(axis, *(a.get()), *(out.get()));
+
+  out->shape.insert(out->shape.begin() + axis, a->shape[axis]);
+  out->stride.insert(out->stride.begin() + axis, 0U);
 
   if (rg) {
     make_match_node(a, out, axis);
@@ -754,6 +773,9 @@ TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::min(axis, *(a.get()), *(out.get()));
+
+  out->shape.insert(out->shape.begin() + axis, a->shape[axis]);
+  out->stride.insert(out->stride.begin() + axis, 0U);
 
   if (rg) {
     make_match_node(a, out, axis);

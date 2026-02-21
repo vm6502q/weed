@@ -333,25 +333,17 @@ struct Tensor : public BaseTensor {
   /**
    * Average of all elements by axis (with autograd)
    */
-  static TensorPtr mean(TensorPtr a, const tcapint &axis) {
-    return div(sum(a, axis), SCALAR((real1)a->shape[axis], a));
-  }
+  static TensorPtr mean(TensorPtr a, const tcapint &axis);
 
   /**
    * Variance of all elements (with autograd)
    */
-  static TensorPtr variance(TensorPtr a) {
-    return div(pow(sub(a, mean(a)), real1(2)),
-               SCALAR((real1)a->get_broadcast_size(), a));
-  }
+  static TensorPtr variance(TensorPtr a);
 
   /**
    * Variance of all elements by axis (with autograd)
    */
-  static TensorPtr variance(TensorPtr a, const tcapint &axis) {
-    return div(pow(sub(a, mean(a, axis)), real1(2)),
-               SCALAR((real1)a->shape[axis], a));
-  }
+  static TensorPtr variance(TensorPtr a, const tcapint &axis);
 
   /**
    * Standard deviation of all elements (with autograd)
