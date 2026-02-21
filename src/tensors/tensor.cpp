@@ -1132,25 +1132,117 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 }
 
 TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
-  if ((a->shape.size() != 2U) || (b->shape.size() != 2U)) {
-    throw std::invalid_argument(
-        "Tensor::matmul is only for matrices with 2 indices!");
+  if (a->shape.size() < 2U) {
+    throw std::invalid_argument("Tensor::matmul requires a to have rank >= 2");
   }
 
-  const DeviceTag dtag = get_dtag_by_presidence({a, b});
-  a->cast_in_place(dtag);
-  b->cast_in_place(dtag);
-
-  const tcapint as0 = a->shape[0U];
-  const tcapint bs1 = b->shape[1U];
-  const std::vector<tcapint> shp = {as0, bs1};
-  const std::vector<tcapint> str = {1U, as0};
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
-  TensorPtr out = allocate_like(shp, str, *(a.get()), dt, rg, s);
 
-  Weed::matmul(*(a.get()), *(b.get()), *(out.get()));
+  if (a->shape.size() > 2U && b->shape.size() > 2U) {
+    if (a->shape.size() != b->shape.size()) {
+      throw std::invalid_argument("batched matmul rank mismatch");
+    }
+
+    size_t rank = a->shape.size();
+
+    // Check batch dims
+    for (size_t i = 0; i < rank - 2; ++i) {
+      if (a->shape[i] != b->shape[i]) {
+        throw std::invalid_argument("batched matmul batch mismatch");
+      }
+    }
+
+    symint M = a->shape[rank - 2];
+    symint K = a->shape[rank - 1];
+    symint K2 = b->shape[rank - 2];
+    symint N = b->shape[rank - 1];
+
+    if (K != K2) {
+      throw std::invalid_argument("batched matmul inner dim mismatch");
+    }
+
+    symint batch = 1;
+    for (size_t i = 0; i < rank - 2; ++i) {
+      batch *= a->shape[i];
+    }
+
+    // reshape to 3D
+    TensorPtr a3 = reshape(a, {batch, M, K});
+    TensorPtr b3 = reshape(b, {batch, K, N});
+
+    // allocate output
+    std::vector<tcapint> out_shape;
+    for (size_t i = 0; i < rank - 2; ++i) {
+      out_shape.push_back(a->shape[i]);
+    }
+    out_shape.push_back(M);
+    out_shape.push_back(N);
+
+    TensorPtr out = allocate_like(out_shape, full_contiguous_stride(out_shape),
+                                  *(out.get()), dt, rg, s);
+
+    TensorPtr out3 = reshape(out, {batch, M, N});
+
+    // loop over batch
+    for (symint i = 0; i < batch; ++i) {
+      TensorPtr ai = a3->slice(i);
+      TensorPtr bi = b3->slice(i);
+      TensorPtr oi = out3->slice(i);
+
+      Weed::matmul(*(ai.get()), *(bi.get()), *(oi.get()));
+
+      if (rg) {
+        make_matmul_node(ai, bi, oi);
+      }
+    }
+
+    return out;
+  }
+
+  const bool needs_flatten = (a->shape.size() > 2U);
+
+  const symint K = a->shape.back();
+  const symint M = a->shape[a->shape.size() - 2];
+  const symint N = b->shape[1U];
+
+  if ((symint)(b->shape[0U]) != K) {
+    throw std::invalid_argument("matmul dimension mismatch");
+  }
+
+  symint batch = 1;
+  for (size_t i = 0; i < a->shape.size() - 2; ++i) {
+    batch *= a->shape[i];
+  }
+
+  TensorPtr a2 = a;
+  if (needs_flatten) {
+    a2 = reshape(a, {batch * M, K});
+  }
+
+  const DeviceTag dtag = get_dtag_by_presidence({a2, b});
+  a2->cast_in_place(dtag);
+  b->cast_in_place(dtag);
+
+  const tcapint as0 = a2->shape[0U];
+  const tcapint bs1 = b->shape[1U];
+  const std::vector<tcapint> shp = {as0, bs1};
+  const std::vector<tcapint> str = {1U, as0};
+  TensorPtr out = allocate_like(shp, str, *(a2.get()), dt, rg, s);
+
+  Weed::matmul(*(a2.get()), *(b.get()), *(out.get()));
+
+  if (needs_flatten) {
+    std::vector<symint> final_shape;
+    for (size_t i = 0; i < a->shape.size() - 2; ++i) {
+      final_shape.push_back(a->shape[i]);
+    }
+    final_shape.push_back(M);
+    final_shape.push_back(N);
+
+    out = reshape(out, final_shape);
+  }
 
   if (rg) {
     make_matmul_node(a, b, out);
@@ -1173,24 +1265,61 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     }
     const DeviceTag dtag = get_dtag_by_presidence(p);
     TensorPtr out_grad = out->grad->cast(dtag);
+
+    const bool needs_flatten = (a->shape.size() > 2U);
+    const symint K = a->shape.back();
+    const symint M = a->shape[a->shape.size() - 2];
+    const symint N = b->shape[1U];
+
+    symint batch = 1;
+    for (size_t i = 0; i < a->shape.size() - 2; ++i) {
+      batch *= a->shape[i];
+    }
+
+    TensorPtr a2 = a;
+    TensorPtr out_grad2 = out_grad;
+
+    if (needs_flatten) {
+      a2 = reshape(a, {batch * M, K});
+      out_grad2 = reshape(out_grad, {batch * M, N});
+    }
+
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
       TensorPtr bt = transpose(b)->cast(dtag);
+
       const DType &dt = get_dtype_by_presidence({b, out_grad});
-      TensorPtr tmp = Tensor::allocate_like(*(a_grad.get()), dt, false,
-                                            IS_SPARSE(out_grad));
-      Weed::matmul(*(out_grad.get()), *(bt.get()), *(tmp.get()));
+      TensorPtr tmp = Tensor::allocate_like(
+          std::vector<tcapint>{(tcapint)(batch * M),
+                               (tcapint)K}, // 2D flattened shape
+          std::vector<tcapint>{1U, (tcapint)(batch * M)}, *(a2.get()), dt,
+          false, IS_SPARSE(out_grad));
+
+      Weed::matmul(*(out_grad2.get()), *(bt.get()), *(tmp.get()));
+
+      if (needs_flatten) {
+        std::vector<symint> a_shape(a->shape.size());
+        for (size_t i = 0U; i < a_shape.size(); ++i) {
+          a_shape[i] = (symint)(a->shape[i]);
+        }
+        tmp = reshape(tmp, a_shape); // restore (..., M, K)
+      }
+
       a_grad->upcast(dt);
       Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
       a->grad = a_grad;
     }
+
     if (b->requires_grad) {
       TensorPtr b_grad = b->grad->cast(dtag);
-      TensorPtr at = transpose(a)->cast(dtag);
+      TensorPtr at = transpose(a2)->cast(dtag);
+
       const DType &dt = get_dtype_by_presidence({a, out_grad});
       TensorPtr tmp = Tensor::allocate_like(*(b_grad.get()), dt, false,
                                             IS_SPARSE(out_grad));
-      Weed::matmul(*(at.get()), *(out_grad.get()), *(tmp.get()));
+
+      Weed::matmul(*(at.get()), *(out_grad2.get()), *(tmp.get()));
+
       b_grad->upcast(dt);
       Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
       b->grad = b_grad;

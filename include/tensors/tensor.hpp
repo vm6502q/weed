@@ -165,6 +165,21 @@ struct Tensor : public BaseTensor {
                   const tcapint &length);
 
   /**
+   * A view into a Tensor along one row
+   */
+  TensorPtr slice(const int64_t &row) {
+    if (row >= shape[0U]) {
+      throw std::invalid_argument("Tensor::slice row is out-of-bounds!");
+    }
+    TensorPtr v = std::make_shared<Tensor>(*this);
+    v->offset += row * stride[0U];
+    v->shape.erase(v->shape.begin());
+    v->stride.erase(v->stride.begin());
+
+    return v;
+  }
+
+  /**
    * Tensor initialized with 0
    */
   static TensorPtr zeros(const std::vector<tcapint> &shape,
