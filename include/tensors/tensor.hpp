@@ -64,7 +64,9 @@ struct Tensor : public BaseTensor {
          const std::vector<tcapint> &strd, const bool &rg = false);
   Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
          const std::vector<tcapint> &strd, const bool &rg = false);
-  Tensor(const Tensor &orig) { copy(orig); }
+  Tensor(const Tensor &orig, const bool is_copy_grad = false) {
+    copy(orig, is_copy_grad);
+  }
 
   void validate_dtype(const DType &dtype) {
     if (dtype == DType::INT) {
@@ -89,12 +91,14 @@ struct Tensor : public BaseTensor {
   /**
    * Make this tensor a shallow copy of another
    */
-  void copy(const Tensor &cp) {
+  void copy(const Tensor &cp, const bool is_copy_grad = false) {
     // A tensor is a view on storage:
     BaseTensor::copy(cp);
     freeze = cp.freeze;
-    grad_node = cp.grad_node;
-    grad = cp.grad;
+    if (is_copy_grad) {
+      grad_node = cp.grad_node;
+      grad = cp.grad;
+    }
     requires_grad = cp.requires_grad;
   }
 
