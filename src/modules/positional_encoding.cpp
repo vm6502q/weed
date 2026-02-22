@@ -44,11 +44,23 @@ PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
   pe->eval();
 }
 TensorPtr PositionalEncoding::forward(const TensorPtr x) {
+  symint ap1 = axis + 1;
+  while (ap1 >= (symint)(x->shape.size())) {
+    ap1 -= x->shape.size();
+  }
+  while (ap1 < 0) {
+     ap1 += x->shape.size();
+  }
+  symint a = axis;
+  while (a < 0) {
+     a += x->shape.size();
+  }
+
   // x: [B, T, D]
-  const tcapint T = x->shape[axis + 1U];
+  const tcapint T = x->shape[a + 1U];
 
   // slice pe -> [T, D]
-  TensorPtr pe_slice = Tensor::slice(pe, axis, 0, T);
+  TensorPtr pe_slice = Tensor::slice(pe, a, 0, T);
 
   // broadcast pe_slice to [B, T, D] and add
   return x + pe_slice;
