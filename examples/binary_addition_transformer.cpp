@@ -16,6 +16,7 @@
 #include "modules/linear.hpp"
 #include "modules/positional_encoding.hpp"
 #include "modules/sequential.hpp"
+#include "modules/sigmoid.hpp"
 #include "modules/transformer_encoder_layer.hpp"
 #include "tensors/symbol_tensor.hpp"
 
@@ -95,7 +96,7 @@ int main() {
 
   auto output = std::make_shared<Linear>(d_model, 1);
 
-  Sequential model({embedding, pos_enc, encoder, output});
+  Sequential model({embedding, pos_enc, encoder, output, std::make_shared<Sigmoid>()});
 
   Adam optimizer(R(0.001));
   optimizer.register_parameters(model.parameters());
