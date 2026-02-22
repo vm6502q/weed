@@ -260,14 +260,10 @@ struct BaseTensor {
    */
   static std::vector<tcapint>
   full_contiguous_stride(const std::vector<tcapint> &shp) {
-    if ((shp.size() == 1U) && (shp[0U] == 1U)) {
-      return std::vector<tcapint>{0U};
-    }
-
     std::vector<tcapint> g_stride(shp.size());
     tcapint max_index = 1U;
     for (size_t i = 0U; i < shp.size(); ++i) {
-      g_stride[i] = max_index;
+      g_stride[i] = (shp[i] == 1U) ? 0U : max_index;
       max_index *= shp[i];
     }
 
