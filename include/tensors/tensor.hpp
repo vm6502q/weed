@@ -347,7 +347,7 @@ struct Tensor : public BaseTensor {
       out = std::make_shared<Tensor>(*(a.get()));
     } else {
       out = zeros(
-          a->shape, a->requires_grad,
+          a->shape, false,
           a->storage->is_sparse() &&
               ((a->storage->get_sparse_size() << 1U) < a->storage->size),
           a->storage->dtype, a->storage->device, a->storage->get_device_id());
