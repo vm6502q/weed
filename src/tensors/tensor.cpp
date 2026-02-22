@@ -677,7 +677,13 @@ TensorPtr Tensor::mean(TensorPtr a, symint axis) {
   while (axis < 0) {
     axis += a->shape.size();
   }
-  return sum(a, axis) / (real1)(a->shape[axis]);
+
+  TensorPtr tmp = sum(a, axis);
+  tmp->squeeze(axis);
+  tmp = tmp / (real1)(a->shape[axis]);
+  tmp->unsqueeze(axis);
+
+  return tmp;
 }
 
 TensorPtr Tensor::variance(TensorPtr a) {
@@ -685,7 +691,10 @@ TensorPtr Tensor::variance(TensorPtr a) {
 }
 
 TensorPtr Tensor::variance(TensorPtr a, const tcapint &axis) {
-  return ((a - mean(a, axis)) ^ real1(2)) / (real1)(a->get_broadcast_size());
+  TensorPtr tmp = mean(a, axis);
+  tmp = a - tmp;
+
+  return mean(tmp * tmp, axis);
 }
 
 TensorPtr Tensor::max(TensorPtr a, symint axis) {
