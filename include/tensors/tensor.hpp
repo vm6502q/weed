@@ -388,7 +388,7 @@ struct Tensor : public BaseTensor {
   /**
    * Average of all elements by axis (with autograd)
    */
-  static TensorPtr mean(TensorPtr a, const tcapint &axis);
+  static TensorPtr mean(TensorPtr a, symint axis);
 
   /**
    * Variance of all elements (with autograd)
@@ -415,17 +415,17 @@ struct Tensor : public BaseTensor {
   /**
    * Sum of all elements by axis (with autograd)
    */
-  static TensorPtr sum(TensorPtr a, const tcapint &axis);
+  static TensorPtr sum(TensorPtr a, symint axis);
   static void make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis);
 
   /**
    * Maximum of all elements by axis (with autograd)
    */
-  static TensorPtr max(TensorPtr a, const tcapint &axis);
+  static TensorPtr max(TensorPtr a, symint axis);
   /**
    * Minimum of all elements by axis (with autograd)
    */
-  static TensorPtr min(TensorPtr a, const tcapint &axis);
+  static TensorPtr min(TensorPtr a, symint axis);
   static void make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis);
 
   /**

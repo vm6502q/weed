@@ -93,6 +93,7 @@ int main() {
     std::make_shared<Embedding>(vocab_size, d_model),
     std::make_shared<PositionalEncoding>(seq_len, d_model),
     std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
+    std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
     std::make_shared<Linear>(d_model, 1),
     std::make_shared<Tanh>(),
     std::make_shared<Linear>(1, 1),

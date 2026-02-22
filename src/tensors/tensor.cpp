@@ -724,7 +724,11 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
       });
 }
 
-TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
+TensorPtr Tensor::sum(TensorPtr a, symint axis) {
+  while (axis < 0) {
+    axis += a->shape.size();
+  }
+
   const bool rg = a->requires_grad;
 
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
@@ -772,7 +776,10 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
       });
 }
 
-TensorPtr Tensor::mean(TensorPtr a, const tcapint &axis) {
+TensorPtr Tensor::mean(TensorPtr a, symint axis) {
+  while (axis < 0) {
+    axis += a->shape.size();
+  }
   return sum(a, axis) / (real1)(a->shape[axis]);
 }
 
@@ -784,7 +791,11 @@ TensorPtr Tensor::variance(TensorPtr a, const tcapint &axis) {
   return ((a - mean(a, axis)) ^ real1(2)) / (real1)(a->get_broadcast_size());
 }
 
-TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
+TensorPtr Tensor::max(TensorPtr a, symint axis) {
+  while (axis < 0) {
+    axis += a->shape.size();
+  }
+
   const bool rg = a->requires_grad;
 
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
@@ -813,7 +824,11 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
   return out;
 }
 
-TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
+TensorPtr Tensor::min(TensorPtr a, symint axis) {
+  while (axis < 0) {
+    axis += a->shape.size();
+  }
+
   const bool rg = a->requires_grad;
 
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
