@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "common/serializer.hpp"
 #include "modules/module.hpp"
 
 namespace Weed {
@@ -19,11 +20,12 @@ namespace Weed {
  */
 struct Mean : public Module {
   symint axis;
-  Mean(const symint &axis_ = -1) : Module(MEAN_T), axis(axis_) {}
+  Mean(const symint &axis_ = 0) : Module(MEAN_T), axis(axis_) {}
   TensorPtr forward(const TensorPtr x) override {
     return Tensor::mean(x, axis);
   }
   void save(std::ostream &os) const override {
+    Module::save(os);
     Serializer::write_symint(os, axis);
   }
 };

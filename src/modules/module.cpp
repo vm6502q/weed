@@ -141,7 +141,9 @@ ModulePtr Module::load(std::istream &is) {
     return std::make_shared<MigrateGpu>();
   }
   case ModuleType::MEAN_CENTER_T: {
-    return std::make_shared<MeanCenter>();
+    symint axis;
+    Serializer::read_symint(is, axis);
+    return std::make_shared<MeanCenter>(axis);
   }
   case ModuleType::SOFTMAX_T: {
     symint axis;

@@ -684,7 +684,12 @@ TensorPtr Tensor::mean(TensorPtr a, symint axis) {
     axis += a->shape.size();
   }
 
-  return sum(a, axis) / (real1)(a->shape[axis]);
+  TensorPtr tmp = sum(a, axis);
+  tmp->squeeze(axis);
+  tmp = tmp / (real1)(a->shape[axis]);
+  tmp->unsqueeze(axis);
+
+  return tmp;
 }
 
 TensorPtr Tensor::variance(TensorPtr a) {

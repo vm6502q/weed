@@ -15,7 +15,6 @@
 #include "autograd/bci_with_logits_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
-#include "modules/mean_center.hpp"
 #include "modules/qrack_neuron_layer.hpp"
 #include "modules/sequential.hpp"
 #include "tensors/real_scalar.hpp"
@@ -41,8 +40,7 @@ int main() {
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<QrackNeuronLayer>(2, 1, 0, 2, 2, ALT_BELL_GHZ_QFN),
-      std::make_shared<MeanCenter>(),
-      std::make_shared<Linear>(1, 1, false, false)};
+      std::make_shared<Linear>(1, 1)};
 
   Sequential model(mv);
 
