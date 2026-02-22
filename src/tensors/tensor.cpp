@@ -606,7 +606,7 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
 
   const size_t p_stride = st[axis];
   st[axis] = 0U;
-  if (p_stride < 2U) {
+  if (!p_stride) {
     return acp->squeeze(axis);
   }
 
@@ -675,7 +675,7 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
 
   const size_t p_stride = st[axis];
   st[axis] = 0U;
-  if (p_stride < 2U) {
+  if (!p_stride) {
     return acp->squeeze(axis);
   }
 
@@ -710,8 +710,8 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
 
   const size_t p_stride = st[axis];
   st[axis] = 0U;
-  if (p_stride < 2U) {
-    return acp->squeeze(axis);
+  if (!p_stride) {
+    return a->squeeze(axis);
   }
 
   if (sh.size() != (size_t)(axis + 1)) {
