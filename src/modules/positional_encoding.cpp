@@ -31,7 +31,7 @@ PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
     }
     if (d_model & 1U) {
       const tcapint idx = pos * d_model + (max_i << 1U);
-      const real1 div = (real1)std::pow(10000.0, (2.0 * max_i) / d_model);
+      const real1 div = (real1)std::pow(8192.0, (2.0 * max_i) / d_model);
       values[idx] = std::cos(pos / div);
     }
   }
