@@ -14,7 +14,7 @@
 #include "common/rapidcsv.h"
 
 #include "autograd/adam.hpp"
-#include "autograd/bci_loss.hpp"
+#include "autograd/bci_with_logits_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
 #include "modules/sequential.hpp"
@@ -74,8 +74,7 @@ int main() {
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<Linear>(col_count, col_count << 1U),
-      std::make_shared<Tanh>(), std::make_shared<Linear>(col_count << 1U, 1),
-      std::make_shared<Sigmoid>()};
+      std::make_shared<Tanh>(), std::make_shared<Linear>(col_count << 1U, 1)};
 
   Sequential model(mv);
 
@@ -89,7 +88,7 @@ int main() {
 
   while ((epoch <= 5000) && (loss_r > 0.01)) {
     TensorPtr y_pred = model.forward(x);
-    TensorPtr loss = bci_loss(y_pred, y);
+    TensorPtr loss = bci_with_logits_loss(y_pred, y);
 
     Tensor::backward(loss);
     adam_step(opt, params);
