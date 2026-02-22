@@ -638,9 +638,15 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
   acp->shape[axis] = 1U;
   std::vector<tcapint> &st = acp->stride;
   st[axis] = 0U;
-  const size_t o_stride = st[axis + 1] / p_stride;
-  for (size_t j = axis + 1; j < st.size(); ++j) {
-    st[j] /= o_stride;
+  size_t j = axis + 1;
+  while (!st[j] && (j < st.size())) {
+    ++j;
+  }
+  if (j < st.size()) {
+    const size_t o_stride = st[j] / p_stride;
+    for (; j < st.size(); ++j) {
+      st[j] /= o_stride;
+    }
   }
 
   TensorPtr out =
@@ -678,12 +684,7 @@ TensorPtr Tensor::mean(TensorPtr a, symint axis) {
     axis += a->shape.size();
   }
 
-  TensorPtr tmp = sum(a, axis);
-  tmp->squeeze(axis);
-  tmp = tmp / (real1)(a->shape[axis]);
-  tmp->unsqueeze(axis);
-
-  return tmp;
+  return sum(a, axis) / (real1)(a->shape[axis]);
 }
 
 TensorPtr Tensor::variance(TensorPtr a) {
@@ -716,9 +717,15 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
   acp->shape[axis] = 1U;
   std::vector<tcapint> &st = acp->stride;
   st[axis] = 0U;
-  const size_t o_stride = st[axis + 1] / p_stride;
-  for (size_t j = axis + 1; j < st.size(); ++j) {
-    st[j] /= o_stride;
+  size_t j = axis + 1;
+  while (!st[j] && (j < st.size())) {
+    ++j;
+  }
+  if (j < st.size()) {
+    const size_t o_stride = st[j] / p_stride;
+    for (; j < st.size(); ++j) {
+      st[j] /= o_stride;
+    }
   }
 
   TensorPtr out =
@@ -750,10 +757,15 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   acp->shape[axis] = 1U;
   std::vector<tcapint> &st = acp->stride;
-  st[axis] = 0U;
-  const size_t o_stride = st[axis + 1] / p_stride;
-  for (size_t j = axis + 1; j < st.size(); ++j) {
-    st[j] /= o_stride;
+  size_t j = axis + 1;
+  while (!st[j] && (j < st.size())) {
+    ++j;
+  }
+  if (j < st.size()) {
+    const size_t o_stride = st[j] / p_stride;
+    for (; j < st.size(); ++j) {
+      st[j] /= o_stride;
+    }
   }
 
   TensorPtr out =
