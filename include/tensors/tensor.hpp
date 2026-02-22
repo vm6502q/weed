@@ -64,9 +64,7 @@ struct Tensor : public BaseTensor {
          const std::vector<tcapint> &strd, const bool &rg = false);
   Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
          const std::vector<tcapint> &strd, const bool &rg = false);
-  Tensor(const Tensor &orig, const bool is_copy_grad = false) {
-    copy(orig, is_copy_grad);
-  }
+  Tensor(const TensorPtr &orig) { copy(orig); }
 
   void validate_dtype(const DType &dtype) {
     if (dtype == DType::INT) {
@@ -91,16 +89,7 @@ struct Tensor : public BaseTensor {
   /**
    * Make this tensor a shallow copy of another
    */
-  void copy(const Tensor &cp, const bool is_copy_grad = false) {
-    // A tensor is a view on storage:
-    BaseTensor::copy(cp);
-    freeze = cp.freeze;
-    if (is_copy_grad) {
-      grad_node = cp.grad_node;
-      grad = cp.grad;
-    }
-    requires_grad = cp.requires_grad;
-  }
+  void copy(const TensorPtr &cp);
 
   void make_gradient(const bool &force_sparse = false);
 
@@ -334,22 +323,30 @@ struct Tensor : public BaseTensor {
     return out;
   }
 
+  /**
+   * Return a copy of the tensor with contiguous storage
+   */
+  static TensorPtr contiguous(const TensorPtr a) {
+    if (is_contiguous(a->shape, a->stride)) {
+      return std::make_shared<Tensor>(*(a.get()));
+    }
+
+    TensorPtr z = zeros(
+      a->shape, false,
+      a->storage->is_sparse() &&
+          ((a->storage->get_sparse_size() << 1U) < a->storage->size),
+      a->storage->dtype, a->storage->device, a->storage->get_device_id());
+
+    return add(z, a);
+  }
+
+
   using BaseTensor::reshape;
   /**
    * Reshape the tensor
    */
   static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
-    TensorPtr out;
-    if (is_contiguous(a->shape, a->stride)) {
-      out = std::make_shared<Tensor>(*(a.get()));
-    } else {
-      out = zeros(
-          a->shape, false,
-          a->storage->is_sparse() &&
-              ((a->storage->get_sparse_size() << 1U) < a->storage->size),
-          a->storage->dtype, a->storage->device, a->storage->get_device_id());
-      out = add(out, a);
-    }
+    TensorPtr out = contiguous(a);
     out->reshape(s);
 
     return out;

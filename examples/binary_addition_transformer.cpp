@@ -114,6 +114,7 @@ int main() {
           std::vector<tcapint>{0U, 1U});
 
       auto logits = model.forward(input);
+      logits->squeeze(2);
 
       // We take only last (target_len) positions
       auto predicted =

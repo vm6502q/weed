@@ -93,6 +93,31 @@ DeviceTag Tensor::get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
   return DeviceTag::CPU;
 }
 
+void Tensor::copy(const TensorPtr &cp) {
+  // A tensor is a view on storage:
+  BaseTensor::copy(cp);
+  freeze = cp->freeze;
+  requires_grad = cp->requires_grad;
+  if (requires_grad) {
+    make_gradient();
+    grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{cp}, [cp, this]() {
+        const DeviceTag dtag = get_dtag_by_presidence({grad, cp->grad});
+
+        TensorPtr dx = grad->cast(dtag);
+        TensorPtr dy = cp->grad->cast(dtag);
+
+        dx->match_shape(dy);
+        dx->materialize_broadcast();
+
+        Weed::add_in_place(*(dx.get()), *(dy.get()));
+
+        grad = dx;
+        reduce_grad_broadcast();
+      });
+  }
+}
+
 void Tensor::make_gradient(const bool &force_sparse) {
   if (!requires_grad || grad) {
     return;
@@ -603,6 +628,8 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
     return a;
   }
 
+  a = contiguous(a);
+
   const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
@@ -671,6 +698,8 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
     return a;
   }
 
+  a = contiguous(a);
+
   const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
@@ -704,6 +733,8 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   if (!p_stride) {
     return a;
   }
+
+  a = contiguous(a);
 
   const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
