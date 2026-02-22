@@ -20,14 +20,15 @@ namespace Weed {
 struct LayerNorm : Module {
   tcapint features;
   real1 eps;
+  symint axis;
 
   ParameterPtr gamma; // scale
   ParameterPtr beta;  // shift
 
   LayerNorm() : Module(LAYERNORM_T) {}
   LayerNorm(const tcapint &f, const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-            const real1 &e = FP_NORM_EPSILON)
-      : Module(LAYERNORM_T), features(f), eps(e) {
+            const real1 &e = FP_NORM_EPSILON, const symint& a = -1)
+      : Module(LAYERNORM_T), features(f), eps(e), axis(a) {
     gamma = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
                                         std::vector<tcapint>{f},
                                         std::vector<tcapint>{1}, dtag);
@@ -39,24 +40,7 @@ struct LayerNorm : Module {
     beta->storage->FillZeros();
   }
 
-  TensorPtr forward(const TensorPtr x) override {
-    // μ: (B, 1)
-    TensorPtr mu = Tensor::mean(x, -1);
-
-    // x − μ
-    TensorPtr xc = x - mu;
-
-    // σ²: (B, 1)
-    TensorPtr var = Tensor::mean(xc * xc, -1);
-
-    // normalized by sqrt(σ² + eps)
-    TensorPtr y = xc / ((var + eps) ^ real1(0.5f));
-
-    // affine transform
-    y = y * gamma + beta;
-
-    return y;
-  }
+  TensorPtr forward(const TensorPtr x) override;
 
   std::vector<ParameterPtr> parameters() override { return {gamma, beta}; }
 

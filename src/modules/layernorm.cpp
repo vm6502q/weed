@@ -13,6 +13,25 @@
 #include "common/serializer.hpp"
 
 namespace Weed {
+TensorPtr LayerNorm::forward(const TensorPtr x) {
+  // μ: (B, 1)
+  TensorPtr mu = Tensor::mean(x, axis);
+
+  // x − μ
+  TensorPtr xc = x - mu;
+
+  // σ²: (B, 1)
+  TensorPtr var = Tensor::mean(xc * xc, axis);
+
+  // normalized by sqrt(σ² + eps)
+  TensorPtr y = xc / ((var + eps) ^ real1(0.5f));
+
+  // affine transform
+  y = y * gamma + beta;
+
+  return y;
+}
+
 void LayerNorm::save(std::ostream &os) const {
   Module::save(os);
   Serializer::write_tcapint(os, features);
