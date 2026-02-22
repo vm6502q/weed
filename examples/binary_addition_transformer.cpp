@@ -17,6 +17,7 @@
 #include "modules/positional_encoding.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
+#include "modules/tanh.hpp"
 #include "modules/transformer_encoder_layer.hpp"
 #include "tensors/symbol_tensor.hpp"
 
@@ -88,17 +89,17 @@ int main() {
   const int batch_size = 32;
 
   // ---- Model ----
-  auto embedding = std::make_shared<Embedding>(vocab_size, d_model);
-  auto pos_enc = std::make_shared<PositionalEncoding>(seq_len, d_model);
+  Sequential model({
+    std::make_shared<Embedding>(vocab_size, d_model),
+    std::make_shared<PositionalEncoding>(seq_len, d_model),
+    std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
+    std::make_shared<Linear>(d_model, 1),
+    std::make_shared<Tanh>(),
+    std::make_shared<Linear>(1, 1),
+    std::make_shared<Sigmoid>()}
+  );
 
-  auto encoder =
-      std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff);
-
-  auto output = std::make_shared<Linear>(d_model, 1);
-
-  Sequential model({embedding, pos_enc, encoder, output, std::make_shared<Sigmoid>()});
-
-  Adam optimizer(R(0.001));
+  Adam optimizer(R(0.01));
   optimizer.register_parameters(model.parameters());
 
   // ---- Training ----
