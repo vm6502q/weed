@@ -635,13 +635,12 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
 
   const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
-  std::vector<tcapint> &sh = acp->shape;
+  acp->shape[axis] = 1U;
   std::vector<tcapint> &st = acp->stride;
-  sh[axis] = 1U;
   st[axis] = 0U;
-  const size_t o_stride = acp->stride[axis + 1] / p_stride;
-  for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
-    acp->stride[j] /= o_stride;
+  const size_t o_stride = st[axis + 1] / p_stride;
+  for (size_t j = axis + 1; j < st.size(); ++j) {
+    st[j] /= o_stride;
   }
 
   TensorPtr out =
@@ -696,6 +695,8 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
 
   const size_t p_stride = a->stride[axis];
   if (!p_stride) {
+    a->shape[axis] = 1U;
+
     return a;
   }
 
@@ -703,13 +704,12 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
 
   const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
-  std::vector<tcapint> &sh = acp->shape;
+  acp->shape[axis] = 1U;
   std::vector<tcapint> &st = acp->stride;
-  sh[axis] = 1U;
   st[axis] = 0U;
-  const size_t o_stride = acp->stride[axis + 1] / p_stride;
-  for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
-    acp->stride[j] /= o_stride;
+  const size_t o_stride = st[axis + 1] / p_stride;
+  for (size_t j = axis + 1; j < st.size(); ++j) {
+    st[j] /= o_stride;
   }
 
   TensorPtr out =
@@ -730,6 +730,8 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
 
   const size_t p_stride = a->stride[axis];
   if (!p_stride) {
+    a->shape[axis] = 1U;
+
     return a;
   }
 
@@ -737,13 +739,12 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
 
   const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
-  std::vector<tcapint> &sh = acp->shape;
+  acp->shape[axis] = 1U;
   std::vector<tcapint> &st = acp->stride;
-  sh[axis] = 1U;
   st[axis] = 0U;
-  const size_t o_stride = acp->stride[axis + 1] / p_stride;
-  for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
-    acp->stride[j] /= o_stride;
+  const size_t o_stride = st[axis + 1] / p_stride;
+  for (size_t j = axis + 1; j < st.size(); ++j) {
+    st[j] /= o_stride;
   }
 
   TensorPtr out =
