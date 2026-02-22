@@ -24,7 +24,7 @@ struct PositionalEncoding : public Module {
   ParameterPtr pe;
 
   PositionalEncoding(tcapint max_seq_len, tcapint d_model,
-                     DeviceTag device = DEFAULT_DEVICE, const symint& a = 0);
+                     DeviceTag device = DEFAULT_DEVICE, const symint &a = 0);
 
   TensorPtr forward(const TensorPtr x) override;
 

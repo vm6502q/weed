@@ -12,13 +12,12 @@
 #include "tensors/symbol_tensor.hpp"
 
 #include "autograd/adam.hpp"
-#include "autograd/bci_loss.hpp"
+#include "autograd/bci_with_logits_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
 #include "modules/mean_center.hpp"
 #include "modules/qrack_neuron_layer.hpp"
 #include "modules/sequential.hpp"
-#include "modules/sigmoid.hpp"
 #include "tensors/real_scalar.hpp"
 
 #include <fstream>
@@ -43,8 +42,7 @@ int main() {
   const std::vector<ModulePtr> mv = {
       std::make_shared<QrackNeuronLayer>(2, 1, 0, 2, 2, ALT_BELL_GHZ_QFN),
       std::make_shared<MeanCenter>(),
-      std::make_shared<Linear>(1, 1, false, false),
-      std::make_shared<Sigmoid>()};
+      std::make_shared<Linear>(1, 1, false, false)};
 
   Sequential model(mv);
 
@@ -58,7 +56,7 @@ int main() {
 
   while ((epoch <= 2000) && (loss_r > 0.01)) {
     TensorPtr y_pred = model.forward(x);
-    TensorPtr loss = bci_loss(y_pred, y);
+    TensorPtr loss = bci_with_logits_loss(y_pred, y);
 
     Tensor::backward(loss);
     adam_step(opt, params);

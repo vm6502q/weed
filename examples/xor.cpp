@@ -12,11 +12,10 @@
 #include "tensors/symbol_tensor.hpp"
 
 #include "autograd/adam.hpp"
-#include "autograd/bci_loss.hpp"
+#include "autograd/bci_with_logits_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
 #include "modules/sequential.hpp"
-#include "modules/sigmoid.hpp"
 #include "modules/tanh.hpp"
 #include "tensors/real_scalar.hpp"
 
@@ -39,9 +38,9 @@ int main() {
       std::vector<real1>{R(0), R(1), R(1), R(0)}, std::vector<tcapint>{4, 1},
       std::vector<tcapint>{1, 0}, false, DeviceTag::CPU);
 
-  const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(2, 4), std::make_shared<Tanh>(),
-      std::make_shared<Linear>(4, 1), std::make_shared<Sigmoid>()};
+  const std::vector<ModulePtr> mv = {std::make_shared<Linear>(2, 4),
+                                     std::make_shared<Tanh>(),
+                                     std::make_shared<Linear>(4, 1)};
 
   Sequential model(mv);
 
@@ -53,9 +52,9 @@ int main() {
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 200) && (loss_r > 0.01)) {
+  while ((epoch <= 1000) && (loss_r > 0.01)) {
     TensorPtr y_pred = model.forward(x);
-    TensorPtr loss = bci_loss(y_pred, y);
+    TensorPtr loss = bci_with_logits_loss(y_pred, y);
 
     Tensor::backward(loss);
     adam_step(opt, params);

@@ -15,13 +15,9 @@
 
 namespace Weed {
 /**
- * Binary cross-entropy loss
+ * Binary cross-entropy loss (with logistic simplification)
  */
-inline TensorPtr bci_loss(TensorPtr y_pred, TensorPtr y_true) {
-  WEED_CONST real1 eps(16 * FP_NORM_EPSILON);
-  y_pred = Tensor::clamp(y_pred, eps, ONE_R1 - eps);
-
-  return Tensor::mean((y_true - ONE_R1) * Tensor::log(ONE_R1 - y_pred) -
-                      y_true * Tensor::log(y_pred));
+inline TensorPtr bci_with_logits_loss(TensorPtr logits, TensorPtr y_true) {
+  return logits - logits * y_true + Tensor::log(ONE_R1 + Tensor::exp(-ONE_R1 * logits));
 }
 } // namespace Weed

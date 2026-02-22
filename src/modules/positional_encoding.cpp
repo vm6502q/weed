@@ -14,7 +14,7 @@
 
 namespace Weed {
 PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
-                                       DeviceTag device, const symint& a)
+                                       DeviceTag device, const symint &a)
     : Module(POSITIONAL_ENCODING_T), max_seq_len(max_seq_len_),
       d_model(d_model_), axis(a) {
 
@@ -49,11 +49,11 @@ TensorPtr PositionalEncoding::forward(const TensorPtr x) {
     ap1 -= x->shape.size();
   }
   while (ap1 < 0) {
-     ap1 += x->shape.size();
+    ap1 += x->shape.size();
   }
   symint a = axis;
   while (a < 0) {
-     a += x->shape.size();
+    a += x->shape.size();
   }
 
   // x: [B, T, D]
