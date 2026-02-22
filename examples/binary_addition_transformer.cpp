@@ -17,7 +17,6 @@
 #include "modules/positional_encoding.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
-#include "modules/tanh.hpp"
 #include "modules/transformer_encoder_layer.hpp"
 #include "tensors/symbol_tensor.hpp"
 
@@ -93,14 +92,11 @@ int main() {
     std::make_shared<Embedding>(vocab_size, d_model),
     std::make_shared<PositionalEncoding>(seq_len, d_model),
     std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
-    std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
     std::make_shared<Linear>(d_model, 1),
-    std::make_shared<Tanh>(),
-    std::make_shared<Linear>(1, 1),
     std::make_shared<Sigmoid>()}
   );
 
-  Adam optimizer(R(0.01));
+  Adam optimizer(R(0.001));
   optimizer.register_parameters(model.parameters());
 
   // ---- Training ----
@@ -126,7 +122,6 @@ int main() {
     Tensor::backward(loss);
 
     adam_step(optimizer, model.parameters());
-    model.train();
     zero_grad(model.parameters());
 
     if (epoch % 100 == 0) {
