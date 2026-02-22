@@ -160,23 +160,26 @@ struct Tensor : public BaseTensor {
   /**
    * Remove all dimensions of size 1
    */
-  TensorPtr squeeze() {
-    TensorPtr v = std::make_shared<Tensor>(*this);
-    for (size_t i = 0U; i < v->shape.size(); ++i) {
-      size_t j = v->shape.size() - (i + 1U);
-      if (v->shape[j] == 1U) {
-        v->shape.erase(v->shape.begin() + j);
-        v->stride.erase(v->stride.begin() + j);
+  void squeeze() {
+    for (size_t i = 0U; i < shape.size(); ++i) {
+      if (shape.size() == 1U) {
+        break;
+      }
+      size_t j = shape.size() - (i + 1U);
+      if (shape[j] == 1U) {
+        shape.erase(shape.begin() + j);
+        stride.erase(stride.begin() + j);
       }
     }
-
-    return v;
   }
 
   /**
    * Remove a dimension of size 1
    */
-  TensorPtr squeeze(int64_t axis) {
+  void squeeze(int64_t axis) {
+    if (shape.size() == 1U) {
+      return;
+    }
     while (axis < 0) {
       axis += shape.size();
     }
@@ -185,26 +188,20 @@ struct Tensor : public BaseTensor {
           "Can only Tensor::squeeze() dimensions with size of 1!");
     }
 
-    TensorPtr v = std::make_shared<Tensor>(*this);
-    v->shape.erase(v->shape.begin() + axis);
-    v->stride.erase(v->stride.begin() + axis);
-
-    return v;
+    shape.erase(shape.begin() + axis);
+    stride.erase(stride.begin() + axis);
   }
 
   /**
    * Add a dimension of size 1
    */
-  TensorPtr unsqueeze(int64_t axis) {
+  void unsqueeze(int64_t axis) {
     while (axis < 0) {
       axis += shape.size();
     }
 
-    TensorPtr v = std::make_shared<Tensor>(*this);
-    v->shape.insert(v->shape.begin() + axis, 1U);
-    v->stride.insert(v->stride.begin() + axis, 0U);
-
-    return v;
+    shape.insert(shape.begin() + axis, 1U);
+    stride.insert(stride.begin() + axis, 0U);
   }
 
   /**

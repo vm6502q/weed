@@ -598,17 +598,16 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
     axis += a->shape.size();
   }
 
-  const bool rg = a->requires_grad;
+  const size_t p_stride = a->stride[axis];
+  if (!p_stride) {
+    return a;
+  }
 
+  const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
-
-  const size_t p_stride = st[axis];
   st[axis] = 0U;
-  if (!p_stride) {
-    return acp->squeeze(axis);
-  }
 
   if (sh.size() != (size_t)(axis + 1)) {
     const size_t o_stride = acp->stride[axis + 1] / p_stride;
@@ -667,17 +666,16 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
     axis += a->shape.size();
   }
 
-  const bool rg = a->requires_grad;
+  const size_t p_stride = a->stride[axis];
+  if (!p_stride) {
+    return a;
+  }
 
+  const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
-
-  const size_t p_stride = st[axis];
   st[axis] = 0U;
-  if (!p_stride) {
-    return acp->squeeze(axis);
-  }
 
   if (sh.size() != (size_t)(axis + 1)) {
     const size_t o_stride = acp->stride[axis + 1] / p_stride;
@@ -702,17 +700,16 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
     axis += a->shape.size();
   }
 
-  const bool rg = a->requires_grad;
+  const size_t p_stride = a->stride[axis];
+  if (!p_stride) {
+    return a;
+  }
 
+  const bool rg = a->requires_grad;
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
-
-  const size_t p_stride = st[axis];
   st[axis] = 0U;
-  if (!p_stride) {
-    return a->squeeze(axis);
-  }
 
   if (sh.size() != (size_t)(axis + 1)) {
     const size_t o_stride = acp->stride[axis + 1] / p_stride;
