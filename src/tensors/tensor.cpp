@@ -732,14 +732,12 @@ TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
   std::vector<tcapint> &st = acp->stride;
 
   if (sh.size() == 1U) {
-    sh[0U] = 1U;
     st[0U] = 0U;
   } else {
     const size_t p_stride = acp->stride[axis];
-    sh.erase(sh.begin() + axis);
-    st.erase(st.begin() + axis);
-    const size_t o_stride = acp->stride[axis] / p_stride;
-    for (size_t j = axis; j < acp->stride.size(); ++j) {
+    st[axis] = 0U;
+    const size_t o_stride = acp->stride[axis + 1] / p_stride;
+    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
     }
   }
@@ -747,8 +745,6 @@ TensorPtr Tensor::sum(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::reduce(axis, *(a.get()), *(out.get()));
-
-  out->unsqueeze(axis);
 
   if (rg) {
     make_sum_node(a, out, axis);
@@ -767,8 +763,7 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
 
         // re-insert reduced axis
-        dy->shape.insert(dy->shape.begin() + axis, a->shape[axis]);
-        dy->stride.insert(dy->stride.begin() + axis, 0U);
+        dy->shape[axis] = a->shape[axis];
 
         dx->upcast(dy->storage->dtype);
         Weed::reduce_grad(axis, *dx, *a, *dy);
@@ -797,14 +792,12 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
   std::vector<tcapint> &st = acp->stride;
 
   if (sh.size() == 1U) {
-    sh[0U] = 1U;
     st[0U] = 0U;
   } else {
     const size_t p_stride = acp->stride[axis];
-    sh.erase(sh.begin() + axis);
-    st.erase(st.begin() + axis);
-    const size_t o_stride = acp->stride[axis] / p_stride;
-    for (size_t j = axis; j < acp->stride.size(); ++j) {
+    st[axis] = 0U;
+    const size_t o_stride = acp->stride[axis + 1] / p_stride;
+    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
     }
   }
@@ -812,8 +805,6 @@ TensorPtr Tensor::max(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::max(axis, *(a.get()), *(out.get()));
-
-  out->unsqueeze(axis);
 
   if (rg) {
     make_match_node(a, out, axis);
@@ -830,14 +821,12 @@ TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
   std::vector<tcapint> &st = acp->stride;
 
   if (sh.size() == 1U) {
-    sh[0U] = 1U;
     st[0U] = 0U;
   } else {
     const size_t p_stride = acp->stride[axis];
-    sh.erase(sh.begin() + axis);
-    st.erase(st.begin() + axis);
-    const size_t o_stride = acp->stride[axis] / p_stride;
-    for (size_t j = axis; j < acp->stride.size(); ++j) {
+    st[axis] = 0U;
+    const size_t o_stride = acp->stride[axis + 1] / p_stride;
+    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
     }
   }
@@ -845,8 +834,6 @@ TensorPtr Tensor::min(TensorPtr a, const tcapint &axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::min(axis, *(a.get()), *(out.get()));
-
-  out->unsqueeze(axis);
 
   if (rg) {
     make_match_node(a, out, axis);
@@ -865,8 +852,7 @@ void Tensor::make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
 
         // re-insert reduced axis
-        dy->shape.insert(dy->shape.begin() + axis, a->shape[axis]);
-        dy->stride.insert(dy->stride.begin() + axis, 0U);
+        dy->shape[axis] = a->shape[axis];
 
         dx->upcast(dy->storage->dtype);
         Weed::match_grad(axis, *dx, *a, *dy, *out);
