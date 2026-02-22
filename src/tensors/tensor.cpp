@@ -104,16 +104,16 @@ void Tensor::copy(const TensorPtr &cp) {
       std::make_shared<Node>(std::vector<TensorPtr>{cp}, [cp, this]() {
         const DeviceTag dtag = get_dtag_by_presidence({grad, cp->grad});
 
-        TensorPtr dx = grad->cast(dtag);
-        TensorPtr dy = cp->grad->cast(dtag);
+        TensorPtr dx = cp->grad->cast(dtag);
+        TensorPtr dy = grad->cast(dtag);
 
         dx->match_shape(dy);
         dx->materialize_broadcast();
 
         Weed::add_in_place(*(dx.get()), *(dy.get()));
 
-        grad = dx;
-        reduce_grad_broadcast();
+        cp->grad = dx;
+        cp->reduce_grad_broadcast();
       });
   }
 }
