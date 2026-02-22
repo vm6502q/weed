@@ -55,18 +55,14 @@ TransformerEncoderLayer::TransformerEncoderLayer(
   add(norm2->parameters());
 }
 TensorPtr TransformerEncoderLayer::forward(const TensorPtr x) {
-  // Self-attention block
-  TensorPtr attn_out = self_attn->forward(x);
-  TensorPtr x1 = norm1->forward(x + attn_out);
+  TensorPtr attn_out = self_attn->forward(norm1->forward(x));
+  TensorPtr x1 = x + attn_out;
 
-  // Feed-forward block
-  TensorPtr ff = ff1->forward(x1);
+  TensorPtr ff = ff1->forward(norm2->forward(x1));
   ff = activation->forward(ff);
   ff = ff2->forward(ff);
 
-  TensorPtr out = norm2->forward(x1 + ff);
-
-  return out;
+  return x1 + ff;
 }
 void TransformerEncoderLayer::save(std::ostream &os) const {
   Module::save(os);
