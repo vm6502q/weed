@@ -34,10 +34,8 @@ struct BinaryAdditionSample {
 };
 
 BinaryAdditionSample generate_samples(int bit_width, int samples) {
-  BinaryAdditionSample batch;
-
-  int max_val = 1 << bit_width;
-
+  std::vector<BinaryAdditionSample> svec;
+  const int max_val = 1 << bit_width;
   for (int j = 0; j < samples; ++j) {
     int a = rand() % max_val;
     int b = rand() % max_val;
@@ -64,12 +62,21 @@ BinaryAdditionSample generate_samples(int bit_width, int samples) {
       sample.target_bits.push_back((sum >> i) & 1);
     }
 
-    batch.input_tokens.insert(batch.input_tokens.end(),
-                              sample.input_tokens.begin(),
-                              sample.input_tokens.end());
-    batch.target_bits.insert(batch.target_bits.end(),
-                             sample.target_bits.begin(),
-                             sample.target_bits.end());
+    svec.push_back(sample);
+  }
+
+  BinaryAdditionSample batch;
+  const int max_in = (bit_width << 1) + 2;
+  for (int i = 0; i < max_in; ++i) {
+    for (int j = 0; j < samples; ++j) {
+      batch.input_tokens.push_back(svec[j].input_tokens[i]);
+    }
+  }
+  const int max_out = bit_width + 1;
+  for (int i = 0; i < max_out; ++i) {
+    for (int j = 0; j < samples; ++j) {
+      batch.target_bits.push_back(svec[j].target_bits[i]);
+    }
   }
 
   return batch;
@@ -78,7 +85,7 @@ BinaryAdditionSample generate_samples(int bit_width, int samples) {
 int main() {
   const tcapint bit_width = 4;
   const tcapint seq_len = (bit_width << 1U) + 2U; // a + b =
-  const tcapint target_len = bit_width + 1U;  // sum bits
+  const tcapint target_len = bit_width + 1U;      // sum bits
   const tcapint vocab_size = 5;
 
   const tcapint d_model = 16;
@@ -89,14 +96,12 @@ int main() {
   const int batch_size = 32;
 
   // ---- Model ----
-  Sequential model({
-      std::make_shared<Embedding>(vocab_size, d_model),
-      std::make_shared<PositionalEncoding>(seq_len, d_model),
-      std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
-      std::make_shared<Linear>(d_model, 2),
-      std::make_shared<Tanh>(),
-      std::make_shared<Linear>(2, 1)
-  });
+  Sequential model(
+      {std::make_shared<Embedding>(vocab_size, d_model),
+       std::make_shared<PositionalEncoding>(seq_len, d_model),
+       std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
+       std::make_shared<Linear>(d_model, 2), std::make_shared<Tanh>(),
+       std::make_shared<Linear>(2, 1)});
 
   Adam optimizer(R(0.001));
   optimizer.register_parameters(model.parameters());
@@ -117,7 +122,8 @@ int main() {
 
     // We take only last (target_len) positions
     auto predicted =
-        Tensor::slice(logits, 1, logits->shape[1U] - target_len, target_len)->squeeze(2);
+        Tensor::slice(logits, 1, logits->shape[1U] - target_len, target_len)
+            ->squeeze(2);
 
     auto loss = bci_with_logits_loss(predicted, target);
 

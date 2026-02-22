@@ -314,7 +314,7 @@ struct Tensor : public BaseTensor {
     }
 
     const tcapint dim = a->shape[axis];
-    if (dim % chunks != 0) {
+    if (dim % chunks) {
       throw std::invalid_argument(
           "Tensor::chunk: dimension not divisible by chunks");
     }
