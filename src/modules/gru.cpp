@@ -24,7 +24,7 @@ TensorPtr GRU::forward(const TensorPtr x) {
   TensorPtr z = W_x->forward(x) + W_h->forward(state);
 
   // Split into 3 chunks
-  const std::vector<TensorPtr> zc = z->chunk(3, /*axis=*/-1);
+  const std::vector<TensorPtr> zc = Tensor::chunk(z, 3, /*axis=*/-1);
 
   TensorPtr z_t = Tensor::sigmoid(zc[0U]);
   TensorPtr r_t = Tensor::sigmoid(zc[1U]);

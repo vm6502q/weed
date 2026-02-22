@@ -158,11 +158,6 @@ struct Tensor : public BaseTensor {
   }
 
   /**
-   * Split tensor into equally-sized chunks along axis
-   */
-  std::vector<TensorPtr> chunk(const size_t &chunks, const int64_t &axis = -1);
-
-  /**
    * Remove all dimensions of size 1
    */
   TensorPtr squeeze() {
@@ -173,10 +168,6 @@ struct Tensor : public BaseTensor {
         v->shape.erase(v->shape.begin() + j);
         v->stride.erase(v->stride.begin() + j);
       }
-    }
-
-    if (grad) {
-      grad = grad->squeeze();
     }
 
     return v;
@@ -197,10 +188,6 @@ struct Tensor : public BaseTensor {
     TensorPtr v = std::make_shared<Tensor>(*this);
     v->shape.erase(v->shape.begin() + axis);
     v->stride.erase(v->stride.begin() + axis);
-
-    if (grad) {
-      grad = grad->squeeze(axis);
-    }
 
     return v;
   }
@@ -268,25 +255,6 @@ struct Tensor : public BaseTensor {
   static DeviceTag get_dtag_by_presidence(const std::vector<TensorPtr> &v);
 
   /**
-   * Find the gradient stride (before reduction), for constructors
-   */
-  static std::vector<tcapint>
-  full_contiguous_stride(const std::vector<tcapint> &shp) {
-    if ((shp.size() == 1U) && (shp[0U] == 1U)) {
-      return std::vector<tcapint>{0U};
-    }
-
-    std::vector<tcapint> g_stride(shp.size());
-    tcapint max_index = 1U;
-    for (size_t i = 0U; i < shp.size(); ++i) {
-      g_stride[i] = max_index;
-      max_index *= shp[i];
-    }
-
-    return g_stride;
-  }
-
-  /**
    * Make a gradient tensor (static)
    */
   static TensorPtr make_gradient(const std::vector<tcapint> &shp, const bool &s,
@@ -329,25 +297,153 @@ struct Tensor : public BaseTensor {
                                  const bool &rg, const bool &s);
 
   /**
-   * Use autograd to calculate gradients that are in the same graph as this
-   * Tensor
+   * Split tensor into equally-sized chunks along axis
    */
-  static void backward(const TensorPtr loss);
+  static std::vector<TensorPtr> chunk(TensorPtr a, const size_t &chunks,
+                                      int64_t axis = -1) {
+    // Contributed by Elara (the OpenAI custom GPT)
+    if (chunks == 0) {
+      throw std::invalid_argument("Tensor::chunk: chunks must be > 0");
+    }
+
+    if (axis < 0) {
+      axis += a->shape.size();
+    }
+    if (axis < 0 || axis >= (int64_t)a->shape.size()) {
+      throw std::invalid_argument("Tensor::chunk: axis out of range");
+    }
+
+    const tcapint dim = a->shape[axis];
+    if (dim % chunks != 0) {
+      throw std::invalid_argument(
+          "Tensor::chunk: dimension not divisible by chunks");
+    }
+
+    const tcapint chunk_dim = dim / chunks;
+
+    std::vector<TensorPtr> out;
+    out.reserve(chunks);
+
+    for (size_t i = 0; i < chunks; ++i) {
+      TensorPtr t =
+          std::make_shared<Tensor>(*(a.get())); // shallow copy (shared storage)
+
+      t->shape[axis] = chunk_dim;
+      t->offset += i * chunk_dim * a->stride[axis];
+
+      out.push_back(t);
+    }
+
+    return out;
+  }
 
   /**
    * Reshape the tensor
    */
-  static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s);
+  static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
+    const tcapint total = a->get_size();
+
+    // Resolve -1
+    std::vector<tcapint> resolved;
+    resolved.reserve(s.size());
+    for (size_t i = 0U; i < s.size(); ++i) {
+      resolved.push_back((tcapint)s[i]);
+    }
+
+    symint infer_index = -1;
+    tcapint known_product = 1U;
+
+    for (size_t i = 0U; i < s.size(); ++i) {
+      if (s[i] < 0) {
+        if (infer_index != -1) {
+          throw std::invalid_argument(
+              "Tensor::reshape(): only one -1 dimension allowed");
+        }
+        infer_index = (symint)i;
+      } else {
+        known_product *= s[i];
+      }
+    }
+
+    if (infer_index >= 0) {
+      if ((!known_product) || (total % known_product)) {
+        throw std::invalid_argument(
+            "Tensor::reshape(): cannot infer dimension size");
+      }
+      resolved[infer_index] = total / known_product;
+    }
+
+    // Final size check
+    tcapint new_size = 1;
+    for (tcapint d : resolved) {
+      new_size *= d;
+    }
+
+    if (new_size != total) {
+      throw std::invalid_argument("Tensor::reshape(): sizes do not match");
+    }
+
+    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+    out->shape = resolved;
+    out->stride = full_contiguous_stride(resolved);
+
+    return out;
+  }
 
   /**
    * If the tensor has exactly two indices, transpose them
    */
-  static TensorPtr transpose(const TensorPtr a);
+  static TensorPtr transpose(const TensorPtr a) {
+    if (a->shape.size() > 2U) {
+      throw std::invalid_argument(
+          "Tensor::transpose is only for 2D tensors (and "
+          "vectors and covectors)!");
+    }
+
+    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+
+    if (out->shape.size() == 1U) {
+      // Treat input as column vector, and transpose to row vector
+      out->shape = {1U, out->shape[0U]};
+      out->stride = {0U, out->stride[0U]};
+
+      return out;
+    }
+
+    std::swap(out->shape[0U], out->shape[1U]);
+    std::swap(out->stride[0U], out->stride[1U]);
+
+    return out;
+  }
 
   /**
    * Transpose the two tensor indices
    */
-  static TensorPtr transpose(const TensorPtr a, symint i, symint j);
+  static TensorPtr transpose(const TensorPtr a, symint i, symint j) {
+    while (i < 0) {
+      i += a->shape.size();
+    }
+    while (j < 0) {
+      j += a->shape.size();
+    }
+
+    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+
+    if (i == j) {
+      return out;
+    }
+
+    std::swap(out->shape[i], out->shape[j]);
+    std::swap(out->stride[i], out->stride[j]);
+
+    return out;
+  }
+
+  /**
+   * Use autograd to calculate gradients that are in the same graph as this
+   * Tensor
+   */
+  static void backward(const TensorPtr loss);
 
   /**
    * Softmax activation function

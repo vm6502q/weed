@@ -24,14 +24,17 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   TensorPtr V = W_v->forward(x);
 
   // (B, T, H, head_dim)
-  Q = Tensor::reshape(Q, {B, T, num_heads, head_dim});
-  K = Tensor::reshape(K, {B, T, num_heads, head_dim});
-  V = Tensor::reshape(V, {B, T, num_heads, head_dim});
+  Q = std::dynamic_pointer_cast<Tensor>(
+      Tensor::reshape(Q, {B, T, num_heads, head_dim}));
+  K = std::dynamic_pointer_cast<Tensor>(
+      Tensor::reshape(K, {B, T, num_heads, head_dim}));
+  V = std::dynamic_pointer_cast<Tensor>(
+      Tensor::reshape(V, {B, T, num_heads, head_dim}));
 
   // (B, H, T, head_dim)
-  Q = Tensor::transpose(Q, 1, 2);
-  K = Tensor::transpose(K, 1, 2);
-  V = Tensor::transpose(V, 1, 2);
+  Q = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(Q, 1, 2));
+  K = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(K, 1, 2));
+  V = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(V, 1, 2));
 
   // scores = Q K^T
   TensorPtr Kt = Tensor::transpose(K, -2, -1);

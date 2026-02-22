@@ -29,7 +29,7 @@ TensorPtr LSTM::forward(const TensorPtr x) {
   TensorPtr z = W_x->forward(x) + W_h->forward(state.h);
 
   // Split z into 4 chunks
-  const std::vector<TensorPtr> zc = z->chunk(4, -1);
+  const std::vector<TensorPtr> zc = Tensor::chunk(z, 4, -1);
 
   TensorPtr f = Tensor::sigmoid(zc[0U]);
   TensorPtr i = Tensor::sigmoid(zc[1U]);
