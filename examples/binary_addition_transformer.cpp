@@ -120,11 +120,10 @@ int main() {
       auto predicted =
           Tensor::slice(logits, 1, seq_len - target_len, target_len);
 
-      auto target =
-          std::make_shared<Tensor>(
-              sample.target_bits,
-              std::vector<tcapint>{1U, (tcapint)sample.target_bits.size()},
-              std::vector<tcapint>{0U, 1U});
+      auto target = std::make_shared<Tensor>(
+          sample.target_bits,
+          std::vector<tcapint>{1U, (tcapint)sample.target_bits.size()},
+          std::vector<tcapint>{0U, 1U});
 
       auto loss = bci_with_logits_loss(predicted, target);
       total_loss += GET_REAL(loss);

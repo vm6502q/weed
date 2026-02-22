@@ -328,25 +328,26 @@ struct Tensor : public BaseTensor {
    */
   static TensorPtr contiguous(const TensorPtr a) {
     if (is_contiguous(a->shape, a->stride)) {
-      return std::make_shared<Tensor>(*(a.get()));
+      return a;
     }
 
     TensorPtr z = zeros(
-      a->shape, false,
-      a->storage->is_sparse() &&
-          ((a->storage->get_sparse_size() << 1U) < a->storage->size),
-      a->storage->dtype, a->storage->device, a->storage->get_device_id());
+        a->shape, false,
+        a->storage->is_sparse() &&
+            ((a->storage->get_sparse_size() << 1U) < a->storage->size),
+        a->storage->dtype, a->storage->device, a->storage->get_device_id());
 
     return add(z, a);
   }
-
 
   using BaseTensor::reshape;
   /**
    * Reshape the tensor
    */
   static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
-    TensorPtr out = contiguous(a);
+    TensorPtr out = (is_contiguous(a->shape, a->stride))
+                        ? std::make_shared<Tensor>(*(a.get()))
+                        : contiguous(a);
     out->reshape(s);
 
     return out;

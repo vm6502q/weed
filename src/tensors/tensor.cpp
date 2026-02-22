@@ -98,24 +98,25 @@ void Tensor::copy(const TensorPtr &cp) {
   BaseTensor::copy(cp);
   freeze = cp->freeze;
   requires_grad = cp->requires_grad;
-  if (requires_grad) {
-    make_gradient();
-    grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{cp}, [cp, this]() {
-        const DeviceTag dtag = get_dtag_by_presidence({grad, cp->grad});
 
-        TensorPtr dx = cp->grad->cast(dtag);
-        TensorPtr dy = grad->cast(dtag);
-
-        dx->match_shape(dy);
-        dx->materialize_broadcast();
-
-        Weed::add_in_place(*(dx.get()), *(dy.get()));
-
-        cp->grad = dx;
-        cp->reduce_grad_broadcast();
-      });
+  if (!requires_grad) {
+    return;
   }
+
+  make_gradient();
+  grad_node = std::make_shared<Node>(std::vector<TensorPtr>{cp}, [cp, this]() {
+    const DeviceTag dtag = get_dtag_by_presidence({grad, cp->grad});
+
+    TensorPtr dx = cp->grad->cast(dtag);
+    TensorPtr dy = grad->cast(dtag);
+
+    dx->match_shape(dy);
+    dx->materialize_broadcast();
+
+    Weed::add_in_place(*(dx.get()), *(dy.get()));
+
+    cp->grad = dx;
+  });
 }
 
 void Tensor::make_gradient(const bool &force_sparse) {
@@ -625,6 +626,8 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
 
   const size_t p_stride = a->stride[axis];
   if (!p_stride) {
+    a->shape[axis] = 1U;
+
     return a;
   }
 
@@ -634,13 +637,11 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
+  sh[axis] = 1U;
   st[axis] = 0U;
-
-  if (sh.size() != (size_t)(axis + 1)) {
-    const size_t o_stride = acp->stride[axis + 1] / p_stride;
-    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
-      acp->stride[j] /= o_stride;
-    }
+  const size_t o_stride = acp->stride[axis + 1] / p_stride;
+  for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
+    acp->stride[j] /= o_stride;
   }
 
   TensorPtr out =
@@ -704,13 +705,11 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
+  sh[axis] = 1U;
   st[axis] = 0U;
-
-  if (sh.size() != (size_t)(axis + 1)) {
-    const size_t o_stride = acp->stride[axis + 1] / p_stride;
-    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
-      acp->stride[j] /= o_stride;
-    }
+  const size_t o_stride = acp->stride[axis + 1] / p_stride;
+  for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
+    acp->stride[j] /= o_stride;
   }
 
   TensorPtr out =
@@ -740,13 +739,11 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
+  sh[axis] = 1U;
   st[axis] = 0U;
-
-  if (sh.size() != (size_t)(axis + 1)) {
-    const size_t o_stride = acp->stride[axis + 1] / p_stride;
-    for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
-      acp->stride[j] /= o_stride;
-    }
+  const size_t o_stride = acp->stride[axis + 1] / p_stride;
+  for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
+    acp->stride[j] /= o_stride;
   }
 
   TensorPtr out =
