@@ -647,11 +647,6 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::reduce(axis, *(a.get()), *(out.get()));
 
-  if (out->stride[axis]) {
-    out->squeeze(axis);
-    out->unsqueeze(axis);
-  }
-
   if (rg) {
     make_sum_node(a, out, axis);
   }
@@ -730,11 +725,6 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::max(axis, *(a.get()), *(out.get()));
 
-  if (out->stride[axis]) {
-    out->squeeze(axis);
-    out->unsqueeze(axis);
-  }
-
   if (rg) {
     make_match_node(a, out, axis);
   }
@@ -769,11 +759,6 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   TensorPtr out =
       allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
   Weed::min(axis, *(a.get()), *(out.get()));
-
-  if (out->stride[axis]) {
-    out->squeeze(axis);
-    out->unsqueeze(axis);
-  }
 
   if (rg) {
     make_match_node(a, out, axis);
