@@ -27,7 +27,7 @@ Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, bool init_rand,
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    real1_s lim = (real1_s)(0.5 / std::sqrt(in_f));
+    real1_s lim = (real1_s)(2.0 / std::sqrt(in_f + out_f));
     std::uniform_real_distribution<real1_s> dis(-lim, lim);
 
     const size_t sz = in_f * out_f;
