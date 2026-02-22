@@ -337,22 +337,24 @@ struct Tensor : public BaseTensor {
     return out;
   }
 
+  using BaseTensor::reshape;
   /**
    * Reshape the tensor
    */
   static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
     TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-    (std::dynamic_pointer_cast<BaseTensor>(out))->reshape(s);
+    out->reshape(s);
 
     return out;
   }
 
+  using BaseTensor::transpose;
   /**
    * If the tensor has exactly two indices, transpose them
    */
   static TensorPtr transpose(const TensorPtr a) {
     TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-    (std::dynamic_pointer_cast<BaseTensor>(out))->transpose();
+    out->transpose();
 
     return out;
   }
@@ -362,7 +364,7 @@ struct Tensor : public BaseTensor {
    */
   static TensorPtr transpose(const TensorPtr a, symint i, symint j) {
     TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-    (std::dynamic_pointer_cast<BaseTensor>(out))->transpose(i, j);
+    out->transpose(i, j);
 
     return out;
   }

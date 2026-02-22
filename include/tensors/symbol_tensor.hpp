@@ -30,23 +30,25 @@ struct SymbolTensor : BaseTensor {
                const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
                const int64_t &did = -1);
 
+  using BaseTensor::reshape;
   /**
    * Reshape the tensor
    */
   static SymbolTensorPtr reshape(const SymbolTensorPtr a,
                                  const std::vector<symint> &s) {
     SymbolTensorPtr out = std::make_shared<SymbolTensor>(*(a.get()));
-    (std::dynamic_pointer_cast<BaseTensor>(out))->reshape(s);
+    out->reshape(s);
 
     return out;
   }
 
+  using BaseTensor::transpose;
   /**
    * If the tensor has exactly two indices, transpose them
    */
   static SymbolTensorPtr transpose(const SymbolTensorPtr a) {
     SymbolTensorPtr out = std::make_shared<SymbolTensor>(*(a.get()));
-    (std::dynamic_pointer_cast<BaseTensor>(out))->transpose();
+    out->transpose();
 
     return out;
   }
@@ -57,7 +59,7 @@ struct SymbolTensor : BaseTensor {
   static SymbolTensorPtr transpose(const SymbolTensorPtr a, symint i,
                                    symint j) {
     SymbolTensorPtr out = std::make_shared<SymbolTensor>(*(a.get()));
-    (std::dynamic_pointer_cast<BaseTensor>(out))->transpose(i, j);
+    out->transpose(i, j);
 
     return out;
   }
