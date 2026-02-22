@@ -145,6 +145,93 @@ struct BaseTensor {
   }
 
   /**
+   * Reshape the tensor
+   */
+  void reshape(const std::vector<symint> &s) {
+    const tcapint total = get_size();
+
+    // Resolve -1
+    std::vector<tcapint> resolved;
+    resolved.reserve(s.size());
+    for (size_t i = 0U; i < s.size(); ++i) {
+      resolved.push_back((tcapint)s[i]);
+    }
+
+    symint infer_index = -1;
+    tcapint known_product = 1U;
+
+    for (size_t i = 0U; i < s.size(); ++i) {
+      if (s[i] < 0) {
+        if (infer_index != -1) {
+          throw std::invalid_argument(
+              "Tensor::reshape(): only one -1 dimension allowed");
+        }
+        infer_index = (symint)i;
+      } else {
+        known_product *= s[i];
+      }
+    }
+
+    if (infer_index >= 0) {
+      if ((!known_product) || (total % known_product)) {
+        throw std::invalid_argument(
+            "Tensor::reshape(): cannot infer dimension size");
+      }
+      resolved[infer_index] = total / known_product;
+    }
+
+    // Final size check
+    tcapint new_size = 1;
+    for (tcapint d : resolved) {
+      new_size *= d;
+    }
+
+    if (new_size != total) {
+      throw std::invalid_argument("Tensor::reshape(): sizes do not match");
+    }
+
+    shape = resolved;
+    stride = full_contiguous_stride(resolved);
+  }
+
+  /**
+   * If the tensor has exactly two indices, transpose them
+   */
+  void transpose() {
+    if (shape.size() > 2U) {
+      throw std::invalid_argument(
+          "Tensor::transpose is only for 2D tensors (and "
+          "vectors and covectors)!");
+    }
+
+    if (shape.size() == 1U) {
+      // Treat input as column vector, and transpose to row vector
+      shape = {1U, shape[0U]};
+      stride = {0U, stride[0U]};
+    } else {
+      std::swap(shape[0U], shape[1U]);
+      std::swap(stride[0U], stride[1U]);
+    }
+  }
+
+  /**
+   * Transpose the two tensor indices
+   */
+  void transpose(symint i, symint j) {
+    while (i < 0) {
+      i += shape.size();
+    }
+    while (j < 0) {
+      j += shape.size();
+    }
+
+    if (i != j) {
+      std::swap(shape[i], shape[j]);
+      std::swap(stride[i], stride[j]);
+    }
+  }
+
+  /**
    * Validate the Tensor shape, for constructors
    */
   static bool is_contiguous(const std::vector<tcapint> &shp,

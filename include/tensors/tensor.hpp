@@ -341,51 +341,8 @@ struct Tensor : public BaseTensor {
    * Reshape the tensor
    */
   static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
-    const tcapint total = a->get_size();
-
-    // Resolve -1
-    std::vector<tcapint> resolved;
-    resolved.reserve(s.size());
-    for (size_t i = 0U; i < s.size(); ++i) {
-      resolved.push_back((tcapint)s[i]);
-    }
-
-    symint infer_index = -1;
-    tcapint known_product = 1U;
-
-    for (size_t i = 0U; i < s.size(); ++i) {
-      if (s[i] < 0) {
-        if (infer_index != -1) {
-          throw std::invalid_argument(
-              "Tensor::reshape(): only one -1 dimension allowed");
-        }
-        infer_index = (symint)i;
-      } else {
-        known_product *= s[i];
-      }
-    }
-
-    if (infer_index >= 0) {
-      if ((!known_product) || (total % known_product)) {
-        throw std::invalid_argument(
-            "Tensor::reshape(): cannot infer dimension size");
-      }
-      resolved[infer_index] = total / known_product;
-    }
-
-    // Final size check
-    tcapint new_size = 1;
-    for (tcapint d : resolved) {
-      new_size *= d;
-    }
-
-    if (new_size != total) {
-      throw std::invalid_argument("Tensor::reshape(): sizes do not match");
-    }
-
     TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-    out->shape = resolved;
-    out->stride = full_contiguous_stride(resolved);
+    (std::dynamic_pointer_cast<BaseTensor>(out))->reshape(s);
 
     return out;
   }
@@ -394,24 +351,8 @@ struct Tensor : public BaseTensor {
    * If the tensor has exactly two indices, transpose them
    */
   static TensorPtr transpose(const TensorPtr a) {
-    if (a->shape.size() > 2U) {
-      throw std::invalid_argument(
-          "Tensor::transpose is only for 2D tensors (and "
-          "vectors and covectors)!");
-    }
-
     TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-
-    if (out->shape.size() == 1U) {
-      // Treat input as column vector, and transpose to row vector
-      out->shape = {1U, out->shape[0U]};
-      out->stride = {0U, out->stride[0U]};
-
-      return out;
-    }
-
-    std::swap(out->shape[0U], out->shape[1U]);
-    std::swap(out->stride[0U], out->stride[1U]);
+    (std::dynamic_pointer_cast<BaseTensor>(out))->transpose();
 
     return out;
   }
@@ -420,21 +361,8 @@ struct Tensor : public BaseTensor {
    * Transpose the two tensor indices
    */
   static TensorPtr transpose(const TensorPtr a, symint i, symint j) {
-    while (i < 0) {
-      i += a->shape.size();
-    }
-    while (j < 0) {
-      j += a->shape.size();
-    }
-
     TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-
-    if (i == j) {
-      return out;
-    }
-
-    std::swap(out->shape[i], out->shape[j]);
-    std::swap(out->stride[i], out->stride[j]);
+    (std::dynamic_pointer_cast<BaseTensor>(out))->transpose(i, j);
 
     return out;
   }
