@@ -604,11 +604,13 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
 
-  if (sh.size() == 1U) {
-    st[0U] = 0U;
-  } else {
-    const size_t p_stride = acp->stride[axis];
-    st[axis] = 0U;
+  const size_t p_stride = acp->stride[axis];
+  st[axis] = 0U;
+  if (!p_stride) {
+    return a->squeeze(axis);
+  }
+
+  if (sh.size() != (size_t)(axis + 1)) {
     const size_t o_stride = acp->stride[axis + 1] / p_stride;
     for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
@@ -671,11 +673,13 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
 
-  if (sh.size() == 1U) {
-    st[0U] = 0U;
-  } else {
-    const size_t p_stride = acp->stride[axis];
-    st[axis] = 0U;
+  const size_t p_stride = acp->stride[axis];
+  st[axis] = 0U;
+  if (!p_stride) {
+    return a->squeeze(axis);
+  }
+
+  if (sh.size() != (size_t)(axis + 1)) {
     const size_t o_stride = acp->stride[axis + 1] / p_stride;
     for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
@@ -704,11 +708,13 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   std::vector<tcapint> &sh = acp->shape;
   std::vector<tcapint> &st = acp->stride;
 
-  if (sh.size() == 1U) {
-    st[0U] = 0U;
-  } else {
-    const size_t p_stride = acp->stride[axis];
-    st[axis] = 0U;
+  const size_t p_stride = acp->stride[axis];
+  st[axis] = 0U;
+  if (!p_stride) {
+    return a->squeeze(axis);
+  }
+
+  if (sh.size() != (size_t)(axis + 1)) {
     const size_t o_stride = acp->stride[axis + 1] / p_stride;
     for (size_t j = axis + 1; j < acp->stride.size(); ++j) {
       acp->stride[j] /= o_stride;
