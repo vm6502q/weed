@@ -148,6 +148,11 @@ struct BaseTensor {
    * Reshape the tensor
    */
   void reshape(const std::vector<symint> &s) {
+    if (!is_contiguous(shape, stride)) {
+      throw std::domain_error(
+          "Can't reshape BaseTensor that isn't contiguous!");
+    }
+
     const tcapint total = get_size();
 
     // Resolve -1

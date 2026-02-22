@@ -342,7 +342,17 @@ struct Tensor : public BaseTensor {
    * Reshape the tensor
    */
   static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
-    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+    TensorPtr out;
+    if (is_contiguous(a->shape, a->stride)) {
+      out = std::make_shared<Tensor>(*(a.get()));
+    } else {
+      out = zeros(
+          a->shape, a->requires_grad,
+          a->storage->is_sparse() &&
+              ((a->storage->get_sparse_size() << 1U) < a->storage->size),
+          a->storage->dtype, a->storage->device, a->storage->get_device_id());
+      out = add(out, a);
+    }
     out->reshape(s);
 
     return out;
