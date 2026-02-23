@@ -312,21 +312,33 @@ std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
 }
 
 bool Tensor::match_shape(const TensorPtr a) {
-  if (!is_scalar() && (shape.size() != a->shape.size())) {
+  if (shape.size() > a->shape.size()) {
     return false;
   }
 
-  for (size_t i = 0U; i < shape.size(); ++i) {
-    if ((shape[i] != a->shape[i]) && stride[i]) {
+  std::vector<tcapint> osh = shape;
+  std::vector<tcapint> ost = stride;
+  std::vector<tcapint> nsh = a->shape;
+
+  std::reverse(osh.begin(), osh.end());
+  std::reverse(ost.begin(), ost.end());
+  std::reverse(nsh.begin(), nsh.end());
+
+  for (size_t i = 0U; i < osh.size(); ++i) {
+    if ((osh[i] != nsh[i]) && ost[i]) {
       return false;
     }
   }
 
+  ost.resize(nsh.size());
+  std::reverse(ost.begin(), ost.end());
+
   shape = a->shape;
-  stride.resize(shape.size());
+  stride = ost;
 
   return true;
 }
+
 
 void Tensor::materialize_broadcast() {
   bool needs = false;
@@ -979,14 +991,6 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
-  if (a->shape.size() == b->shape.size()) {
-    if (!a->match_shape(b) && !b->match_shape(a)) {
-      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                  "alter an index that was not broadcast.)");
-    }
-  } else if (!a->is_scalar() && !b->is_scalar()) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
-  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
     throw std::invalid_argument("Tensor shape mismatch in add!");
   }
@@ -1041,16 +1045,8 @@ TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
-  if (a->shape.size() == b->shape.size()) {
-    if (!a->match_shape(b) && !b->match_shape(a)) {
-      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                  "alter an index that was not broadcast.)");
-    }
-  } else if (!a->is_scalar() && !b->is_scalar()) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
-  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
+    throw std::invalid_argument("Tensor shape mismatch in mul!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 
@@ -1315,16 +1311,8 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
-  if (a->shape.size() == b->shape.size()) {
-    if (!a->match_shape(b) && !b->match_shape(a)) {
-      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                  "alter an index that was not broadcast.)");
-    }
-  } else if (!a->is_scalar() && !b->is_scalar()) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
-  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
+    throw std::invalid_argument("Tensor shape mismatch in sub!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 
@@ -1377,16 +1365,8 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
-  if (a->shape.size() == b->shape.size()) {
-    if (!a->match_shape(b) && !b->match_shape(a)) {
-      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                  "alter an index that was not broadcast.)");
-    }
-  } else if (!a->is_scalar() && !b->is_scalar()) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
-  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor shape mismatch in add!");
+    throw std::invalid_argument("Tensor shape mismatch in div!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 

@@ -15,16 +15,13 @@
 namespace Weed {
 TensorPtr LayerNorm::forward(const TensorPtr x) {
   // μ: (B, 1)
-  TensorPtr mu = Tensor::mean(x, axis);
+  TensorPtr mu = Tensor::mean(x, -1);
 
   // x − μ
   TensorPtr xc = x - mu;
 
   // σ²: (B, 1)
-  TensorPtr var = Tensor::mean(xc * xc, axis);
-
-  xc->match_shape(x);
-  var->match_shape(x);
+  TensorPtr var = Tensor::mean(xc * xc, -1);
 
   // normalized by sqrt(σ² + eps)
   TensorPtr y = xc / ((var + eps) ^ real1(0.5f));

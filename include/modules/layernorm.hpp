@@ -20,21 +20,20 @@ namespace Weed {
 struct LayerNorm : Module {
   tcapint features;
   real1 eps;
-  symint axis;
 
   ParameterPtr gamma; // scale
   ParameterPtr beta;  // shift
 
   LayerNorm() : Module(LAYERNORM_T) {}
   LayerNorm(const tcapint &f, const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-            const real1 &e = FP_NORM_EPSILON, const symint &a = -1)
-      : Module(LAYERNORM_T), features(f), eps(e), axis(a) {
+            const real1 &e = FP_NORM_EPSILON)
+      : Module(LAYERNORM_T), features(f), eps(e) {
     gamma = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
-                                        std::vector<tcapint>{f}, dtag);
+                                        std::vector<tcapint>{1U, 1U, f}, dtag);
     gamma->storage->FillOnes();
 
     beta = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
-                                       std::vector<tcapint>{f}, dtag);
+                                       std::vector<tcapint>{1U, 1U, f}, dtag);
     beta->storage->FillZeros();
   }
 
