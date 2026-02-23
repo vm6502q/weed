@@ -29,6 +29,30 @@ struct SymbolTensor : BaseTensor {
                const bool &rg = false,
                const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
                const int64_t &did = -1);
+  SymbolTensor(const SymbolTensor &orig) { copy(orig); }
+
+  /**
+   * Make this tensor a shallow copy of another
+   */
+  void copy(const SymbolTensor &cp) {
+    // A tensor is a view on storage:
+    BaseTensor::copy(cp);
+  }
+
+  /**
+   * Cast this CPU-based tensor to a GPU-based one tensor or vice-versa (if
+   * necessary)
+   */
+  SymbolTensorPtr cast(const DeviceTag &dt) const {
+    SymbolTensorPtr cp = std::make_shared<SymbolTensor>(*this);
+    if (dt == DeviceTag::CPU) {
+      cp->storage = cp->storage->cpu();
+    } else if (dt == DeviceTag::GPU) {
+      cp->storage = cp->storage->gpu();
+    }
+
+    return cp;
+  }
 
   using BaseTensor::reshape;
   /**

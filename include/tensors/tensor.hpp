@@ -215,23 +215,6 @@ struct Tensor : public BaseTensor {
   }
 
   /**
-   * Compare the data type of two tensors and return the more-encompassing one
-   */
-  static DType get_dtype_by_presidence(const std::vector<TensorPtr> &v) {
-    for (const TensorPtr &p : v) {
-      if (p->storage->dtype == DType::COMPLEX) {
-        return DType::COMPLEX;
-      }
-    }
-    return DType::REAL;
-  }
-
-  /**
-   * Compare the device of two tensors and return the higher-performance one
-   */
-  static DeviceTag get_dtag_by_presidence(const std::vector<TensorPtr> &v);
-
-  /**
    * Make a gradient tensor (static)
    */
   static TensorPtr make_gradient(const std::vector<tcapint> &shp, const bool &s,

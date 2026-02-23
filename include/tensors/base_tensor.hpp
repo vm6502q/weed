@@ -50,7 +50,7 @@ struct BaseTensor {
   /**
    * Validate the constructor parameters
    */
-  virtual void validate_constructor() {
+  void validate_constructor() {
     if (shape.size() != stride.size()) {
       throw std::invalid_argument(
           "Tensor shape vector must have same length as stride vector!");
@@ -266,5 +266,22 @@ struct BaseTensor {
 
     return g_stride;
   }
+
+  /**
+   * Compare the data type of two tensors and return the more-encompassing one
+   */
+  static DType get_dtype_by_presidence(const std::vector<BaseTensorPtr> &v) {
+    for (const BaseTensorPtr &p : v) {
+      if (p->storage->dtype == DType::COMPLEX) {
+        return DType::COMPLEX;
+      }
+    }
+    return DType::REAL;
+  }
+
+  /**
+   * Compare the device of two tensors and return the higher-performance one
+   */
+  static DeviceTag get_dtag_by_presidence(const std::vector<BaseTensorPtr> &v);
 };
 } // namespace Weed

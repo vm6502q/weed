@@ -57,6 +57,7 @@ add_library (weed STATIC
     src/storage/sparse_cpu_complex_storage.cpp
     src/storage/sparse_cpu_real_storage.cpp
     src/storage/storage.cpp
+    src/tensors/base_tensor.cpp
     src/tensors/parameter.cpp
     src/tensors/tensor.cpp
     src/tensors/symbol_tensor.cpp

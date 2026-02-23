@@ -73,26 +73,6 @@ const tcapint GSTRIDE =
 const tcapint GSTRIDE = -1;
 #endif
 
-DeviceTag Tensor::get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
-#if ENABLE_GPU
-  for (const TensorPtr &p : v) {
-    const tcapint sz = p->storage->size;
-    const tcapint sp = p->storage->get_sparse_size();
-    if (sz == sp) {
-      if (sz > GSTRIDE) {
-        return DeviceTag::GPU;
-      }
-    } else {
-      if ((sp << 1U) > GSTRIDE) {
-        return DeviceTag::GPU;
-      }
-    }
-  }
-#endif
-
-  return DeviceTag::CPU;
-}
-
 void Tensor::make_gradient(const bool &force_sparse) {
   if (!requires_grad) {
     return;
@@ -1018,7 +998,7 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
 void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    std::vector<TensorPtr> p{out->grad};
+    std::vector<BaseTensorPtr> p{out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
     }
@@ -1072,7 +1052,7 @@ TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
 void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    std::vector<TensorPtr> p{out->grad};
+    std::vector<BaseTensorPtr> p{out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
       p.push_back(b);
@@ -1241,7 +1221,7 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
 void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    std::vector<TensorPtr> p{out->grad};
+    std::vector<BaseTensorPtr> p{out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
       p.push_back(b);
@@ -1338,7 +1318,7 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
 void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    std::vector<TensorPtr> p{out->grad};
+    std::vector<BaseTensorPtr> p{out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
     }
@@ -1392,7 +1372,7 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
 void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
-    std::vector<TensorPtr> p{b, out->grad};
+    std::vector<BaseTensorPtr> p{b, out->grad};
     if (a->requires_grad) {
       p.push_back(a->grad);
     }
