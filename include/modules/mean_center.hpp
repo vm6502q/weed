@@ -21,7 +21,9 @@ namespace Weed {
 struct MeanCenter : public Module {
   symint axis;
   MeanCenter(const symint &axis_ = 0) : Module(MEAN_CENTER_T), axis(axis_) {}
-  TensorPtr forward(const TensorPtr x) override { return x - Tensor::mean(x, axis); }
+  TensorPtr forward(const TensorPtr x) override {
+    return x - Tensor::mean(x, axis);
+  }
   void save(std::ostream &os) const override {
     Module::save(os);
     Serializer::write_symint(os, axis);

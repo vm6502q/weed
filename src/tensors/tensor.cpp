@@ -116,6 +116,7 @@ void Tensor::copy(const TensorPtr &cp) {
     Weed::add_in_place(*(dx.get()), *(dy.get()));
 
     cp->grad = dx;
+    cp->reduce_grad_broadcast();
   });
 }
 
@@ -490,7 +491,6 @@ void Tensor::make_row_slice_node(TensorPtr a, TensorPtr out,
         Weed::add_in_place(*(row_view.get()), *(out_grad.get()));
 
         a->grad = a_grad;
-
         a->reduce_grad_broadcast();
       });
 }
@@ -549,7 +549,6 @@ void Tensor::make_slice_node(TensorPtr a, TensorPtr out, const int64_t &axis,
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
 
         a->grad = a_grad;
-
         a->reduce_grad_broadcast();
       });
 }
@@ -610,6 +609,7 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         out_grad->match_shape(a_grad);
         a_grad->match_shape(out_grad);
         a_grad->materialize_broadcast();
+        out_grad->match_shape(a_grad);
         TensorPtr s =
             SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
         TensorPtr tmp = s * out_grad;
@@ -671,11 +671,14 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
 
         // re-insert reduced axis
         dy->shape[axis] = a->shape[axis];
+        dx->match_shape(dy);
+        dx->materialize_broadcast();
 
         dx->upcast(dy->storage->dtype);
         Weed::reduce_grad(axis, *dx, *a, *dy);
 
         a->grad = dx;
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -795,11 +798,14 @@ void Tensor::make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
 
         // re-insert reduced axis
         dy->shape[axis] = a->shape[axis];
+        dx->match_shape(dy);
+        dx->materialize_broadcast();
 
         dx->upcast(dy->storage->dtype);
         Weed::match_grad(axis, *dx, *a, *dy, *out);
 
         a->grad = dx;
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -825,10 +831,11 @@ void Tensor::make_abs_node(TensorPtr a, TensorPtr out) {
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         a_grad->upcast(out_grad->storage->dtype);
+        a_grad->match_shape(out_grad);
         a_grad->materialize_broadcast();
-        out_grad->match_shape(a_grad);
         Weed::abs_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()));
         a->grad = a_grad;
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -867,10 +874,11 @@ void Tensor::make_relu_node(TensorPtr a, TensorPtr out) {
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         a_grad->upcast(out_grad->storage->dtype);
+        a_grad->match_shape(out_grad);
         a_grad->materialize_broadcast();
-        out_grad->match_shape(a_grad);
         Weed::relu_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()));
         a->grad = a_grad;
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -897,10 +905,11 @@ void Tensor::make_sigmoid_node(TensorPtr a, TensorPtr out) {
     TensorPtr out_grad = out->grad->cast(dtag);
     TensorPtr _out = out->cast(dtag);
     a_grad->upcast(out_grad->storage->dtype);
+    a_grad->match_shape(out_grad);
     a_grad->materialize_broadcast();
-    out_grad->match_shape(a_grad);
     Weed::sigmoid_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
     a->grad = a_grad;
+    a->reduce_grad_broadcast();
   });
 }
 
@@ -927,10 +936,11 @@ void Tensor::make_tanh_node(TensorPtr a, TensorPtr out) {
     TensorPtr out_grad = out->grad->cast(dtag);
     TensorPtr _out = out->cast(dtag);
     a_grad->upcast(out_grad->storage->dtype);
+    a_grad->match_shape(out_grad);
     a_grad->materialize_broadcast();
-    out_grad->match_shape(a_grad);
     Weed::tanh_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
     a->grad = a_grad;
+    a->reduce_grad_broadcast();
   });
 }
 
@@ -958,10 +968,13 @@ void Tensor::make_max_node(TensorPtr a, TensorPtr out) {
     TensorPtr a_grad = a->grad->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
     a_grad->upcast(out_grad->storage->dtype);
+    a_grad->match_shape(out_grad);
+    a_grad->materialize_broadcast();
     out_grad->match_shape(a_grad);
     Weed::max_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
                    *(_out.get()));
     a->grad = a_grad;
+    a->reduce_grad_broadcast();
   });
 }
 
@@ -989,10 +1002,13 @@ void Tensor::make_min_node(TensorPtr a, TensorPtr out) {
     TensorPtr a_grad = a->grad->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
     a_grad->upcast(out_grad->storage->dtype);
+    a_grad->match_shape(out_grad);
+    a_grad->materialize_broadcast();
     out_grad->match_shape(a_grad);
     Weed::min_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
                    *(_out.get()));
     a->grad = a_grad;
+    a->reduce_grad_broadcast();
   });
 }
 
@@ -1019,8 +1035,8 @@ void Tensor::make_clamp_node(TensorPtr a, real1 lo, real1 hi, TensorPtr out) {
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         a_grad->upcast(out_grad->storage->dtype);
+        a_grad->match_shape(out_grad);
         a_grad->materialize_broadcast();
-        out_grad->match_shape(a_grad);
         Weed::clamp_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()), lo,
                          hi);
         a->grad = a_grad;
@@ -1492,6 +1508,9 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
     TensorPtr dx = x->grad->cast(dtag);
     TensorPtr dy = y->grad->cast(dtag);
 
+    dx->match_shape(dy);
+    dx->materialize_broadcast();
+
     TensorPtr _x = x->cast(dtag);
     TensorPtr _y = y->cast(dtag);
 
@@ -1509,6 +1528,7 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
     dx->upcast(r->storage->dtype);
     Weed::add_in_place(*(dx.get()), *(r.get()));
     x->grad = dx;
+    x->reduce_grad_broadcast();
   });
 }
 
@@ -1535,6 +1555,9 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
         TensorPtr dx = x->grad->cast(dtag);
         TensorPtr dy = y->grad->cast(dtag);
 
+        dx->match_shape(dy);
+        dx->materialize_broadcast();
+
         TensorPtr _y = y->cast(dtag);
 
         TensorPtr s = SCALAR(log_b, dy);
@@ -1547,6 +1570,7 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
         x->grad = dx;
+        x->reduce_grad_broadcast();
       });
 }
 
@@ -1573,6 +1597,9 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
         TensorPtr dx = x->grad->cast(dtag);
         TensorPtr dy = y->grad->cast(dtag);
 
+        dx->match_shape(dy);
+        dx->materialize_broadcast();
+
         TensorPtr _x = x->cast(dtag);
 
         TensorPtr s = SCALAR(inv_log_b, dy);
@@ -1585,6 +1612,7 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
         x->grad = dx;
+        x->reduce_grad_broadcast();
       });
 }
 } // namespace Weed
