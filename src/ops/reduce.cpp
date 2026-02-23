@@ -439,7 +439,7 @@ void match_grad(const tcapint &index, Tensor &din, const Tensor &in,
   if ((din.storage->dtype == DType::REAL) &&
       (dout.storage->dtype != DType::REAL)) {
     throw std::invalid_argument(
-        "In Weed::reduce_grad(din, in, dout), dout dtype "
+        "In Weed::match_grad(din, in, dout), dout dtype "
         "must upcast to dout dtype!");
   }
   const tcapint dinSize = din.get_broadcast_size();
@@ -447,7 +447,7 @@ void match_grad(const tcapint &index, Tensor &din, const Tensor &in,
   const tcapint doutSize = dout.get_broadcast_size();
   if ((dinSize != inSize) || (dinSize != doutSize)) {
     throw std::invalid_argument(
-        "In Weed::reduce_grad(din, in, dout), sizes do not match!");
+        "In Weed::match_grad(din, in, dout), sizes do not match!");
   }
   switch (din.storage->dtype) {
   case DType::COMPLEX:

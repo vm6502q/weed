@@ -627,18 +627,23 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
 
         TensorPtr dx = a->grad->cast(dtag);
-        TensorPtr dy = out->grad->cast(dtag);
+        TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
+
+        TensorPtr _a = a->cast(dtag);
 
         // re-insert reduced axis
-        dy->shape[axis] = a->shape[axis];
+        if (dy->shape.size() < _a->shape.size()) {
+          dy->unsqueeze(axis);
+        }
+        dx->match_shape(_a);
+        dx->materialize_broadcast();
+        dy->match_shape(dx);
 
         dx->upcast(dy->storage->dtype);
-        Weed::reduce_grad(axis, *dx, *a, *dy);
-
-        // remove reduced axis
-        dy->shape[axis] = 1U;
+        Weed::reduce_grad(axis, *dx, *_a, *dy);
 
         a->grad = dx;
+        a->reduce_grad_broadcast();
       });
 }
 
@@ -755,18 +760,23 @@ void Tensor::make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
 
         TensorPtr dx = a->grad->cast(dtag);
-        TensorPtr dy = out->grad->cast(dtag);
+        TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
+
+        TensorPtr _a = a->cast(dtag);
 
         // re-insert reduced axis
-        dy->shape[axis] = a->shape[axis];
+        if (dy->shape.size() < _a->shape.size()) {
+          dy->unsqueeze(axis);
+        }
+        dx->match_shape(_a);
+        dx->materialize_broadcast();
+        dy->match_shape(dx);
 
         dx->upcast(dy->storage->dtype);
         Weed::match_grad(axis, *dx, *a, *dy, *out);
 
-        // remove reduced axis
-        dy->shape[axis] = 1U;
-
         a->grad = dx;
+        a->reduce_grad_broadcast();
       });
 }
 

@@ -34,10 +34,16 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
       Node>(std::vector<TensorPtr>{weight}, [indices, w, out]() {
     const DeviceTag dtag = Tensor::get_dtag_by_presidence({w->grad, out->grad});
     TensorPtr dW = w->grad->cast(dtag);
-    TensorPtr dout = out->grad->cast(dtag);
+    TensorPtr dout = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
+
+    dout->match_shape(w);
+    dW->match_shape(w);
+    dW->materialize_broadcast();
+
     dW->upcast(dout->storage->dtype);
     Weed::embedding_scatter_add(*(dW.get()), *(indices.get()), *(dout.get()));
     w->grad = dW;
+    w->reduce_grad_broadcast();
   });
 
   return out;
