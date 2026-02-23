@@ -1188,6 +1188,10 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
     throw std::invalid_argument("matmul dimension mismatch");
   }
 
+  if (b->shape.size() < 2U) {
+    b->unsqueeze(1U);
+  }
+
   symint batch = 1;
   for (size_t i = 0; i < a->shape.size() - 2; ++i) {
     batch *= a->shape[i];
