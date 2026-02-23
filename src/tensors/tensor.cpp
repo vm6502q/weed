@@ -30,6 +30,7 @@
 #include <thread>
 #include <unordered_set>
 
+
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 #define IS_SPARSE(a)                                                           \
   (a && a->storage->is_sparse() &&                                             \
@@ -1430,10 +1431,16 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
     const DeviceTag dtag = get_dtag_by_presidence({x, y, x->grad, y->grad});
 
     TensorPtr dx = x->grad->cast(dtag);
-    TensorPtr dy = y->grad->cast(dtag);
+    TensorPtr dy = std::make_shared<Tensor>(*(y->grad.get()))->cast(dtag);
 
     TensorPtr _x = x->cast(dtag);
     TensorPtr _y = y->cast(dtag);
+
+    _y->match_shape(_x);
+    _x->match_shape(_y);
+    dy->match_shape(_y);
+    dx->match_shape(_y);
+    dx->materialize_broadcast();
 
     TensorPtr dy_y = Tensor::allocate_like(*(dy.get()), dy->storage->dtype,
                                            false, IS_SPARSE(dy));
@@ -1449,6 +1456,7 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
     dx->upcast(r->storage->dtype);
     Weed::add_in_place(*(dx.get()), *(r.get()));
     x->grad = dx;
+    x->reduce_grad_broadcast();
   });
 }
 
@@ -1473,9 +1481,13 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
         const DeviceTag dtag = get_dtag_by_presidence({y, x->grad, y->grad});
 
         TensorPtr dx = x->grad->cast(dtag);
-        TensorPtr dy = y->grad->cast(dtag);
+        TensorPtr dy = std::make_shared<Tensor>(*(y->grad.get()))->cast(dtag);
 
         TensorPtr _y = y->cast(dtag);
+
+        dy->match_shape(_y);
+        dx->match_shape(_y);
+        dx->materialize_broadcast();
 
         TensorPtr s = SCALAR(log_b, dy);
         TensorPtr dy_v = s * dy;
@@ -1487,6 +1499,7 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
         x->grad = dx;
+        x->reduce_grad_broadcast();
       });
 }
 
@@ -1511,9 +1524,13 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
         const DeviceTag dtag = get_dtag_by_presidence({x, x->grad, y->grad});
 
         TensorPtr dx = x->grad->cast(dtag);
-        TensorPtr dy = y->grad->cast(dtag);
+        TensorPtr dy = std::make_shared<Tensor>(*(y->grad.get()))->cast(dtag);
 
         TensorPtr _x = x->cast(dtag);
+
+        dy->match_shape(_x);
+        dx->match_shape(_x);
+        dx->materialize_broadcast();
 
         TensorPtr s = SCALAR(inv_log_b, dy);
         TensorPtr dy_v = s * dy;
@@ -1525,6 +1542,7 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
         dx->upcast(r->storage->dtype);
         Weed::add_in_place(*(dx.get()), *(r.get()));
         x->grad = dx;
+        x->reduce_grad_broadcast();
       });
 }
 } // namespace Weed
