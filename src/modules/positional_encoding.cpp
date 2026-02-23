@@ -48,6 +48,7 @@ TensorPtr PositionalEncoding::forward(const TensorPtr x) {
 
   // slice pe -> [T, D]
   TensorPtr pe_slice = Tensor::slice(pe, 0, 0, T);
+  pe_slice->unsqueeze(0);
 
   // broadcast pe_slice to [B, T, D] and add
   return x + pe_slice;

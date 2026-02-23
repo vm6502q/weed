@@ -339,7 +339,6 @@ bool Tensor::match_shape(const TensorPtr a) {
   return true;
 }
 
-
 void Tensor::materialize_broadcast() {
   bool needs = false;
   for (size_t i = 0; i < shape.size(); ++i) {
