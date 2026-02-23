@@ -34,8 +34,6 @@ struct Tensor : public BaseTensor {
   TensorPtr grad;
   bool requires_grad;
 
-  std::vector<bool> freeze;
-
   Tensor() {}
   Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &str,
          const bool &rg = false, const bool &s = true,
@@ -70,19 +68,6 @@ struct Tensor : public BaseTensor {
     if (dtype == DType::INT) {
       throw std::invalid_argument("Tensor cannot have DType::INT! (INT is only "
                                   "for SymbolTensor, not arithmetic Tensor.)");
-    }
-  }
-
-  void freeze_init_broadcast() {
-    if (stride.size() == 1U) {
-      // Never freeze a single (broadcast) index
-      // (or else the index isn't broadcast anyway)
-      return;
-    }
-
-    for (size_t i = 0U; i < stride.size(); ++i) {
-      // Freeze all initial broadcast indices
-      freeze[i] = !stride[i];
     }
   }
 

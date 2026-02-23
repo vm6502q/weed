@@ -96,7 +96,6 @@ DeviceTag Tensor::get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
 void Tensor::copy(const TensorPtr &cp) {
   // A tensor is a view on storage:
   BaseTensor::copy(cp);
-  freeze = cp->freeze;
   requires_grad = cp->requires_grad;
 
   if (!requires_grad) {
@@ -151,7 +150,6 @@ TensorPtr Tensor::allocate_like(const Tensor &orig, const DType &dt,
                                 const bool &rg, const bool &s) {
   TensorPtr n = allocate_like(orig.shape, full_contiguous_stride(orig.shape),
                               orig, dt, rg, s);
-  n->freeze = orig.freeze;
 
   return n;
 }
@@ -176,10 +174,9 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg, const bool &s,
                const DType &dtype, const DeviceTag &_dtag, const int64_t &did)
     : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
-      requires_grad(rg), freeze(shp.size(), false) {
+      requires_grad(rg) {
 
   validate_dtype(dtype);
-  freeze_init_broadcast();
 
   const tcapint size = get_size();
   DeviceTag dtag = _dtag;
@@ -223,7 +220,7 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
                const bool &rg, const DeviceTag &_dtag, const int64_t &did)
     : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
-      requires_grad(rg), freeze(shp.size(), false) {
+      requires_grad(rg) {
 
   const tcapint size = get_size();
 
@@ -231,8 +228,6 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument("Tensor value initializer vector must have "
                                 "same size as implied by shape and stride!");
   }
-
-  freeze_init_broadcast();
 
   DeviceTag dtag = _dtag;
   if (dtag == DEFAULT_DEVICE) {
@@ -253,7 +248,7 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
                const bool &rg, const DeviceTag &_dtag, const int64_t &did)
     : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
-      requires_grad(rg), freeze(shp.size(), false) {
+      requires_grad(rg) {
 
   const tcapint size = get_size();
 
@@ -261,8 +256,6 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
     throw std::invalid_argument("Tensor value initializer vector must have "
                                 "same size as implied by shape and stride!");
   }
-
-  freeze_init_broadcast();
 
   DeviceTag dtag = _dtag;
   if (dtag == DEFAULT_DEVICE) {
@@ -283,15 +276,13 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
 Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
                const bool &rg)
     : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
-      requires_grad(rg), freeze(shp.size(), false) {
-  freeze_init_broadcast();
+      requires_grad(rg) {
   storage = std::make_shared<SparseCpuRealStorage>(val, get_size());
 }
 Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
                const bool &rg)
     : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
-      requires_grad(rg), freeze(shp.size(), false) {
-  freeze_init_broadcast();
+      requires_grad(rg) {
   storage = std::make_shared<SparseCpuComplexStorage>(val, get_size());
 }
 
@@ -325,36 +316,18 @@ std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
 }
 
 bool Tensor::match_shape(const TensorPtr a) {
-  if (shape.size() > a->shape.size()) {
+  if (!is_scalar() && (shape.size() != a->shape.size())) {
     return false;
   }
 
-  std::vector<tcapint> osh = shape;
-  std::vector<tcapint> ost = stride;
-  std::vector<tcapint> nsh = a->shape;
-
-  std::reverse(osh.begin(), osh.end());
-  std::reverse(ost.begin(), ost.end());
-  std::reverse(nsh.begin(), nsh.end());
-
-  for (size_t i = 0U; i < osh.size(); ++i) {
-    if ((osh[i] != nsh[i]) && ost[i]) {
+  for (size_t i = 0U; i < shape.size(); ++i) {
+    if ((shape[i] != a->shape[i]) && stride[i]) {
       return false;
     }
   }
 
-  std::vector<bool> frz = freeze;
-  std::reverse(frz.begin(), frz.end());
-
-  ost.resize(nsh.size());
-  frz.resize(nsh.size());
-
-  std::reverse(ost.begin(), ost.end());
-  std::reverse(frz.begin(), frz.end());
-
   shape = a->shape;
-  stride = ost;
-  freeze = frz;
+  stride.resize(shape.size());
 
   return true;
 }
@@ -388,7 +361,7 @@ void Tensor::reduce_grad_broadcast() {
   }
 
   for (symint i = stride.size() - 1; i >= 0; --i) {
-    if (freeze[i] || stride[i]) {
+    if (stride[i]) {
       continue;
     }
 
@@ -1049,9 +1022,16 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  if (a->shape.size() == b->shape.size()) {
+    if (!a->match_shape(b) && !b->match_shape(a)) {
+      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                  "alter an index that was not broadcast.)");
+    }
+  } else if (!a->is_scalar() && !b->is_scalar()) {
+    throw std::invalid_argument("Tensor shape mismatch in add!");
+  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                "alter an index that was not broadcast.)");
+    throw std::invalid_argument("Tensor shape mismatch in add!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 
@@ -1106,9 +1086,16 @@ TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  if (a->shape.size() == b->shape.size()) {
+    if (!a->match_shape(b) && !b->match_shape(a)) {
+      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                  "alter an index that was not broadcast.)");
+    }
+  } else if (!a->is_scalar() && !b->is_scalar()) {
+    throw std::invalid_argument("Tensor shape mismatch in add!");
+  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                "alter an index that was not broadcast.)");
+    throw std::invalid_argument("Tensor shape mismatch in add!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 
@@ -1371,9 +1358,16 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  if (a->shape.size() == b->shape.size()) {
+    if (!a->match_shape(b) && !b->match_shape(a)) {
+      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                  "alter an index that was not broadcast.)");
+    }
+  } else if (!a->is_scalar() && !b->is_scalar()) {
+    throw std::invalid_argument("Tensor shape mismatch in add!");
+  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                "alter an index that was not broadcast.)");
+    throw std::invalid_argument("Tensor shape mismatch in add!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 
@@ -1428,9 +1422,16 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  if (a->shape.size() == b->shape.size()) {
+    if (!a->match_shape(b) && !b->match_shape(a)) {
+      throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
+                                  "alter an index that was not broadcast.)");
+    }
+  } else if (!a->is_scalar() && !b->is_scalar()) {
+    throw std::invalid_argument("Tensor shape mismatch in add!");
+  }
   if (!a->match_shape(b) && !b->match_shape(a)) {
-    throw std::invalid_argument("Tensor::match_shape() failed! (You tried to "
-                                "alter an index that was not broadcast.)");
+    throw std::invalid_argument("Tensor shape mismatch in add!");
   }
   TensorPtr out = Tensor::allocate_like(a->shape, *(a.get()), dt, rg, s);
 
