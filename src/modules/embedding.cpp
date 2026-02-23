@@ -36,11 +36,8 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
     TensorPtr dW = w->grad->cast(dtag);
     TensorPtr dout = out->grad->cast(dtag);
     dW->upcast(dout->storage->dtype);
-    dW->materialize_broadcast();
-    dout->match_shape(dW);
     Weed::embedding_scatter_add(*(dW.get()), *(indices.get()), *(dout.get()));
     w->grad = dW;
-    w->reduce_grad_broadcast();
   });
 
   return out;
