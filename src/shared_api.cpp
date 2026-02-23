@@ -170,7 +170,7 @@ MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
   }
 
   try {
-    module_results[mid]->t = module_results[mid]->m->forward(x);
+    module_results[mid]->t = Tensor::contiguous(module_results[mid]->m->forward(x));
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     module_results[mid]->error = 1;
@@ -213,7 +213,7 @@ MICROSOFT_QUANTUM_DECL void forward_int(_In_ uintw mid, _In_ uintw dtype,
   }
 
   try {
-    module_results[mid]->t = module_results[mid]->m->forward(x);
+    module_results[mid]->t = Tensor::contiguous(module_results[mid]->m->forward(x));
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     module_results[mid]->error = 1;
