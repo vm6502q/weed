@@ -67,10 +67,9 @@ int main() {
   std::vector<real1> target = doc.GetColumn<real1>("target");
 
   TensorPtr x = std::make_shared<Tensor>(
-      features, std::vector<tcapint>{row_count, col_count},
-      std::vector<tcapint>{1, row_count});
-  TensorPtr y = std::make_shared<Tensor>(
-      target, std::vector<tcapint>{row_count, 1}, std::vector<tcapint>{1, 0U});
+      features, std::vector<tcapint>{row_count, col_count});
+  TensorPtr y =
+      std::make_shared<Tensor>(target, std::vector<tcapint>{row_count, 1U});
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<Linear>(col_count, col_count << 1U),

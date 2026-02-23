@@ -22,21 +22,19 @@ typedef std::shared_ptr<Parameter> ParameterPtr;
  * during training and "lives" on a module"
  */
 struct Parameter : Tensor {
-  Parameter(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
+  Parameter(const std::vector<tcapint> &shp, const std::vector<tcapint> &str,
             const bool &s = true, const DType &dtype = DType::REAL,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
             const int64_t &did = -1)
-      : Tensor(shp, strd, true, s, DType::REAL, dtag, did) {}
+      : Tensor(shp, str, true, s, DType::REAL, dtag, did) {}
   Parameter(const std::vector<real1> &val, const std::vector<tcapint> &shp,
-            const std::vector<tcapint> &strd,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
             const int64_t &did = -1)
-      : Tensor(val, shp, strd, true, dtag, did) {}
+      : Tensor(val, shp, true, dtag, did) {}
   Parameter(const std::vector<complex> &val, const std::vector<tcapint> &shp,
-            const std::vector<tcapint> &strd,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
             const int64_t &did = -1)
-      : Tensor(val, shp, strd, true, dtag, did) {}
+      : Tensor(val, shp, true, dtag, did) {}
 
   void train() { requires_grad = true; }
   void eval() { requires_grad = false; }

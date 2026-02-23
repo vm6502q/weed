@@ -80,10 +80,9 @@ SymbolTensor::SymbolTensor(const std::vector<tcapint> &shp,
 }
 
 SymbolTensor::SymbolTensor(const std::vector<symint> &val,
-                           const std::vector<tcapint> &shp,
-                           const std::vector<tcapint> &strd, const bool &rg,
+                           const std::vector<tcapint> &shp, const bool &rg,
                            const DeviceTag &_dtag, const int64_t &did)
-    : BaseTensor(shp, strd) {
+    : BaseTensor(shp, full_contiguous_stride(shp)) {
 
   const tcapint size = get_size();
 

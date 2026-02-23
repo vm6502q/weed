@@ -87,9 +87,9 @@ TEST_CASE("test_complex_cpu_gpu_conversions") {
 #endif
 
 TEST_CASE("test_sum_real") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::sum(x);
   Tensor::backward(y);
 
@@ -98,9 +98,9 @@ TEST_CASE("test_sum_real") {
 }
 
 TEST_CASE("test_sum_complex") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<complex>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::sum(x);
   Tensor::backward(y);
 
@@ -109,9 +109,9 @@ TEST_CASE("test_sum_complex") {
 }
 
 TEST_CASE("test_mean_real") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::mean(x);
   Tensor::backward(y);
 
@@ -120,9 +120,9 @@ TEST_CASE("test_mean_real") {
 }
 
 TEST_CASE("test_mean_complex") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<complex>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::mean(x);
   Tensor::backward(y);
 
@@ -131,9 +131,9 @@ TEST_CASE("test_mean_complex") {
 }
 
 TEST_CASE("test_variance_real") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(1), R(2)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(1), R(2)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::variance(x);
   Tensor::backward(y);
 
@@ -142,9 +142,9 @@ TEST_CASE("test_variance_real") {
 }
 
 TEST_CASE("test_variance_complex") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(1), R(2)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<complex>{R(1), R(1), R(2)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::variance(x);
   Tensor::backward(y);
 
@@ -153,9 +153,9 @@ TEST_CASE("test_variance_complex") {
 }
 
 TEST_CASE("test_stddev_real") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(1), R(2)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(1), R(2)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::stddev(x);
   Tensor::backward(y);
 
@@ -164,9 +164,9 @@ TEST_CASE("test_stddev_real") {
 }
 
 TEST_CASE("test_stddev_complex") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(1), R(2)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<complex>{R(1), R(1), R(2)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::stddev(x);
   Tensor::backward(y);
 
@@ -176,8 +176,7 @@ TEST_CASE("test_stddev_complex") {
 
 TEST_CASE("test_sum_axis_real") {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(1)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+      std::vector<real1>{R(1), R(1)}, std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr y = Tensor::sum(x, 0U);
   Tensor::backward(y);
 
@@ -189,9 +188,9 @@ TEST_CASE("test_sum_axis_real") {
 }
 
 TEST_CASE("test_sum_axis_complex") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(1), R(1)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<complex>{R(1), R(1)},
+                               std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr y = Tensor::sum(x, 0U);
   Tensor::backward(y);
 
@@ -204,8 +203,7 @@ TEST_CASE("test_sum_axis_complex") {
 
 TEST_CASE("test_max_axis") {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(1)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+      std::vector<real1>{R(0), R(1)}, std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr y = Tensor::max(x, 0U);
   Tensor::backward(y);
 
@@ -218,8 +216,7 @@ TEST_CASE("test_max_axis") {
 
 TEST_CASE("test_min_axis") {
   TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(0), R(1)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+      std::vector<real1>{R(0), R(1)}, std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr y = Tensor::min(x, 0U);
   Tensor::backward(y);
 
@@ -345,9 +342,9 @@ TEST_CASE("test_scalar_tanh_mixed_grad") {
 }
 
 TEST_CASE("test_max") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::max(x);
   Tensor::backward(y);
 
@@ -360,9 +357,9 @@ TEST_CASE("test_max") {
 }
 
 TEST_CASE("test_max_complex_grad") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::max(x);
   TensorPtr z = std::make_shared<ComplexScalar>(R(1), true, TEST_DTAG);
   TensorPtr w = y * z;
@@ -377,9 +374,9 @@ TEST_CASE("test_max_complex_grad") {
 }
 
 TEST_CASE("test_max_mixed_grad") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::max(x);
   x->grad->upcast(DType::COMPLEX);
   Tensor::backward(y);
@@ -393,9 +390,9 @@ TEST_CASE("test_max_mixed_grad") {
 }
 
 TEST_CASE("test_min") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::min(x);
   Tensor::backward(y);
 
@@ -408,9 +405,9 @@ TEST_CASE("test_min") {
 }
 
 TEST_CASE("test_min_complex_grad") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::min(x);
   TensorPtr z = std::make_shared<ComplexScalar>(R(1), true, TEST_DTAG);
   TensorPtr w = y * z;
@@ -425,9 +422,9 @@ TEST_CASE("test_min_complex_grad") {
 }
 
 TEST_CASE("test_min_mixed_grad") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(1), R(2), R(3)}, std::vector<tcapint>{3},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
   TensorPtr y = Tensor::min(x);
   x->grad->upcast(DType::COMPLEX);
   Tensor::backward(y);
@@ -734,10 +731,8 @@ TEST_CASE("test_real_scalar_add_sparse") {
   ComplexSparseVector yvec;
   yvec[1] = R(1);
 
-  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3}, false);
   TensorPtr z = x + y;
 
   ComplexStorage *zs = static_cast<ComplexStorage *>(z->storage.get());
@@ -804,10 +799,8 @@ TEST_CASE("test_real_scalar_sub_sparse") {
   RealSparseVector yvec;
   yvec[1] = R(1);
 
-  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3}, false);
   TensorPtr z = x - y;
 
   RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
@@ -857,10 +850,8 @@ TEST_CASE("test_real_scalar_mul_sparse") {
   RealSparseVector yvec;
   yvec[1] = R(1);
 
-  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3}, false);
   TensorPtr z = x * y;
 
   RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
@@ -919,10 +910,8 @@ TEST_CASE("test_real_scalar_div_sparse") {
   yvec[1] = R(2);
   yvec[2] = R(2);
 
-  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
-  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3},
-                                         std::vector<tcapint>{1}, false);
+  TensorPtr x = std::make_shared<Tensor>(xvec, std::vector<tcapint>{3}, false);
+  TensorPtr y = std::make_shared<Tensor>(yvec, std::vector<tcapint>{3}, false);
   TensorPtr z = x / y;
 
   RealStorage *zs = static_cast<RealStorage *>(z->storage.get());
@@ -934,8 +923,7 @@ TEST_CASE("test_real_scalar_div_sparse") {
 TEST_CASE("test_real_broadcast_mul") {
   TensorPtr x = std::make_shared<RealScalar>(R(2), true, TEST_DTAG);
   TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(3), R(4)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+      std::vector<real1>{R(3), R(4)}, std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr z = x * y;
   Tensor::backward(z);
 
@@ -946,9 +934,9 @@ TEST_CASE("test_real_broadcast_mul") {
 
 TEST_CASE("test_complex_broadcast_mul") {
   TensorPtr x = std::make_shared<ComplexScalar>(complex(R(2)), true, TEST_DTAG);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<complex>{R(3), R(4)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+  TensorPtr y =
+      std::make_shared<Tensor>(std::vector<complex>{R(3), R(4)},
+                               std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr z = x * y;
   Tensor::backward(z);
 
@@ -960,8 +948,7 @@ TEST_CASE("test_complex_broadcast_mul") {
 TEST_CASE("test_mixed_broadcast_mul") {
   TensorPtr x = std::make_shared<ComplexScalar>(complex(R(2)), true, TEST_DTAG);
   TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(3), R(4)}, std::vector<tcapint>{2},
-      std::vector<tcapint>{1}, true, TEST_DTAG);
+      std::vector<real1>{R(3), R(4)}, std::vector<tcapint>{2}, true, TEST_DTAG);
   TensorPtr z = x * y;
   Tensor::backward(z);
 
@@ -971,22 +958,20 @@ TEST_CASE("test_mixed_broadcast_mul") {
 }
 
 TEST_CASE("test_real_matmul") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(2), R(3)}, std::vector<tcapint>{1, 2},
-      std::vector<tcapint>{1, 1}, false, TEST_DTAG);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<real1>{R(4), R(5)}, std::vector<tcapint>{2, 1},
-      std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(2), R(3)},
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  TensorPtr y =
+      std::make_shared<Tensor>(std::vector<real1>{R(4), R(5)},
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   TensorPtr z = x >> y;
 
   REQUIRE(GET_REAL((*(z.get()))[0]) == R(23));
 
   x = std::make_shared<Tensor>(std::vector<real1>{R(2), R(3)},
-                               std::vector<tcapint>{2, 1},
-                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   y = std::make_shared<Tensor>(std::vector<real1>{R(4), R(5)},
-                               std::vector<tcapint>{1, 2},
-                               std::vector<tcapint>{1, 1}, false, TEST_DTAG);
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
   z = x >> y;
 
   REQUIRE(GET_REAL((*(*(z.get()))[0])[0]) == R(8));
@@ -996,22 +981,20 @@ TEST_CASE("test_real_matmul") {
 }
 
 TEST_CASE("test_complex_matmul") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<complex>{R(2), R(3)}, std::vector<tcapint>{1, 2},
-      std::vector<tcapint>{1, 1}, false, TEST_DTAG);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<complex>{R(4), R(5)}, std::vector<tcapint>{2, 1},
-      std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<complex>{R(2), R(3)},
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  TensorPtr y =
+      std::make_shared<Tensor>(std::vector<complex>{R(4), R(5)},
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   TensorPtr z = x >> y;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), R(23));
 
   x = std::make_shared<Tensor>(std::vector<complex>{R(2), R(3)},
-                               std::vector<tcapint>{2, 1},
-                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   y = std::make_shared<Tensor>(std::vector<complex>{R(4), R(5)},
-                               std::vector<tcapint>{1, 2},
-                               std::vector<tcapint>{1, 1}, false, TEST_DTAG);
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
   z = x >> y;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[0])[0]), R(8));
@@ -1021,22 +1004,20 @@ TEST_CASE("test_complex_matmul") {
 }
 
 TEST_CASE("test_mixed_matmul") {
-  TensorPtr x = std::make_shared<Tensor>(
-      std::vector<real1>{R(2), R(3)}, std::vector<tcapint>{1, 2},
-      std::vector<tcapint>{1, 1}, false, TEST_DTAG);
-  TensorPtr y = std::make_shared<Tensor>(
-      std::vector<complex>{R(4), R(5)}, std::vector<tcapint>{2, 1},
-      std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(2), R(3)},
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  TensorPtr y =
+      std::make_shared<Tensor>(std::vector<complex>{R(4), R(5)},
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   TensorPtr z = x >> y;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), R(23));
 
   x = std::make_shared<Tensor>(std::vector<complex>{R(2), R(3)},
-                               std::vector<tcapint>{1, 2},
-                               std::vector<tcapint>{1, 1}, false, TEST_DTAG);
-  y = std::make_shared<Tensor>(std::vector<real1>{R(4), R(5)},
-                               std::vector<tcapint>{2, 1},
                                std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+  y = std::make_shared<Tensor>(std::vector<real1>{R(4), R(5)},
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   z = y << x;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), R(23));
@@ -1044,11 +1025,9 @@ TEST_CASE("test_mixed_matmul") {
   REQUIRE_CMPLX(GET_COMPLEX((*(z.get()))[0]), R(23));
 
   x = std::make_shared<Tensor>(std::vector<real1>{R(2), R(3)},
-                               std::vector<tcapint>{2, 1},
-                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   y = std::make_shared<Tensor>(std::vector<complex>{R(4), R(5)},
-                               std::vector<tcapint>{1, 2},
-                               std::vector<tcapint>{1, 1}, false, TEST_DTAG);
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
   z = y << x;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[0])[0]), R(8));
@@ -1057,11 +1036,9 @@ TEST_CASE("test_mixed_matmul") {
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[1])[1]), R(15));
 
   x = std::make_shared<Tensor>(std::vector<complex>{R(2), R(3)},
-                               std::vector<tcapint>{2, 1},
-                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
+                               std::vector<tcapint>{2, 1}, false, TEST_DTAG);
   y = std::make_shared<Tensor>(std::vector<real1>{R(4), R(5)},
-                               std::vector<tcapint>{1, 2},
-                               std::vector<tcapint>{1, 1}, false, TEST_DTAG);
+                               std::vector<tcapint>{1, 2}, false, TEST_DTAG);
   z = x >> y;
 
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[0])[0]), R(8));
@@ -1076,14 +1053,12 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   // A: 2x3 (column-major)
   TensorPtr A = std::make_shared<Tensor>(
       std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6)},
-      std::vector<tcapint>{2, 3}, std::vector<tcapint>{1, 2},
-      /*requires_grad=*/true, TEST_DTAG);
+      std::vector<tcapint>{2, 3}, true, TEST_DTAG);
 
   // B: 3x2 (column-major)
   TensorPtr B = std::make_shared<Tensor>(
       std::vector<real1>{R(7), R(8), R(9), R(10), R(11), R(12)},
-      std::vector<tcapint>{3, 2}, std::vector<tcapint>{1, 3},
-      /*requires_grad=*/true, TEST_DTAG);
+      std::vector<tcapint>{3, 2}, true, TEST_DTAG);
 
   TensorPtr C = A >> B;
   TensorPtr L = Tensor::sum(C);

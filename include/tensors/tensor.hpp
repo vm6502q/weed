@@ -37,33 +37,33 @@ struct Tensor : public BaseTensor {
   std::vector<bool> freeze;
 
   Tensor() {}
-  Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &strd,
+  Tensor(const std::vector<tcapint> &shp, const std::vector<tcapint> &str,
          const bool &rg = false, const bool &s = true,
          const DType &dtype = DType::REAL,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
          const int64_t &did = -1);
   Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
-         const std::vector<tcapint> &strd, const bool &rg = false,
+         const bool &rg = false,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
          const int64_t &did = -1);
   Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
-         const std::vector<tcapint> &strd, const bool &rg = false,
+         const bool &rg = false,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
          const int64_t &did = -1);
   Tensor(const real1 &val, const bool &rg = false,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
          const int64_t &did = -1)
-      : Tensor(std::vector<real1>{val}, std::vector<tcapint>{1U},
-               std::vector<tcapint>{0U}, rg, dtag, did) {}
+      : Tensor(std::vector<real1>{val}, std::vector<tcapint>{1U}, rg, dtag,
+               did) {}
   Tensor(const complex &val, const bool &rg = false,
          const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
          const int64_t &did = -1)
-      : Tensor(std::vector<complex>{val}, std::vector<tcapint>{1U},
-               std::vector<tcapint>{0U}, rg, dtag, did) {}
+      : Tensor(std::vector<complex>{val}, std::vector<tcapint>{1U}, rg, dtag,
+               did) {}
   Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
-         const std::vector<tcapint> &strd, const bool &rg = false);
+         const bool &rg = false);
   Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
-         const std::vector<tcapint> &strd, const bool &rg = false);
+         const bool &rg = false);
   Tensor(const TensorPtr &orig) { copy(orig); }
 
   void validate_dtype(const DType &dtype) {

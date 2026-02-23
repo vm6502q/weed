@@ -30,9 +30,8 @@ QrackNeuron::QrackNeuron(Qrack::QNeuronPtr qn,
       init.push_back((real1)dis(gen));
     }
 
-    angles =
-        std::make_shared<Parameter>(init, std::vector<tcapint>{(tcapint)sz},
-                                    std::vector<tcapint>{1U}, DeviceTag::CPU);
+    angles = std::make_shared<Parameter>(
+        init, std::vector<tcapint>{(tcapint)sz}, DeviceTag::CPU);
   } else {
     angles = std::make_shared<Parameter>(std::vector<tcapint>{(tcapint)sz},
                                          std::vector<tcapint>{1U}, false,
@@ -48,7 +47,7 @@ QrackNeuron::QrackNeuron(Qrack::QNeuronPtr qn,
     : Module(QRACK_NEURON_T), neuron(qn), activation_fn(activation) {
   angles = std::make_shared<Parameter>(
       init_angles, std::vector<tcapint>{(tcapint)(qn->GetInputPower())},
-      std::vector<tcapint>{1U}, DeviceTag::CPU);
+      DeviceTag::CPU);
   data = static_cast<CpuRealStorage *>(angles->storage.get())->data.get();
 }
 

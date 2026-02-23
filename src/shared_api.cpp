@@ -128,7 +128,6 @@ MICROSOFT_QUANTUM_DECL void free_module(_In_ uintw mid) {
 
 MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
                                     _In_ uintw n, _In_reads_(n) uintw *shape,
-                                    _In_reads_(n) uintw *stride,
                                     _In_ double *d) {
   MODULE_LOCK_GUARD_VOID(mid);
 
@@ -136,9 +135,11 @@ MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
   try {
     std::vector<tcapint> sh(n);
     std::vector<tcapint> st(n);
+    tcapint stride = 1U;
     for (size_t i = 0U; i < n; ++i) {
       sh[i] = (tcapint)shape[i];
-      st[i] = (tcapint)stride[i];
+      st[i] = stride;
+      stride *= sh[i];
     }
 
     tcapint max_index = 0U;
@@ -154,14 +155,14 @@ MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
       for (size_t i = 0U; i < max_index; ++i) {
         v[i] = (real1)d[i];
       }
-      x = std::make_shared<Tensor>(v, sh, st);
+      x = std::make_shared<Tensor>(v, sh);
     } else {
       std::vector<complex> v(max_index);
       for (size_t i = 0U; i < max_index; ++i) {
         size_t j = i << 1U;
         v[i] = complex((real1)d[j], (real1)d[j + 1U]);
       }
-      x = std::make_shared<Tensor>(v, sh, st);
+      x = std::make_shared<Tensor>(v, sh);
     }
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
@@ -179,7 +180,6 @@ MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
 MICROSOFT_QUANTUM_DECL void forward_int(_In_ uintw mid, _In_ uintw dtype,
                                         _In_ uintw n,
                                         _In_reads_(n) uintw *shape,
-                                        _In_reads_(n) uintw *stride,
                                         _In_ intw *d) {
   MODULE_LOCK_GUARD_VOID(mid);
 
@@ -187,9 +187,11 @@ MICROSOFT_QUANTUM_DECL void forward_int(_In_ uintw mid, _In_ uintw dtype,
   try {
     std::vector<tcapint> sh(n);
     std::vector<tcapint> st(n);
+    tcapint stride = 1U;
     for (size_t i = 0U; i < n; ++i) {
       sh[i] = (tcapint)shape[i];
-      st[i] = (tcapint)stride[i];
+      st[i] = stride;
+      stride *= sh[i];
     }
 
     tcapint max_index = 0U;
@@ -204,7 +206,7 @@ MICROSOFT_QUANTUM_DECL void forward_int(_In_ uintw mid, _In_ uintw dtype,
     for (size_t i = 0U; i < max_index; ++i) {
       v[i] = (symint)d[i];
     }
-    x = std::make_shared<SymbolTensor>(v, sh, st);
+    x = std::make_shared<SymbolTensor>(v, sh);
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     meta_error = 2;

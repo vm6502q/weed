@@ -175,8 +175,8 @@ TensorPtr Tensor::allocate_like(const std::vector<tcapint> &shp,
 Tensor::Tensor(const std::vector<tcapint> &shp,
                const std::vector<tcapint> &strd, const bool &rg, const bool &s,
                const DType &dtype, const DeviceTag &_dtag, const int64_t &did)
-    : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
-      freeze(shp.size(), false) {
+    : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
+      requires_grad(rg), freeze(shp.size(), false) {
 
   validate_dtype(dtype);
   freeze_init_broadcast();
@@ -221,10 +221,9 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
 }
 
 Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
-               const std::vector<tcapint> &strd, const bool &rg,
-               const DeviceTag &_dtag, const int64_t &did)
-    : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
-      freeze(shp.size(), false) {
+               const bool &rg, const DeviceTag &_dtag, const int64_t &did)
+    : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
+      requires_grad(rg), freeze(shp.size(), false) {
 
   const tcapint size = get_size();
 
@@ -252,10 +251,9 @@ Tensor::Tensor(const std::vector<real1> &val, const std::vector<tcapint> &shp,
 }
 
 Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
-               const std::vector<tcapint> &strd, const bool &rg,
-               const DeviceTag &_dtag, const int64_t &did)
-    : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
-      freeze(shp.size(), false) {
+               const bool &rg, const DeviceTag &_dtag, const int64_t &did)
+    : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
+      requires_grad(rg), freeze(shp.size(), false) {
 
   const tcapint size = get_size();
 
@@ -283,16 +281,16 @@ Tensor::Tensor(const std::vector<complex> &val, const std::vector<tcapint> &shp,
 }
 
 Tensor::Tensor(const RealSparseVector &val, const std::vector<tcapint> &shp,
-               const std::vector<tcapint> &strd, const bool &rg)
-    : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
-      freeze(shp.size(), false) {
+               const bool &rg)
+    : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
+      requires_grad(rg), freeze(shp.size(), false) {
   freeze_init_broadcast();
   storage = std::make_shared<SparseCpuRealStorage>(val, get_size());
 }
 Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
-               const std::vector<tcapint> &strd, const bool &rg)
-    : BaseTensor(shp, strd), grad_node(nullptr), requires_grad(rg),
-      freeze(shp.size(), false) {
+               const bool &rg)
+    : BaseTensor(shp, full_contiguous_stride(shp)), grad_node(nullptr),
+      requires_grad(rg), freeze(shp.size(), false) {
   freeze_init_broadcast();
   storage = std::make_shared<SparseCpuComplexStorage>(val, get_size());
 }

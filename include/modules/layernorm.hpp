@@ -30,13 +30,11 @@ struct LayerNorm : Module {
             const real1 &e = FP_NORM_EPSILON, const symint &a = -1)
       : Module(LAYERNORM_T), features(f), eps(e), axis(a) {
     gamma = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
-                                        std::vector<tcapint>{f},
-                                        std::vector<tcapint>{1}, dtag);
+                                        std::vector<tcapint>{f}, dtag);
     gamma->storage->FillOnes();
 
     beta = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
-                                       std::vector<tcapint>{f},
-                                       std::vector<tcapint>{1}, dtag);
+                                       std::vector<tcapint>{f}, dtag);
     beta->storage->FillZeros();
   }
 

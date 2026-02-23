@@ -37,8 +37,7 @@ PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
   }
 
   pe = std::make_shared<Parameter>(
-      values, std::vector<tcapint>{max_seq_len, d_model},
-      Tensor::full_contiguous_stride({max_seq_len, d_model}), device);
+      values, std::vector<tcapint>{max_seq_len, d_model}, device);
 
   // Never requires_grad
   pe->eval();

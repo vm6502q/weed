@@ -32,11 +32,10 @@ using namespace Weed;
 int main() {
   TensorPtr x = std::make_shared<Tensor>(
       std::vector<real1>{R(0), R(1), R(0), R(1), R(0), R(0), R(1), R(1)},
-      std::vector<tcapint>{4, 2}, std::vector<tcapint>{1, 4}, false,
-      DeviceTag::CPU);
+      std::vector<tcapint>{4, 2}, false, DeviceTag::CPU);
   TensorPtr y = std::make_shared<Tensor>(
       std::vector<real1>{R(0), R(1), R(1), R(0)}, std::vector<tcapint>{4, 1},
-      std::vector<tcapint>{1, 0}, false, DeviceTag::CPU);
+      false, DeviceTag::CPU);
 
   const std::vector<ModulePtr> mv = {std::make_shared<Linear>(2, 4),
                                      std::make_shared<Tanh>(),

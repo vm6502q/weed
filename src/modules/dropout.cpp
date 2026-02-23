@@ -36,7 +36,7 @@ TensorPtr Dropout::forward(const TensorPtr x) {
   }
 
   // Allocate mask like x (real-valued)
-  mask = std::make_shared<Tensor>(m, x->shape, x->stride);
+  mask = std::make_shared<Tensor>(m, x->shape);
 
   // y = x * mask / (1 - p)
   return (x * mask) / real1(ONE_R1 - p);

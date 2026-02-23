@@ -58,9 +58,6 @@ struct BaseTensor {
 
     if ((shape.size() == 1U) && (shape[0U] == 1U)) {
       stride[0U] = 0U;
-    } else if (!is_contiguous()) {
-      throw std::invalid_argument(
-          "Initial tensor shape and stride must be contiguous!");
     }
   }
 

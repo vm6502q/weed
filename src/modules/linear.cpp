@@ -38,8 +38,7 @@ Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, bool init_rand,
         init.push_back((real1)dis(gen));
       }
 
-      weight =
-          std::make_shared<Parameter>(init, shape, stride, device, device_id);
+      weight = std::make_shared<Parameter>(init, shape, device, device_id);
     } else {
       std::uniform_real_distribution<real1_s> adis((real1_s)(-PI_R1),
                                                    (real1_s)PI_R1);
@@ -49,8 +48,7 @@ Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, bool init_rand,
         init.push_back(std::polar((real1)dis(gen), (real1)adis(gen)));
       }
 
-      weight =
-          std::make_shared<Parameter>(init, shape, stride, device, device_id);
+      weight = std::make_shared<Parameter>(init, shape, device, device_id);
     }
   } else {
     weight = std::make_shared<Parameter>(shape, stride, true, dtype, device,

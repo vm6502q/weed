@@ -110,8 +110,7 @@ int main() {
 
       auto input = std::make_shared<SymbolTensor>(
           sample.input_tokens,
-          std::vector<tcapint>{1U, (tcapint)sample.input_tokens.size()},
-          std::vector<tcapint>{1U, 1U});
+          std::vector<tcapint>{1U, (tcapint)sample.input_tokens.size()});
 
       auto logits = model.forward(input);
       logits->squeeze(2);
@@ -122,8 +121,7 @@ int main() {
 
       auto target = std::make_shared<Tensor>(
           sample.target_bits,
-          std::vector<tcapint>{1U, (tcapint)sample.target_bits.size()},
-          std::vector<tcapint>{1U, 1U});
+          std::vector<tcapint>{1U, (tcapint)sample.target_bits.size()});
 
       auto loss = bci_with_logits_loss(predicted, target);
       total_loss += GET_REAL(loss);
