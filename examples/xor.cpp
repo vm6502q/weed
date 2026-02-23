@@ -60,7 +60,7 @@ int main() {
     adam_step(opt, params);
 
     loss_r = GET_REAL(loss);
-    if ((epoch % 10) == 0U) {
+    if ((epoch % 100) == 0U) {
       std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
     }
 

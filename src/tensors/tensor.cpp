@@ -1139,12 +1139,12 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
       TensorPtr _b = b->cast(dtag);
       TensorPtr a_grad = a->grad->cast(dtag);
       const DType &dt = get_dtype_by_presidence({_b, out_grad});
-      TensorPtr tmp =
-          Tensor::allocate_like(*(a_grad.get()), dt, false, IS_SPARSE(b));
-      Weed::mul(*(out_grad.get()), *(_b.get()), *(tmp.get()));
       a_grad->upcast(dt);
       a_grad->match_shape(out_grad);
       a_grad->materialize_broadcast();
+      TensorPtr tmp =
+          Tensor::allocate_like(*(a_grad.get()), dt, false, IS_SPARSE(b));
+      Weed::mul(*(out_grad.get()), *(_b.get()), *(tmp.get()));
       Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
       a->grad = a_grad;
       a->reduce_grad_broadcast();
@@ -1153,12 +1153,12 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
       TensorPtr _a = a->cast(dtag);
       TensorPtr b_grad = b->grad->cast(dtag);
       const DType &dt = get_dtype_by_presidence({_a, out_grad});
-      TensorPtr tmp =
-          Tensor::allocate_like(*(b_grad.get()), dt, false, IS_SPARSE(a));
-      Weed::mul(*(out_grad.get()), *(_a.get()), *(tmp.get()));
       b_grad->upcast(dt);
       b_grad->match_shape(out_grad);
       b_grad->materialize_broadcast();
+      TensorPtr tmp =
+          Tensor::allocate_like(*(b_grad.get()), dt, false, IS_SPARSE(a));
+      Weed::mul(*(out_grad.get()), *(_a.get()), *(tmp.get()));
       Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
       b->grad = b_grad;
       b->reduce_grad_broadcast();
@@ -1469,13 +1469,13 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (b->requires_grad) {
       TensorPtr _a = a->cast(dtag);
       TensorPtr b_grad = b->grad->cast(dtag);
-      TensorPtr b_sqr = Tensor::allocate_like(*(b_grad.get()), _b->storage->dtype,
+      const DType &dt = get_dtype_by_presidence({_b, _a});
+      b_grad->upcast(dt);
+      b_grad->match_shape(_a);
+      b_grad->materialize_broadcast();
+      TensorPtr b_sqr = Tensor::allocate_like(*(_b.get()), _b->storage->dtype,
                                               false, IS_SPARSE(b));
       Weed::mul(*(_b.get()), *(_b.get()), *(b_sqr.get()));
-      const DType &dt = get_dtype_by_presidence({a, b_sqr});
-      b_grad->upcast(dt);
-      b_grad->match_shape(out_grad);
-      b_grad->materialize_broadcast();
       TensorPtr tmp =
           Tensor::allocate_like(*(b_grad.get()), dt, false, IS_SPARSE(a));
       Weed::div(*(_a.get()), *(b_sqr.get()), *(tmp.get()));
