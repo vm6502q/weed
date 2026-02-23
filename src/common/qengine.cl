@@ -713,7 +713,7 @@ void kernel embedding_grad_real(global symint* idx, global real1* dW, global rea
     const tcapint w_base = O_B + token * I_B;
     const tcapint o_base = J_A + i_X * O_C;
     for (tcapint d = 0U; d < J_B; ++d) {
-      dW[w_base + d * O_C] += dO[o_base + d * I_C];
+      dW[w_base + d * I_C] += dO[o_base + d * O_C];
     }
 }
 void kernel embedding_grad_complex(global symint* idx, global cmplx* dW, global cmplx* dO, constant tcapint* vecCapIntArgs)
@@ -722,7 +722,7 @@ void kernel embedding_grad_complex(global symint* idx, global cmplx* dW, global 
     const tcapint w_base = O_B + token * I_B;
     const tcapint o_base = J_A + i_X * O_C;
     for (tcapint d = 0U; d < J_B; ++d) {
-      dW[w_base + d * O_C] += dO[o_base + d * I_C];
+      dW[w_base + d * I_C] += dO[o_base + d * O_C];
     }
 }
 void kernel embedding_grad_mixed(global symint* idx, global real1* dW, global real1* dO, constant tcapint* vecCapIntArgs)
@@ -731,7 +731,7 @@ void kernel embedding_grad_mixed(global symint* idx, global real1* dW, global re
     const tcapint w_base = O_B + token * I_B;
     const tcapint o_base = J_A + i_X * O_C;
     for (tcapint d = 0U; d < J_B; ++d) {
-      dW[(w_base + d * O_C) << 1U] += dO[o_base + d * I_C];
+      dW[(w_base + d * I_C) << 1U] += dO[o_base + d * O_C];
     }
 }
 
