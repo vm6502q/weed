@@ -625,8 +625,7 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
   }
 
   const size_t p_stride = a->stride[axis];
-  const size_t p_shape = a->shape[axis];
-  if (!p_stride || (p_shape == 1U)) {
+  if (!p_stride || (a->shape[axis] == 1U)) {
     a->shape[axis] = 1U;
 
     return a;
@@ -713,8 +712,7 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
   }
 
   const size_t p_stride = a->stride[axis];
-  const size_t p_shape = a->shape[axis];
-  if (!p_stride || (p_shape == 1U)) {
+  if (!p_stride || (a->shape[axis] == 1U)) {
     a->shape[axis] = 1U;
 
     return a;
@@ -755,8 +753,7 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   }
 
   const size_t p_stride = a->stride[axis];
-  const size_t p_shape = a->shape[axis];
-  if (!p_stride || (p_shape == 1U)) {
+  if (!p_stride || (a->shape[axis] == 1U)) {
     a->shape[axis] = 1U;
 
     return a;
