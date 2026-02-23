@@ -603,11 +603,10 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
         // da += dout / N   (broadcast)
-        a_grad->upcast(out_grad->storage->dtype);
         out_grad->match_shape(a_grad);
+        a_grad->upcast(out_grad->storage->dtype);
         a_grad->match_shape(out_grad);
         a_grad->materialize_broadcast();
-        out_grad->match_shape(a_grad);
         TensorPtr s =
             SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
         TensorPtr tmp = s * out_grad;
@@ -966,10 +965,10 @@ void Tensor::make_max_node(TensorPtr a, TensorPtr out) {
     TensorPtr _out = out->cast(dtag);
     TensorPtr a_grad = a->grad->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
+    out_grad->match_shape(a_grad);
     a_grad->upcast(out_grad->storage->dtype);
     a_grad->match_shape(out_grad);
     a_grad->materialize_broadcast();
-    out_grad->match_shape(a_grad);
     Weed::max_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
                    *(_out.get()));
     a->grad = a_grad;
@@ -1000,10 +999,10 @@ void Tensor::make_min_node(TensorPtr a, TensorPtr out) {
     TensorPtr _out = out->cast(dtag);
     TensorPtr a_grad = a->grad->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
+    out_grad->match_shape(a_grad);
     a_grad->upcast(out_grad->storage->dtype);
     a_grad->match_shape(out_grad);
     a_grad->materialize_broadcast();
-    out_grad->match_shape(a_grad);
     Weed::min_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()),
                    *(_out.get()));
     a->grad = a_grad;
@@ -1079,6 +1078,7 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
+      out_grad->match_shape(a_grad);
       a_grad->upcast(out_grad->storage->dtype);
       a_grad->match_shape(out_grad);
       a_grad->materialize_broadcast();
@@ -1088,6 +1088,7 @@ void Tensor::make_add_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     }
     if (b->requires_grad) {
       TensorPtr b_grad = b->grad->cast(dtag);
+      out_grad->match_shape(b_grad);
       b_grad->upcast(out_grad->storage->dtype);
       b_grad->match_shape(out_grad);
       b_grad->materialize_broadcast();
@@ -1137,6 +1138,7 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (a->requires_grad) {
       TensorPtr _b = b->cast(dtag);
       TensorPtr a_grad = a->grad->cast(dtag);
+      out_grad->match_shape(a_grad);
       const DType &dt = get_dtype_by_presidence({_b, out_grad});
       a_grad->upcast(dt);
       a_grad->match_shape(out_grad);
@@ -1151,6 +1153,7 @@ void Tensor::make_mul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (b->requires_grad) {
       TensorPtr _a = a->cast(dtag);
       TensorPtr b_grad = b->grad->cast(dtag);
+      out_grad->match_shape(b_grad);
       const DType &dt = get_dtype_by_presidence({_a, out_grad});
       b_grad->upcast(dt);
       b_grad->match_shape(out_grad);
@@ -1397,6 +1400,7 @@ void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
+      out_grad->match_shape(a_grad);
       a_grad->upcast(out_grad->storage->dtype);
       a_grad->match_shape(out_grad);
       a_grad->materialize_broadcast();
@@ -1406,6 +1410,7 @@ void Tensor::make_sub_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     }
     if (b->requires_grad) {
       TensorPtr b_grad = b->grad->cast(dtag);
+      out_grad->match_shape(b_grad);
       b_grad->upcast(out_grad->storage->dtype);
       b_grad->match_shape(out_grad);
       b_grad->materialize_broadcast();
@@ -1454,6 +1459,7 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad = out->grad->cast(dtag);
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
+      out_grad->match_shape(a_grad);
       const DType &dt = get_dtype_by_presidence({_b, out_grad});
       a_grad->upcast(dt);
       a_grad->match_shape(out_grad);
@@ -1468,6 +1474,7 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (b->requires_grad) {
       TensorPtr _a = a->cast(dtag);
       TensorPtr b_grad = b->grad->cast(dtag);
+      out_grad->match_shape(b_grad);
       const DType &dt = get_dtype_by_presidence({_b, _a});
       b_grad->upcast(dt);
       b_grad->match_shape(_a);
