@@ -30,12 +30,12 @@
 #define DISPATCH_GPU_KERNEL(type1, type2, type3, api_call)                     \
   const tcapint args[10U]{indices.offset,                                      \
                           indices.stride[0U],                                  \
-                          weight.offset,                                       \
-                          weight.stride[0U],                                   \
-                          out.stride.back(),                                   \
-                          weight.stride[1U],                                   \
                           out.offset,                                          \
-                          weight.shape[1U],                                    \
+                          out.stride[0U],                                      \
+                          weight.stride.back(),                                \
+                          out.stride[1U],                                      \
+                          weight.offset,                                       \
+                          out.shape[1U],                                       \
                           0U,                                                  \
                           0U};                                                 \
   std::shared_ptr<type1> a_storage =                                           \
