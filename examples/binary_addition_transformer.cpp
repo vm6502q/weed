@@ -25,14 +25,6 @@
 #define R(v) real1(v)
 #define C(v) complex(v)
 
-#include "autograd/adam.hpp"
-#include "autograd/bci_with_logits_loss.hpp"
-#include "modules/embedding.hpp"
-#include "modules/linear.hpp"
-#include "modules/positional_encoding.hpp"
-#include "modules/sequential.hpp"
-#include "modules/transformer_encoder_layer.hpp"
-
 using namespace Weed;
 
 struct BinaryAdditionSample {
