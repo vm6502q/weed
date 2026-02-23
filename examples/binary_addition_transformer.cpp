@@ -32,99 +32,107 @@ struct BinaryAdditionSample {
   std::vector<real1> target_bits;   // 0/1 labels
 };
 
-BinaryAdditionSample generate_sample(int bit_width) {
-  int max_val = 1 << bit_width;
+BinaryAdditionSample generate_samples(int bit_width) {
+  std::vector<BinaryAdditionSample> svec;
+  const int max_val = 1 << bit_width;
+  const int max_lcv = 1 << (bit_width << 1U);
+  for (int j = 0; j < max_lcv; ++j) {
+    int a = j % max_val;
+    int b = (j >> bit_width) % max_val;
+    int sum = a + b;
 
-  int a = rand() % max_val;
-  int b = rand() % max_val;
-  int sum = a + b;
+    BinaryAdditionSample sample;
 
-  BinaryAdditionSample sample;
+    // Encode a (MSB first)
+    for (int i = bit_width - 1; i >= 0; --i) {
+      sample.input_tokens.push_back((a >> i) & 1);
+    }
 
-  // Encode a (MSB first)
-  for (int i = bit_width - 1; i >= 0; --i) {
-    sample.input_tokens.push_back((a >> i) & 1);
+    sample.input_tokens.push_back(2); // '+'
+
+    // Encode b
+    for (int i = bit_width - 1; i >= 0; --i) {
+      sample.input_tokens.push_back((b >> i) & 1);
+    }
+
+    sample.input_tokens.push_back(3); // '='
+
+    // Encode result (bit_width + 1 bits)
+    for (int i = bit_width; i >= 0; --i) {
+      sample.target_bits.push_back((sum >> i) & 1);
+    }
+
+    svec.push_back(sample);
   }
 
-  sample.input_tokens.push_back(2); // '+'
-
-  // Encode b
-  for (int i = bit_width - 1; i >= 0; --i) {
-    sample.input_tokens.push_back((b >> i) & 1);
+  BinaryAdditionSample batch;
+  const int max_in = (bit_width << 1) + 2;
+  for (int i = 0; i < max_in; ++i) {
+    for (size_t j = 0U; j < svec.size(); ++j) {
+      batch.input_tokens.push_back(svec[j].input_tokens[i]);
+    }
+  }
+  const int max_out = bit_width + 1;
+  for (int i = 0; i < max_out; ++i) {
+    for (size_t j = 0U; j < svec.size(); ++j) {
+      batch.target_bits.push_back(svec[j].target_bits[i]);
+    }
   }
 
-  sample.input_tokens.push_back(3); // '='
-
-  // Encode result (bit_width + 1 bits)
-  for (int i = bit_width; i >= 0; --i) {
-    sample.target_bits.push_back((sum >> i) & 1);
-  }
-
-  return sample;
+  return batch;
 }
 
 int main() {
-  const int bit_width = 4;
-  const int seq_len = bit_width * 2 + 2; // a + b =
-  const int target_len = bit_width + 1;  // sum bits
-  const int vocab_size = 5;
+  const tcapint bit_width = 2;
+  const tcapint seq_len = (bit_width << 1U) + 2U; // a + b =
+  const tcapint target_len = bit_width + 1U;      // sum bits
+  const tcapint vocab_size = 5;
 
-  const int d_model = 32;
-  const int d_ff = 64;
-  const int num_heads = 4;
+  const tcapint d_model = 8;
+  const tcapint d_ff = 16;
+  const tcapint num_heads = 1;
 
-  const int epochs = 2000;
-  const int batch_size = 32;
+  const int epochs = 100;
 
   // ---- Model ----
-  auto embedding = std::make_shared<Embedding>(vocab_size, d_model);
-  auto pos_enc = std::make_shared<PositionalEncoding>(seq_len, d_model);
+  Sequential model(
+      {std::make_shared<Embedding>(vocab_size, d_model),
+       std::make_shared<PositionalEncoding>(seq_len, d_model),
+       std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
+       std::make_shared<Linear>(d_model, 1)});
 
-  auto encoder =
-      std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff);
-
-  auto output = std::make_shared<Linear>(d_model, 1);
-
-  Sequential model({embedding, pos_enc, encoder, output});
   std::vector<ParameterPtr> params = model.parameters();
 
-  Adam opt(R(0.001));
-  opt.register_parameters(params);
+  Adam optimizer(R(0.01));
+  optimizer.register_parameters(params);
+
+  auto sample = generate_samples(bit_width);
+  const tcapint batch_size = sample.target_bits.size() / target_len;
+
+  auto input = std::make_shared<SymbolTensor>(
+      sample.input_tokens, std::vector<tcapint>{batch_size, seq_len});
+
+  auto target = std::make_shared<Tensor>(
+      sample.target_bits, std::vector<tcapint>{batch_size, target_len});
 
   // ---- Training ----
   size_t epoch = 1;
-  real1 total_loss = ONE_R1;
-  while ((epoch <= epochs) && (total_loss > 0.01)) {
-    total_loss = 0.0f;
+  real1 loss_r = ONE_R1;
+  while ((epoch <= epochs) && (loss_r > 0.01)) {
+    auto logits = model.forward(input);
+    logits->squeeze(2);
 
-    for (int b = 0; b < batch_size; ++b) {
-      auto sample = generate_sample(bit_width);
+    // We take only last (target_len) positions
+    auto predicted = Tensor::slice(logits, 1, seq_len - target_len, target_len);
 
-      auto input = std::make_shared<SymbolTensor>(
-          sample.input_tokens,
-          std::vector<tcapint>{1U, (tcapint)sample.input_tokens.size()});
+    auto loss = bci_with_logits_loss(predicted, target);
 
-      auto logits = model.forward(input);
-      logits->squeeze(2);
+    Tensor::backward(loss);
+    adam_step(optimizer, params);
 
-      // We take only last (target_len) positions
-      auto predicted =
-          Tensor::slice(logits, 1, seq_len - target_len, target_len);
-
-      auto target = std::make_shared<Tensor>(
-          sample.target_bits,
-          std::vector<tcapint>{1U, (tcapint)sample.target_bits.size()});
-
-      auto loss = bci_with_logits_loss(predicted, target);
-      total_loss += GET_REAL(loss);
-
-      Tensor::backward(loss);
-    }
-
-    adam_step(opt, params);
-
-    if ((epoch % 100) == 0U) {
-      std::cout << "Epoch " << epoch << ", Loss: " << total_loss << std::endl;
+    loss_r = GET_REAL(loss);
+    if ((epoch % 10) == 0U) {
+      std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
     }
 
     zero_grad(params);
