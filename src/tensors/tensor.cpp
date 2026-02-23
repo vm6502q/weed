@@ -30,7 +30,6 @@
 #include <thread>
 #include <unordered_set>
 
-
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 #define IS_SPARSE(a)                                                           \
   (a && a->storage->is_sparse() &&                                             \
@@ -95,8 +94,24 @@ DeviceTag Tensor::get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
 }
 
 void Tensor::make_gradient(const bool &force_sparse) {
-  if (!requires_grad || grad) {
+  if (!requires_grad) {
     return;
+  }
+
+  if (grad) {
+    bool is_same_shape = (grad->shape.size() == shape.size());
+    if (is_same_shape) {
+      for (size_t i = 0U; i < shape.size(); ++i) {
+        if (shape[i] != grad->shape[i]) {
+          is_same_shape = false;
+          break;
+        }
+      }
+    }
+
+    if (is_same_shape) {
+      return;
+    }
   }
 
   const tcapint sz = storage->size;
