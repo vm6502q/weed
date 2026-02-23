@@ -41,9 +41,9 @@
   std::shared_ptr<type1> a_storage =                                           \
       std::dynamic_pointer_cast<type1>(indices.storage);                       \
   std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(weight.storage);                        \
+      std::dynamic_pointer_cast<type2>(out.storage);                           \
   std::shared_ptr<type3> c_storage =                                           \
-      std::dynamic_pointer_cast<type3>(out.storage);                           \
+      std::dynamic_pointer_cast<type3>(weight.storage);                        \
   a_storage->dev->RequestKernel(                                               \
       api_call, args, indices.get_broadcast_size(),                            \
       {a_storage->buffer, b_storage->buffer, c_storage->buffer})
