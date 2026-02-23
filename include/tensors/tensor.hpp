@@ -62,7 +62,7 @@ struct Tensor : public BaseTensor {
          const bool &rg = false);
   Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
          const bool &rg = false);
-  Tensor(const TensorPtr &orig) { copy(orig); }
+  Tensor(const Tensor &orig) { copy(orig); }
 
   void validate_dtype(const DType &dtype) {
     if (dtype == DType::INT) {
@@ -74,7 +74,13 @@ struct Tensor : public BaseTensor {
   /**
    * Make this tensor a shallow copy of another
    */
-  void copy(const TensorPtr &cp);
+  void copy(const Tensor &cp) {
+    // A tensor is a view on storage:
+    BaseTensor::copy(cp);
+    grad_node = cp.grad_node;
+    grad = cp.grad;
+    requires_grad = cp.requires_grad;
+  }
 
   void make_gradient(const bool &force_sparse = false);
 
@@ -296,8 +302,8 @@ struct Tensor : public BaseTensor {
     out.reserve(chunks);
 
     for (size_t i = 0; i < chunks; ++i) {
-      TensorPtr t =
-          std::make_shared<Tensor>(*(a.get())); // shallow copy (shared storage)
+      // shallow copy (shared storage)
+      TensorPtr t = std::make_shared<Tensor>(*(a.get()));
 
       t->shape[axis] = chunk_dim;
       t->offset += i * chunk_dim * a->stride[axis];

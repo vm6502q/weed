@@ -39,12 +39,12 @@ struct BaseTensor {
   /**
    * Make this (base) tensor a shallow copy of another
    */
-  void copy(const BaseTensorPtr &cp) {
+  void copy(const BaseTensor &cp) {
     // A tensor is a view on storage:
-    storage = cp->storage;
-    offset = cp->offset;
-    shape = cp->shape;
-    stride = cp->stride;
+    storage = cp.storage;
+    offset = cp.offset;
+    shape = cp.shape;
+    stride = cp.stride;
   }
 
   /**

@@ -93,28 +93,6 @@ DeviceTag Tensor::get_dtag_by_presidence(const std::vector<TensorPtr> &v) {
   return DeviceTag::CPU;
 }
 
-void Tensor::copy(const TensorPtr &cp) {
-  // A tensor is a view on storage:
-  BaseTensor::copy(cp);
-  requires_grad = cp->requires_grad;
-
-  if (!requires_grad) {
-    return;
-  }
-
-  make_gradient();
-  grad_node = std::make_shared<Node>(std::vector<TensorPtr>{cp}, [cp, this]() {
-    const DeviceTag dtag = get_dtag_by_presidence({grad, cp->grad});
-
-    TensorPtr dx = cp->grad->cast(dtag);
-    TensorPtr dy = grad->cast(dtag);
-
-    Weed::add_in_place(*(dx.get()), *(dy.get()));
-
-    cp->grad = dx;
-  });
-}
-
 void Tensor::make_gradient(const bool &force_sparse) {
   if (!requires_grad || grad) {
     return;
@@ -633,13 +611,16 @@ void Tensor::make_sum_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
 
         TensorPtr dx = a->grad->cast(dtag);
-        TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
+        TensorPtr dy = out->grad->cast(dtag);
 
         // re-insert reduced axis
         dy->shape[axis] = a->shape[axis];
 
         dx->upcast(dy->storage->dtype);
         Weed::reduce_grad(axis, *dx, *a, *dy);
+
+        // remove reduced axis
+        dy->shape[axis] = 1U;
 
         a->grad = dx;
       });
@@ -758,13 +739,16 @@ void Tensor::make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
 
         TensorPtr dx = a->grad->cast(dtag);
-        TensorPtr dy = std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
+        TensorPtr dy = out->grad->cast(dtag);
 
         // re-insert reduced axis
         dy->shape[axis] = a->shape[axis];
 
         dx->upcast(dy->storage->dtype);
         Weed::match_grad(axis, *dx, *a, *dy, *out);
+
+        // remove reduced axis
+        dy->shape[axis] = 1U;
 
         a->grad = dx;
       });
