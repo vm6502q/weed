@@ -149,10 +149,11 @@ void embedding_gather(const SymbolTensor &a, const Tensor &b, Tensor &o) {
   }
 }
 
-void embedding_scatter_add(Tensor &o, const SymbolTensor &a, const Tensor &b) {
-  validate_all_same_device({&a, &b, &o}, "embedding_gather");
-  const bool isAComplex = a.storage->dtype == DType::COMPLEX;
-  const bool isOComplex = o.storage->dtype == DType::COMPLEX;
+void embedding_scatter_add(Tensor &dW, const SymbolTensor &indices,
+                           const Tensor &dout) {
+  validate_all_same_device({&dW, &indices, &dout}, "embedding_gather");
+  const bool isAComplex = dW.storage->dtype == DType::COMPLEX;
+  const bool isOComplex = dout.storage->dtype == DType::COMPLEX;
   if (isAComplex && !isOComplex) {
     throw std::invalid_argument(
         "Cannot combine complex tensors into real1 tensor!");
@@ -160,34 +161,34 @@ void embedding_scatter_add(Tensor &o, const SymbolTensor &a, const Tensor &b) {
   if (isOComplex) {
     if (isAComplex) {
 #if ENABLE_GPU
-      if (o.storage->device == DeviceTag::GPU) {
-        cpu_backward<ComplexStorage, ComplexStorage>(o, a, b);
+      if (dout.storage->device == DeviceTag::GPU) {
+        gpu_backward_complex(dW, indices, dout);
       } else {
-        gpu_backward_complex(o, a, b);
+        cpu_backward<ComplexStorage, ComplexStorage>(dW, indices, dout);
       }
 #else
-      cpu_backward<ComplexStorage, ComplexStorage>(o, a, b);
+      cpu_backward<ComplexStorage, ComplexStorage>(dW, indices, dout);
 #endif
     } else {
 #if ENABLE_GPU
-      if (o.storage->device == DeviceTag::GPU) {
-        cpu_backward<ComplexStorage, RealStorage>(o, a, b);
+      if (dout.storage->device == DeviceTag::GPU) {
+        gpu_backward_mixed(dW, indices, dout);
       } else {
-        gpu_backward_mixed(o, a, b);
+        cpu_backward<ComplexStorage, RealStorage>(dW, indices, dout);
       }
 #else
-      cpu_backward<ComplexStorage, RealStorage>(o, a, b);
+      cpu_backward<ComplexStorage, RealStorage>(dW, indices, dout);
 #endif
     }
   } else {
 #if ENABLE_GPU
-    if (o.storage->device == DeviceTag::GPU) {
-      cpu_backward<RealStorage, RealStorage>(o, a, b);
+    if (dout.storage->device == DeviceTag::GPU) {
+      gpu_backward_real(dW, indices, dout);
     } else {
-      gpu_backward_real(o, a, b);
+      cpu_backward<RealStorage, RealStorage>(dW, indices, dout);
     }
 #else
-    cpu_backward<RealStorage, RealStorage>(o, a, b);
+    cpu_backward<RealStorage, RealStorage>(dW, indices, dout);
 #endif
   }
 }
