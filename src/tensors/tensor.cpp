@@ -600,23 +600,23 @@ TensorPtr Tensor::sum(TensorPtr a, symint axis) {
   a = contiguous(a);
 
   const bool rg = a->requires_grad;
-  TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
-  acp->shape[axis] = 1U;
-  std::vector<tcapint> &st = acp->stride;
-  st[axis] = 0U;
+  std::vector<tcapint> shp = a->shape;
+  std::vector<tcapint> str = a->stride;
+  shp[axis] = 1U;
+  str[axis] = 0U;
   size_t j = axis + 1;
-  while (!st[j] && (j < st.size())) {
+  while (!str[j] && (j < str.size())) {
     ++j;
   }
-  if (j < st.size()) {
-    const size_t o_stride = st[j] / p_stride;
-    for (; j < st.size(); ++j) {
-      st[j] /= o_stride;
+  if (j < str.size()) {
+    const size_t o_stride = str[j] / p_stride;
+    for (; j < str.size(); ++j) {
+      str[j] /= o_stride;
     }
   }
 
   TensorPtr out =
-      allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
+      allocate_like(shp, str, *(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
   Weed::reduce(axis, *(a.get()), *(out.get()));
 
   if (rg) {
@@ -684,23 +684,23 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
   a = contiguous(a);
 
   const bool rg = a->requires_grad;
-  TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
-  acp->shape[axis] = 1U;
-  std::vector<tcapint> &st = acp->stride;
-  st[axis] = 0U;
+  std::vector<tcapint> shp = a->shape;
+  std::vector<tcapint> str = a->stride;
+  shp[axis] = 1U;
+  str[axis] = 0U;
   size_t j = axis + 1;
-  while (!st[j] && (j < st.size())) {
+  while (!str[j] && (j < str.size())) {
     ++j;
   }
-  if (j < st.size()) {
-    const size_t o_stride = st[j] / p_stride;
-    for (; j < st.size(); ++j) {
-      st[j] /= o_stride;
+  if (j < str.size()) {
+    const size_t o_stride = str[j] / p_stride;
+    for (; j < str.size(); ++j) {
+      str[j] /= o_stride;
     }
   }
 
   TensorPtr out =
-      allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
+      allocate_like(shp, str, *(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
   Weed::max(axis, *(a.get()), *(out.get()));
 
   if (rg) {
@@ -725,23 +725,23 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   a = contiguous(a);
 
   const bool rg = a->requires_grad;
-  TensorPtr acp = std::make_shared<Tensor>(*(a.get()));
-  acp->shape[axis] = 1U;
-  std::vector<tcapint> &st = acp->stride;
-  st[axis] = 0U;
+  std::vector<tcapint> shp = a->shape;
+  std::vector<tcapint> str = a->stride;
+  shp[axis] = 1U;
+  str[axis] = 0U;
   size_t j = axis + 1;
-  while (!st[j] && (j < st.size())) {
+  while (!str[j] && (j < str.size())) {
     ++j;
   }
-  if (j < st.size()) {
-    const size_t o_stride = st[j] / p_stride;
-    for (; j < st.size(); ++j) {
-      st[j] /= o_stride;
+  if (j < str.size()) {
+    const size_t o_stride = str[j] / p_stride;
+    for (; j < str.size(); ++j) {
+      str[j] /= o_stride;
     }
   }
 
   TensorPtr out =
-      allocate_like(*(acp.get()), acp->storage->dtype, rg, IS_SPARSE(a));
+      allocate_like(shp, str, *(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
   Weed::min(axis, *(a.get()), *(out.get()));
 
   if (rg) {
