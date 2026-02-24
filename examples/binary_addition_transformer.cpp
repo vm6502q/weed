@@ -13,8 +13,8 @@
 #include "autograd/bci_with_logits_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/embedding.hpp"
+#include "modules/learned_positional_encoding.hpp"
 #include "modules/linear.hpp"
-#include "modules/positional_encoding.hpp"
 #include "modules/sequential.hpp"
 #include "modules/transformer_encoder_layer.hpp"
 #include "tensors/real_scalar.hpp"
@@ -97,7 +97,7 @@ int main() {
   // ---- Model ----
   Sequential model(
       {std::make_shared<Embedding>(vocab_size, d_model),
-       std::make_shared<PositionalEncoding>(seq_len, d_model),
+       std::make_shared<LearnedPositionalEncoding>(seq_len, d_model),
        std::make_shared<TransformerEncoderLayer>(d_model, num_heads, d_ff),
        std::make_shared<Linear>(d_model, 1)});
 

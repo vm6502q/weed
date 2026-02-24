@@ -46,6 +46,7 @@ enum ModuleType {
   STDDEV_T = 25,
   POSITIONAL_ENCODING_T = 26,
   MEAN_CENTER_T = 27,
-  FLATTEN_T = 28
+  FLATTEN_T = 28,
+  LEARNED_POSITIONAL_ENCODING_T = 29
 };
 } // namespace Weed

@@ -18,6 +18,7 @@
 #include "modules/gelu.hpp"
 #include "modules/gru.hpp"
 #include "modules/layernorm.hpp"
+#include "modules/learned_positional_encoding.hpp"
 #include "modules/linear.hpp"
 #include "modules/logsoftmax.hpp"
 #include "modules/lstm.hpp"
@@ -223,11 +224,22 @@ ModulePtr Module::load(std::istream &is) {
     return t;
   }
   case POSITIONAL_ENCODING_T: {
-    tcapint max_seq_len;
+    tcapint max_seq_len, d_model;
     Serializer::read_tcapint(is, max_seq_len);
-    tcapint d_model;
     Serializer::read_tcapint(is, d_model);
     return std::make_shared<PositionalEncoding>(max_seq_len, d_model);
+  }
+  case LEARNED_POSITIONAL_ENCODING_T: {
+    LearnedPositionalEncodingPtr l =
+        std::make_shared<LearnedPositionalEncoding>();
+    tcapint max_len, d_model;
+    Serializer::read_tcapint(is, max_len);
+    Serializer::read_tcapint(is, d_model);
+    l->max_len = max_len;
+    l->d_model = d_model;
+    l->pos_encoding = Parameter::load(is);
+
+    return l;
   }
 #if QRACK_AVAILABLE
   case QRACK_NEURON_LAYER_T: {

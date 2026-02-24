@@ -27,6 +27,7 @@ add_library (weed STATIC
     src/modules/embedding.cpp
     src/modules/gru.cpp
     src/modules/layernorm.cpp
+    src/modules/learned_positional_encoding.cpp
     src/modules/linear.cpp
     src/modules/lstm.cpp
     src/modules/migrate_cpu.cpp
@@ -241,7 +242,9 @@ install (FILES
     include/enums/quantum_function_type.hpp
     include/modules/dropout.hpp
     include/modules/embedding.hpp
+    include/modules/flatten.hpp
     include/modules/gru.hpp
+    include/modules/learned_positional_encoding.hpp
     include/modules/linear.hpp
     include/modules/logsoftmax.hpp
     include/modules/lstm.hpp
