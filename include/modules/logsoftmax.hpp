@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "common/serializer.hpp"
 #include "modules/module.hpp"
 
 namespace Weed {
@@ -24,6 +25,7 @@ struct LogSoftmax : public Module {
     return Tensor::logsoftmax(x, axis);
   }
   void save(std::ostream &os) const override {
+    Module::save(os);
     Serializer::write_symint(os, axis);
   }
 };

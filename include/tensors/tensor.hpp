@@ -348,6 +348,19 @@ struct Tensor : public BaseTensor {
     return out;
   }
 
+  using BaseTensor::flatten;
+  /**
+   * Flatten the tensor axis
+   */
+  static TensorPtr flatten(const TensorPtr a, symint axis) {
+    TensorPtr out = (is_contiguous(a->shape, a->stride))
+                        ? std::make_shared<Tensor>(*(a.get()))
+                        : contiguous(a);
+    out->flatten(axis);
+
+    return out;
+  }
+
   /**
    * Use autograd to calculate gradients that are in the same graph as this
    * Tensor

@@ -87,5 +87,16 @@ struct SymbolTensor : BaseTensor {
 
     return out;
   }
+
+  using BaseTensor::flatten;
+  /**
+   * Flatten the tensor axis
+   */
+  static SymbolTensorPtr flatten(const SymbolTensorPtr a, const symint &axis) {
+    SymbolTensorPtr out = std::make_shared<SymbolTensor>(*(a.get()));
+    out->flatten(axis);
+
+    return out;
+  }
 };
 } // namespace Weed

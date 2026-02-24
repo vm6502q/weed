@@ -14,6 +14,7 @@
 
 #include "modules/dropout.hpp"
 #include "modules/embedding.hpp"
+#include "modules/flatten.hpp"
 #include "modules/gelu.hpp"
 #include "modules/gru.hpp"
 #include "modules/layernorm.hpp"
@@ -154,6 +155,11 @@ ModulePtr Module::load(std::istream &is) {
     symint axis;
     Serializer::read_symint(is, axis);
     return std::make_shared<LogSoftmax>(axis);
+  }
+  case ModuleType::FLATTEN_T: {
+    symint axis;
+    Serializer::read_symint(is, axis);
+    return std::make_shared<Flatten>(axis);
   }
   case ModuleType::MEAN_T: {
     symint axis;

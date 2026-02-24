@@ -233,6 +233,30 @@ struct BaseTensor {
     }
   }
 
+  void flatten(symint axis) {
+    while (axis < 0) {
+      axis += shape.size();
+    }
+
+    if (axis < 1) {
+      throw std::invalid_argument("Can't flatten axis 0!");
+    }
+    if ((tcapint)axis >= shape.size()) {
+      throw std::invalid_argument(
+          "Flatten axis is greater than highest index!");
+    }
+
+    std::vector<symint> shp;
+    shp.reserve(shape.size());
+    for (size_t i = 0U; i < shape.size(); ++i) {
+      shp.push_back((symint)shape[i]);
+    }
+    shp[axis - 1U] *= shp[axis];
+    shp.erase(shp.begin() + axis);
+
+    reshape(shp);
+  }
+
   /**
    * Validate the Tensor shape, for constructors
    */

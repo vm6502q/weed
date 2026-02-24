@@ -16,18 +16,18 @@
 
 namespace Weed {
 /**
- * Softmax activation
+ * Flatten axis
  */
-struct Softmax : public Module {
+struct Flatten : public Module {
   symint axis;
-  Softmax(const symint &axis_ = -1) : Module(SOFTMAX_T), axis(axis_) {}
+  Flatten(const symint &axis_ = -1) : Module(FLATTEN_T), axis(axis_) {}
   TensorPtr forward(const TensorPtr x) override {
-    return Tensor::softmax(x, axis);
+    return Tensor::flatten(x, axis);
   }
   void save(std::ostream &os) const override {
     Module::save(os);
     Serializer::write_symint(os, axis);
   }
 };
-typedef std::shared_ptr<Softmax> SoftmaxPtr;
+typedef std::shared_ptr<Flatten> FlattenPtr;
 } // namespace Weed
