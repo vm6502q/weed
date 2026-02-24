@@ -16,7 +16,7 @@
 namespace Weed {
 
 /**
- * Learned positional embedding.
+ * Learned positional encoding.
  *
  * Adds a trainable (1, max_len, d_model) tensor
  * to input of shape (B, T, d_model).
