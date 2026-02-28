@@ -36,7 +36,7 @@ struct Embedding : public Module {
     throw std::domain_error(
         "Embedding::forward(x) takes a SymbolTensor, not a Tensor!");
   }
-  TensorPtr forward(const SymbolTensorPtr t);
+  TensorPtr forward(const SymbolTensorPtr t) override;
   std::vector<ParameterPtr> parameters() override { return {weight}; }
 
   void save(std::ostream &) const override;
