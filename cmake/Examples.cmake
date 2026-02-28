@@ -17,13 +17,6 @@ target_compile_options (heart_attack PUBLIC ${EXAMPLE_COMPILE_OPTS})
 configure_file(examples/data/Heart_Attack_Data_Set.csv examples/data/Heart_Attack_Data_Set.csv COPYONLY)
 configure_file(examples/data/LICENSE.txt examples/data/LICENSE.txt COPYONLY)
 
-add_executable (binary_addition_transformer
-    examples/binary_addition_transformer.cpp
-    )
-set_target_properties(binary_addition_transformer PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
-target_link_libraries (binary_addition_transformer PUBLIC weed)
-target_compile_options (binary_addition_transformer PUBLIC ${EXAMPLE_COMPILE_OPTS})
-
 if (QRACK_LIB)
     add_executable (xor_qrack
         examples/xor_qrack.cpp
