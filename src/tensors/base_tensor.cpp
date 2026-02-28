@@ -51,9 +51,6 @@ const tlenint PSTRIDEPOW_DEFAULT = WEED_PSTRIDEPOW;
 const tcapint GSTRIDE =
     (1 << PSTRIDEPOW_DEFAULT) * std::thread::hardware_concurrency();
 #endif
-#else
-// Never auto-switch to a GPU if we don't have one.
-const tcapint GSTRIDE = -1;
 #endif
 
 DeviceTag
