@@ -49,7 +49,7 @@ struct Sequential : public Module {
 
     return tmp;
   }
-  TensorPtr forward(const SymbolTensorPtr x) {
+  TensorPtr forward(const SymbolTensorPtr x) override {
     if (layers.empty()) {
       return std::make_shared<Tensor>();
     }
