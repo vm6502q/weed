@@ -31,7 +31,6 @@ struct Embedding : public Module {
         weight(std::make_shared<Parameter>(std::vector<tcapint>{vocab, dim},
                                            std::vector<tcapint>{1, vocab}, true,
                                            dtype, dtag, did)) {}
-  using Module::forward;
   TensorPtr forward(const TensorPtr) override {
     throw std::domain_error(
         "Embedding::forward(x) takes a SymbolTensor, not a Tensor!");
