@@ -283,7 +283,7 @@ ModulePtr Module::load(std::istream &is) {
 #endif
   case ModuleType::NONE_MODULE_TYPE:
   default:
-    throw std::domain_error("Can't recognize ModuleType in Module::load!");
+    throw std::domain_error("Can't recognize ModuleType " + std::to_string(mtype) + " in Module::load!");
   }
 
   return nullptr;
