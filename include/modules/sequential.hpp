@@ -40,7 +40,6 @@ struct Sequential : public Module {
     }
   }
 
-  using Module::forward;
   TensorPtr forward(const TensorPtr x) override {
     TensorPtr tmp = x;
     for (size_t i = 0U; i < layers.size(); ++i) {
