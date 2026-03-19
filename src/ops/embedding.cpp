@@ -17,6 +17,8 @@
 #include "storage/gpu_int_storage.hpp"
 #endif
 
+#include <iostream>
+
 #define DEVICE_SWITCH(cpu, gpu, a, b, o)                                       \
   switch (a.storage->device) {                                                 \
   case DeviceTag::GPU:                                                         \
@@ -62,16 +64,17 @@ static void cpu_forward(const SymbolTensor &indices, const Tensor &weight,
   const tcapint I_s = indices.stride[0];
   const tcapint W_s0 = weight.stride[0];
   const tcapint W_s1 = weight.stride[1];
-  const tcapint O_s = out.stride.back();
+  const tcapint O_s0 = out.stride[0];
+  const tcapint O_s1 = out.stride.back();
 
   pfControl.par_for(0U, N, [&](const tcapint &i, const unsigned &) {
     const tcapint token = (*idx)[indices.offset + i * I_s];
 
     const tcapint w_base = weight.offset + token * W_s0;
-    const tcapint o_base = i * O_s;
+    const tcapint o_base = i * O_s0;
 
     for (tcapint d = 0U; d < D; ++d) {
-      O->write(o_base + d * O_s, (*W)[w_base + d * W_s1]);
+      O->write(o_base + d * O_s1, (*W)[w_base + d * W_s1]);
     }
   });
 }

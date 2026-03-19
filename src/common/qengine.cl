@@ -695,7 +695,7 @@ void kernel embedding_real(global symint* idx, global real1* W, global real1* O,
     const tcapint w_base = O_B + token * I_B;
     const tcapint o_base = J_A + i_X * O_C;
     for (tcapint d = 0U; d < J_B; ++d) {
-      O[o_base + d * O_C] = W[w_base + d * I_C];
+      O[o_base + d * I_C] = W[w_base + d * O_C];
     }
 }
 void kernel embedding_complex(global symint* idx, global cmplx* W, global cmplx* O, constant tcapint* vecCapIntArgs)
@@ -704,7 +704,7 @@ void kernel embedding_complex(global symint* idx, global cmplx* W, global cmplx*
     const tcapint w_base = O_B + token * I_B;
     const tcapint o_base = J_A + i_X * O_C;
     for (tcapint d = 0U; d < J_B; ++d) {
-      O[o_base + d * O_C] = W[w_base + d * I_C];
+      O[o_base + d * I_C] = W[w_base + d * O_C];
     }
 }
 void kernel embedding_grad_real(global symint* idx, global real1* dW, global real1* dO, constant tcapint* vecCapIntArgs)
