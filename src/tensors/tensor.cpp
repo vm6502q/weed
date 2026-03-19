@@ -410,8 +410,7 @@ TensorPtr Tensor::logsoftmax(const TensorPtr x, symint axis) {
 TensorPtr Tensor::slice(TensorPtr a, const int64_t &row) {
   const bool rg = a->requires_grad;
 
-  TensorPtr out =
-      Tensor::allocate_like(*(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
+  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
   out->offset += row * a->stride[0U];
   out->shape[0U] = 1U;
 
@@ -461,8 +460,7 @@ TensorPtr Tensor::slice(TensorPtr a, int64_t axis, const tcapint &start,
   }
 
   const bool rg = a->requires_grad;
-  TensorPtr out =
-      Tensor::allocate_like(*(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
+  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
 
   out->offset += start * a->stride[axis];
   out->shape[axis] = length;
