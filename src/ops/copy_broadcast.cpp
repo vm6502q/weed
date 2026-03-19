@@ -40,17 +40,17 @@
                                 {a_storage->buffer, b_storage->buffer})
 
 namespace Weed {
-template <typename T1, typename T2>
-static void cpu_real(Tensor &a, const Tensor &b) {
-  CPU_INIT_2_IN_PLACE(T1, T1);
+template <typename T1, typename T2, typename T3>
+static void cpu_copy(Tensor &a, const Tensor &b) {
+  CPU_INIT_2_IN_PLACE(T1, T2);
   COPY_KERNEL();
-  SPARSE_CPU_2_SWITCH(T2);
+  SPARSE_CPU_2_SWITCH(T3);
 }
 static inline void cpu_real(Tensor &a, const Tensor &b) {
-  cpu_real<RealTensor, SparseCpuRealStorage>(a, b);
+  cpu_copy<RealTensor, RealTensor, SparseCpuRealStorage>(a, b);
 }
 static inline void cpu_complex(Tensor &a, const Tensor &b) {
-  cpu_real<ComplexTensor, SparseCpuComplexStorage>(a, b);
+  cpu_copy<ComplexTensor, ComplexTensor, SparseCpuComplexStorage>(a, b);
 }
 #if ENABLE_GPU
 static void gpu_real(Tensor &a, const Tensor &b) {
