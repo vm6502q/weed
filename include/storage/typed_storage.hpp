@@ -94,9 +94,7 @@ template <typename T> struct TypedStorage : Storage {
     return std::unique_ptr<T[], void (*)(T *)>(new T[elemCount], deleter);
 #else
     size_t allocSize = sizeof(T) * elemCount;
-    if (allocSize < WEED_ALIGN_SIZE) {
-      allocSize = WEED_ALIGN_SIZE;
-    }
+    allocSize = ((allocSize + WEED_ALIGN_SIZE - 1) / WEED_ALIGN_SIZE) * WEED_ALIGN_SIZE;
 #if defined(__APPLE__)
     return std::unique_ptr<T[], void (*)(T *)>(
         _aligned_state_vec_alloc(allocSize), deleter);
