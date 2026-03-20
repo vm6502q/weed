@@ -47,7 +47,13 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // Causal mask — only when seq_len > 1
   if (T > 1) {
     TensorPtr mask = Tensor::zeros({(tcapint)T, (tcapint)T});
-    Weed::triu_fill(*mask, real1(-1e9f));
+#if WEED_FPPOW > 5
+    Weed::triu_fill(*mask, -4.494232837e307); // -2^1022
+#elif WEED_FPPOW > 4
+    Weed::triu_fill(*mask, -8.507059173e37); // -2^126
+#else
+    Weed::triu_fill(*mask, -32768); // -2^15
+#endif
     scores = scores + mask;
   }
 
