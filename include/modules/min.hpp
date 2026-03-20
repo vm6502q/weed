@@ -22,6 +22,7 @@ struct Min : public Module {
   Min(const symint &axis_ = -1) : Module(MIN_T), axis(axis_) {}
   TensorPtr forward(const TensorPtr x) override { return Tensor::min(x, axis); }
   void save(std::ostream &os) const override {
+    Module::save(os);
     Serializer::write_symint(os, axis);
   }
 };

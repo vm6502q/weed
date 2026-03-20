@@ -24,6 +24,7 @@ struct Reshape : public Module {
     return Tensor::reshape(x, shape);
   }
   void save(std::ostream &os) const override {
+    Module::save(os);
     Serializer::write_tcapint(os, (tcapint)shape.size());
     for (size_t i = 0U; i < shape.size(); ++i) {
       Serializer::write_symint(os, shape[i]);

@@ -42,6 +42,7 @@ TensorPtr Dropout::forward(const TensorPtr x) {
   return (x * mask) / real1(ONE_R1 - p);
 }
 void Dropout::save(std::ostream &os) const {
+  Module::save(os);
   Serializer::write_real(os, p);
   Serializer::write_bool(os, training);
 }

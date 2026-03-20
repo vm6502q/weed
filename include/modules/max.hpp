@@ -22,6 +22,7 @@ struct Max : public Module {
   Max(const symint &axis_ = -1) : Module(MAX_T), axis(axis_) {}
   TensorPtr forward(const TensorPtr x) override { return Tensor::max(x, axis); }
   void save(std::ostream &os) const override {
+    Module::save(os);
     Serializer::write_symint(os, axis);
   }
 };

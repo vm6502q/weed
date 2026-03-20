@@ -119,9 +119,9 @@ TensorPtr Tensor::one_hot(const SymbolTensorPtr targets,
   RealSparseVector sv;
   for (tcapint t = 0U; t < T; ++t) {
     const tcapint tok = (tcapint)(*static_cast<IntStorage *>(
-        targets->storage.get()))[targets->offset + t * targets->stride[0]];
+        targets->storage.get()))[targets->offset + t * targets->stride[0U]];
     // col-major index: t + tok * T
-    sv[t + tok * T] = real1(1.0f);
+    sv[t + tok * T] = ONE_R1;
   }
   return std::make_shared<Tensor>(sv, std::vector<tcapint>{T, vocab_size});
 }
@@ -199,6 +199,7 @@ Tensor::Tensor(const std::vector<tcapint> &shp,
       storage = std::make_shared<CpuRealStorage>(size);
 #endif
     }
+    storage->FillZeros();
   }
 }
 
