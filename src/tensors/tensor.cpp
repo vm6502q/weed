@@ -684,7 +684,7 @@ TensorPtr Tensor::max(TensorPtr a, symint axis) {
   shp[axis] = 1U;
   str[axis] = 0U;
   size_t j = axis + 1;
-  while (!str[j] && (j < str.size())) {
+  while ((j < str.size()) && !str[j]) {
     ++j;
   }
   if (j < str.size()) {
@@ -725,7 +725,7 @@ TensorPtr Tensor::min(TensorPtr a, symint axis) {
   shp[axis] = 1U;
   str[axis] = 0U;
   size_t j = axis + 1;
-  while (!str[j] && (j < str.size())) {
+  while ((j < str.size()) && !str[j]) {
     ++j;
   }
   if (j < str.size()) {
