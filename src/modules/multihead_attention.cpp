@@ -48,11 +48,11 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   if (T > 1) {
     TensorPtr mask = Tensor::zeros({(tcapint)T, (tcapint)T});
 #if WEED_FPPOW > 5
-    Weed::triu_fill(*mask, -4.494232837e307); // -2^1022
+    Weed::triu_fill(*mask, -8.988465674e307; // -2^1023
 #elif WEED_FPPOW > 4
-    Weed::triu_fill(*mask, -8.507059173e37); // -2^126
+    Weed::triu_fill(*mask, -1.701411835e38); // -2^127
 #else
-    Weed::triu_fill(*mask, -32768); // -2^15
+    Weed::triu_fill(*mask, -65536); // -2^16
 #endif
     scores = scores + mask;
   }
