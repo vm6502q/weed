@@ -13,7 +13,12 @@
 #include "common/serializer.hpp"
 
 namespace Weed {
-void Parameter::save(std::ostream &out) const {
+void Parameter::save(std::ostream &out) {
+  for (size_t i = 0U; i < stride.size(); ++i) {
+    if (!stride[i]) {
+      shape[i] = 1U;
+    }
+  }
   Serializer::write_tcapint(out, offset);
   Serializer::write_tcapint(out, (tcapint)(shape.size()));
   for (size_t i = 0U; i < shape.size(); ++i) {

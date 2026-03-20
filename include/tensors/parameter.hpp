@@ -42,7 +42,7 @@ struct Parameter : Tensor {
     grad = nullptr;
   }
 
-  void save(std::ostream &out) const;
+  void save(std::ostream &out);
   static ParameterPtr load(std::istream &in);
 };
 } // namespace Weed
