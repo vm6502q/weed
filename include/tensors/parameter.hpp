@@ -37,7 +37,10 @@ struct Parameter : Tensor {
       : Tensor(val, shp, true, dtag, did) {}
 
   void train() { requires_grad = true; }
-  void eval() { requires_grad = false; }
+  void eval() {
+    requires_grad = false;
+    grad = nullptr;
+  }
 
   void save(std::ostream &out) const;
   static ParameterPtr load(std::istream &in);
