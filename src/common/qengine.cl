@@ -743,3 +743,16 @@ void kernel copy_complex(global cmplx* a, global cmplx* b, constant tcapint* vec
 {
     a[i_X * I_A + O_A] = b[i_X * I_B + O_B];
 }
+
+void kernel triu_fill_real(global real1* a, global cmplx* val, constant tcapint* vecCapIntArgs)
+{
+    if ((i_X + O_A) <= i_Y) {
+      a[i_X * S_X + i_Y] = val->x;
+    }
+}
+void kernel triu_fill_complex(global cmplx* a, global cmplx* val, constant tcapint* vecCapIntArgs)
+{
+    if ((i_X + O_A) <= i_Y) {
+      a[i_X * S_X + i_Y] = *val;
+    }
+}

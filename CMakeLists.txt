@@ -51,6 +51,7 @@ add_library (weed STATIC
     src/ops/sub.cpp
     src/ops/sum.cpp
     src/ops/pow.cpp
+    src/ops/triu_fill.cpp
     src/ops/util.cpp
     src/storage/cpu_complex_storage.cpp
     src/storage/cpu_int_storage.cpp
@@ -279,6 +280,7 @@ install (FILES
     include/ops/real_unary.hpp
     include/ops/sub.hpp
     include/ops/sum.hpp
+    include/ops/triu_fill.hpp
     include/ops/util.hpp
     include/storage/all_storage.hpp
     include/storage/cpu_complex_storage.hpp

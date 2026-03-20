@@ -128,7 +128,7 @@ MICROSOFT_QUANTUM_DECL void free_module(_In_ uintw mid) {
   }
   META_LOCK_GUARD();
   if ((mid < module_results.size()) && module_results[mid]) {
-      module_results[mid] = nullptr;
+    module_results[mid] = nullptr;
   }
 }
 

@@ -11,6 +11,7 @@
 
 #include "modules/multihead_attention.hpp"
 #include "common/serializer.hpp"
+#include "ops/triu_fill.hpp"
 
 namespace Weed {
 TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
@@ -42,6 +43,13 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
 
   // scale
   scores = scores / real1(std::sqrt((real1)head_dim));
+
+  // Causal mask — only when seq_len > 1
+  if (T > 1) {
+    TensorPtr mask = Tensor::zeros({(tcapint)T, (tcapint)T});
+    Weed::triu_fill(*mask, real1(-1e9f));
+    scores = scores + mask;
+  }
 
   // softmax over last axis
   TensorPtr weights = Tensor::softmax(scores, -1);
