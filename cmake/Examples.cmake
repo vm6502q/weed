@@ -17,7 +17,7 @@ target_compile_options (heart_attack PUBLIC ${EXAMPLE_COMPILE_OPTS})
 configure_file(examples/data/Heart_Attack_Data_Set.csv examples/data/Heart_Attack_Data_Set.csv COPYONLY)
 configure_file(examples/data/LICENSE.txt examples/data/LICENSE.txt COPYONLY)
 
-if (QRACK_LIB)
+if (QRACK_LIB AND WEED_ENABLE_QRACK)
     add_executable (xor_qrack
         examples/xor_qrack.cpp
     )
@@ -29,4 +29,4 @@ if (QRACK_LIB)
         PRIVATE ${QRACK_LIB}
     )
     target_compile_options (xor_qrack PUBLIC ${EXAMPLE_COMPILE_OPTS})
-endif (QRACK_LIB)
+endif (QRACK_LIB AND WEED_ENABLE_QRACK)
