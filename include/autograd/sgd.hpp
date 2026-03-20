@@ -29,6 +29,9 @@ inline void sgd_step(const std::vector<ParameterPtr> &params, real1 lr) {
     TensorPtr pg = p->grad;
     TensorPtr tmp = lr * pg;
     tmp->match_shape(p);
+    const DeviceTag dtag = Tensor::get_dtag_by_presidence({p, tmp});
+    tmp = tmp->cast(dtag);
+    p->cast_in_place(dtag);
     Weed::sub_in_place(*(p.get()), *(tmp.get()));
   }
 }

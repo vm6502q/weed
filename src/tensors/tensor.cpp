@@ -450,7 +450,7 @@ void Tensor::make_row_slice_node(TensorPtr a, TensorPtr out,
         TensorPtr a_grad = a->grad->cast(dtag);
         TensorPtr out_grad = out->grad->cast(dtag);
 
-        TensorPtr row_view = Tensor::slice(a_grad, row);
+        TensorPtr row_view = Tensor::slice(a_grad, row)->cast(dtag);
 
         Weed::add_in_place(*(row_view.get()), *(out_grad.get()));
 
@@ -502,7 +502,7 @@ void Tensor::make_slice_node(TensorPtr a, TensorPtr out, const int64_t &axis,
                                       false, IS_SPARSE(out_grad));
 
         // Create view into tmp matching slice region
-        TensorPtr tmp_slice = slice(tmp, axis, start, out_grad->shape[axis]);
+        TensorPtr tmp_slice = slice(tmp, axis, start, out_grad->shape[axis])->cast(dtag);
 
         // Copy gradient into correct region
         Weed::add_in_place(*(tmp_slice.get()), *(out_grad.get()));
@@ -1260,8 +1260,8 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad2 = out_grad;
 
     if (needs_flatten) {
-      a2 = reshape(a, {batch * M, K});
-      out_grad2 = reshape(out_grad, {batch * M, N});
+      a2 = reshape(a, {batch * M, K})->cast(dtag);
+      out_grad2 = reshape(out_grad, {batch * M, N})->cast(dtag);
     }
 
     if (a->requires_grad) {
