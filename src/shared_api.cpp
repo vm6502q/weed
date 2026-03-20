@@ -122,8 +122,14 @@ MICROSOFT_QUANTUM_DECL uintw load_module(_In_ const char *f) {
 }
 
 MICROSOFT_QUANTUM_DECL void free_module(_In_ uintw mid) {
-  MODULE_LOCK_GUARD_VOID(mid);
-  module_results[mid] = nullptr;
+  {
+    MODULE_LOCK_GUARD_VOID(mid);
+    // lock_guard destructor runs here, unlocking before we destroy
+  }
+  META_LOCK_GUARD();
+  if ((mid < module_results.size()) && module_results[mid]) {
+      module_results[mid] = nullptr;
+  }
 }
 
 MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
