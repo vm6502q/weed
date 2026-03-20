@@ -19,7 +19,7 @@
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   const complex v = complex(p);                                                \
-  a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
+  a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.shape[0],            \
                                 {a_storage->buffer}, a.shape[1], &v)
 
 #define DEVICE_SWITCH(cpu, gpu, a, b, d)                                       \
