@@ -38,7 +38,7 @@
                           out.stride[1U],                                      \
                           weight.offset,                                       \
                           out.shape[1U],                                       \
-                          0U,                                                  \
+                          weight.stride[0U],                                   \
                           0U};                                                 \
   std::shared_ptr<type1> a_storage =                                           \
       std::dynamic_pointer_cast<type1>(indices.storage);                       \
@@ -92,16 +92,17 @@ static void cpu_backward(Tensor &dW, const SymbolTensor &indices,
   const tcapint I_s = indices.stride[0];
   const tcapint W_s0 = dW.stride[0];
   const tcapint W_s1 = dW.stride[1];
-  const tcapint O_s = dout.stride.back();
+  const tcapint O_s0 = dout.stride[0];
+  const tcapint O_s1 = dout.stride.back();
 
   pfControl.par_for(0U, N, [&](const tcapint &i, const unsigned &) {
     const tcapint token = (*idx)[indices.offset + i * I_s];
 
     const tcapint w_base = dW.offset + token * W_s0;
-    const tcapint o_base = dout.offset + i * O_s;
+    const tcapint o_base = dout.offset + i * O_s0;
 
     for (tcapint d = 0U; d < D; ++d) {
-      dWt->add(w_base + d * W_s1, (*dOut)[o_base + d * O_s]);
+      dWt->add(w_base + d * W_s1, (*dOut)[o_base + d * O_s1]);
     }
   });
 }
