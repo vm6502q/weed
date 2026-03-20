@@ -111,6 +111,21 @@ void Tensor::make_gradient(const bool &force_sparse) {
                                storage->dtype, dtag, storage->get_device_id());
 }
 
+TensorPtr Tensor::one_hot(const SymbolTensorPtr targets,
+                          const tcapint vocab_size) {
+  // Contributed by (Anthropic) Claude
+  const tcapint T = targets->get_broadcast_size();
+  // Sparse storage: T nonzero entries in [T, vocab_size]
+  RealSparseVector sv;
+  for (tcapint t = 0U; t < T; ++t) {
+    const tcapint tok = (tcapint)(*static_cast<IntStorage *>(
+        targets->storage.get()))[targets->offset + t * targets->stride[0]];
+    // col-major index: t + tok * T
+    sv[t + tok * T] = real1(1.0f);
+  }
+  return std::make_shared<Tensor>(sv, std::vector<tcapint>{T, vocab_size});
+}
+
 TensorPtr Tensor::allocate_scalar_like(const Tensor &orig, const bool &rg) {
   return allocate_like(std::vector<tcapint>{1U}, std::vector<tcapint>{0U}, orig,
                        orig.storage->dtype, rg, false);

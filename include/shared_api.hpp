@@ -35,6 +35,7 @@ extern "C" {
 // non-quantum
 MICROSOFT_QUANTUM_DECL int get_error(_In_ const uintw mid);
 MICROSOFT_QUANTUM_DECL uintw load_module(_In_ const char *f);
+MICROSOFT_QUANTUM_DECL void save_module(_In_ uintw mid, _In_ const char *f);
 MICROSOFT_QUANTUM_DECL void free_module(_In_ uintw mid);
 MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
                                     _In_ uintw n, _In_reads_(n) uintw *shape,
@@ -50,4 +51,8 @@ MICROSOFT_QUANTUM_DECL uintw get_result_size(_In_ uintw mid);
 MICROSOFT_QUANTUM_DECL uintw get_result_offset(_In_ uintw mid);
 MICROSOFT_QUANTUM_DECL uintw get_result_type(_In_ uintw mid);
 MICROSOFT_QUANTUM_DECL void get_result(_In_ uintw mid, double *d);
+MICROSOFT_QUANTUM_DECL void
+train_step(_In_ uintw mid, _In_ uintw n, _In_reads_(n) uintw *shape,
+           _In_ intw *input_ids, _In_ uintw n_target,
+           _In_reads_(n_target) intw *target_ids, _In_ double learning_rate);
 }

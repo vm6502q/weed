@@ -8,6 +8,8 @@
 
 #include "shared_api.hpp"
 
+#include "autograd/cross_entropy_loss.hpp"
+#include "autograd/sgd.hpp"
 #include "modules/module.hpp"
 #include "storage/cpu_storage.hpp"
 #include "tensors/symbol_tensor.hpp"
@@ -86,7 +88,10 @@ MICROSOFT_QUANTUM_DECL int get_error(_In_ const uintw mid) {
     return 2;
   }
 
-  return module_results[mid]->error;
+  const int module_error = module_results[mid]->error;
+  module_results[mid]->error = 0;
+
+  return module_error;
 }
 
 MICROSOFT_QUANTUM_DECL uintw load_module(_In_ const char *f) {
@@ -119,6 +124,20 @@ MICROSOFT_QUANTUM_DECL uintw load_module(_In_ const char *f) {
   }
 
   return id;
+}
+
+MICROSOFT_QUANTUM_DECL void save_module(_In_ uintw mid, _In_ const char *f) {
+  MODULE_LOCK_GUARD_VOID(mid);
+
+  ModulePtr m;
+  try {
+    std::ofstream o(f);
+    module_results[mid]->m->save(o);
+    o.close();
+  } catch (const std::exception &ex) {
+    std::cout << ex.what() << std::endl;
+    meta_error = 1;
+  }
 }
 
 MICROSOFT_QUANTUM_DECL void free_module(_In_ uintw mid) {
@@ -329,6 +348,77 @@ MICROSOFT_QUANTUM_DECL void get_result(_In_ uintw mid, double *d) {
     for (size_t i = 0U; i < max_lcv; ++i) {
       d[i] = (double)s[i];
     }
+  }
+}
+
+// Contributed by (Anthropic) Claude
+MICROSOFT_QUANTUM_DECL void
+train_step(_In_ uintw mid, _In_ uintw n, _In_reads_(n) uintw *shape,
+           _In_ intw *input_ids, _In_ uintw n_target,
+           _In_reads_(n_target) intw *target_ids, _In_ double learning_rate) {
+  MODULE_LOCK_GUARD_VOID(mid);
+
+  try {
+    // 1. Switch to training mode
+    module_results[mid]->m->train();
+
+    // 2. Build input SymbolTensor (same as forward_int)
+    std::vector<tcapint> sh(n);
+    std::vector<tcapint> st(n);
+    tcapint stride = 1U;
+    for (size_t i = 0U; i < n; ++i) {
+      sh[i] = (tcapint)shape[i];
+      st[i] = stride;
+      stride *= sh[i];
+    }
+    tcapint max_index = 0U;
+    for (size_t i = 0U; i < sh.size(); ++i) {
+      max_index += (sh[i] - 1U) * st[i];
+    }
+    if (!sh.empty()) {
+      ++max_index;
+    }
+    std::vector<symint> v(max_index);
+    for (size_t i = 0U; i < max_index; ++i) {
+      v[i] = (symint)input_ids[i];
+    }
+    SymbolTensorPtr x = std::make_shared<SymbolTensor>(v, sh);
+
+    std::vector<symint> tgt(n_target);
+    for (tcapint i = 0U; i < n_target; ++i) {
+      tgt[i] = (symint)target_ids[i];
+    }
+    SymbolTensorPtr targets = std::make_shared<SymbolTensor>(
+        tgt, std::vector<tcapint>{(tcapint)n_target});
+
+    // 3. Forward pass
+    TensorPtr logits = module_results[mid]->m->forward(x);
+    // logits shape: [1, seq_len, vocab_size]
+
+    // 4. Cross-entropy loss over target_ids
+    // For each position t, loss += -log(softmax(logits[0,t,:])[target_ids[t]])
+    TensorPtr loss = cross_entropy_loss(logits, targets);
+
+    // 5. Backward pass
+    Tensor::backward(loss);
+
+    // 6. SGD update
+    // p = p - lr * grad
+    sgd_step(module_results[mid]->m->parameters(), real1(learning_rate));
+
+    // 7. Zero gradients
+    // for (const auto &p : module_results[mid]->m->parameters()) {
+    //     if (p->grad) {
+    //         p->grad->storage->FillZeros();
+    //     }
+    // }
+
+    // 8. Back to eval mode
+    module_results[mid]->m->eval();
+
+  } catch (const std::exception &ex) {
+    std::cout << ex.what() << std::endl;
+    module_results[mid]->error = 1;
   }
 }
 }

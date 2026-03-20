@@ -229,6 +229,7 @@ install (FILES
     include/shared_api.hpp
     include/autograd/adam.hpp
     include/autograd/bci_loss.hpp
+    include/autograd/cross_entropy_loss.hpp
     include/autograd/mse_loss.hpp
     include/autograd/node.hpp
     include/autograd/sgd.hpp

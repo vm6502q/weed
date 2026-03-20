@@ -13,7 +13,7 @@
 
 #include "enums/device_tag.hpp"
 #include "enums/dtype.hpp"
-#include "tensors/base_tensor.hpp"
+#include "tensors/symbol_tensor.hpp"
 
 #include <vector>
 
@@ -213,6 +213,12 @@ struct Tensor : public BaseTensor {
 
     return z;
   }
+
+  /**
+   * "One hot" (for diagonal gather)
+   */
+  static TensorPtr one_hot(const SymbolTensorPtr targets,
+                           const tcapint vocab_size);
 
   /**
    * Make a gradient tensor (static)
