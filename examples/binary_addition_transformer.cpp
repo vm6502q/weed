@@ -92,7 +92,7 @@ int main() {
   const tcapint d_ff = 16;
   const tcapint num_heads = 1;
 
-  const int epochs = 100;
+  const int epochs = 1000;
 
   // ---- Model ----
   Sequential model(
@@ -118,7 +118,7 @@ int main() {
   // ---- Training ----
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
-  while (epoch <= epochs) {
+  while ((epoch <= epochs) && (loss_r > 0.001)) {
     auto logits = model.forward(input);
     logits->squeeze(2);
 
@@ -138,6 +138,8 @@ int main() {
     zero_grad(params);
     ++epoch;
   }
+
+  std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
 
   return 0;
 }
