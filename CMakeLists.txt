@@ -37,6 +37,7 @@ add_library (weed STATIC
     src/modules/positional_encoding.cpp
     src/modules/rope.cpp
     src/modules/sequential.cpp
+    src/modules/swiglu.cpp
     src/modules/transformer_encoder_layer.cpp
     src/ops/abs.cpp
     src/ops/clamp.cpp
@@ -267,6 +268,7 @@ install (FILES
     include/modules/qrack_neuron_layer.hpp
     include/modules/sequential.hpp
     include/modules/sigmoid.hpp
+    include/modules/swiglu.hpp
     include/modules/softmax.hpp
     include/modules/tanh.hpp
     include/modules/transformer_encoder_layer.hpp

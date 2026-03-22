@@ -38,6 +38,7 @@
 #include "modules/sigmoid.hpp"
 #include "modules/softmax.hpp"
 #include "modules/stddev.hpp"
+#include "modules/swiglu.hpp"
 #include "modules/tanh.hpp"
 #include "modules/transformer_encoder_layer.hpp"
 #include "modules/variance.hpp"
@@ -92,6 +93,17 @@ ModulePtr Module::load(std::istream &is) {
   }
   case ModuleType::TANH_T: {
     return std::make_shared<Tanh>();
+  }
+  case ModuleType::SWIGLU_T: {
+    SwiGLUPtr s = std::make_shared<SwiGLU>();
+    Serializer::read_tcapint(is, s->hidden_size);
+    Serializer::read_tcapint(is, s->intermediate_size);
+    s->gate_proj = std::dynamic_pointer_cast<Linear>(Module::load(is));
+    s->up_proj = std::dynamic_pointer_cast<Linear>(Module::load(is));
+    s->down_proj = std::dynamic_pointer_cast<Linear>(Module::load(is));
+    s->_register_params();
+
+    return s;
   }
   case ModuleType::DROPOUT_T: {
     DropoutPtr d = std::make_shared<Dropout>();
