@@ -503,7 +503,8 @@ void Tensor::make_slice_node(TensorPtr a, TensorPtr out, const int64_t &axis,
                                       false, IS_SPARSE(out_grad));
 
         // Create view into tmp matching slice region
-        TensorPtr tmp_slice = slice(tmp, axis, start, out_grad->shape[axis])->cast(dtag);
+        TensorPtr tmp_slice =
+            slice(tmp, axis, start, out_grad->shape[axis])->cast(dtag);
 
         // Copy gradient into correct region
         Weed::add_in_place(*(tmp_slice.get()), *(out_grad.get()));
@@ -895,6 +896,62 @@ void Tensor::make_tanh_node(TensorPtr a, TensorPtr out) {
     Weed::tanh_grad(*(a_grad.get()), *(_out.get()), *(out_grad.get()));
     a->grad = a_grad;
   });
+}
+
+TensorPtr Tensor::sin(TensorPtr a) {
+  const bool rg = a->requires_grad;
+  TensorPtr out =
+      allocate_like(*(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
+
+  Weed::sin(*(a.get()), *(out.get()));
+
+  if (rg) {
+    make_sin_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_sin_node(TensorPtr a, TensorPtr out) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+        TensorPtr _a = a->cast(dtag);
+        TensorPtr a_grad = a->grad->cast(dtag);
+        TensorPtr out_grad = out->grad->cast(dtag);
+        a_grad->upcast(out_grad->storage->dtype);
+        Weed::sin_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()));
+        a->grad = a_grad;
+      });
+}
+
+TensorPtr Tensor::cos(TensorPtr a) {
+  const bool rg = a->requires_grad;
+  TensorPtr out =
+      allocate_like(*(a.get()), a->storage->dtype, rg, IS_SPARSE(a));
+
+  Weed::cos(*(a.get()), *(out.get()));
+
+  if (rg) {
+    make_cos_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_cos_node(TensorPtr a, TensorPtr out) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
+        const DeviceTag dtag = get_dtag_by_presidence({a, a->grad, out->grad});
+        TensorPtr _a = a->cast(dtag);
+        TensorPtr a_grad = a->grad->cast(dtag);
+        TensorPtr out_grad = out->grad->cast(dtag);
+        a_grad->upcast(out_grad->storage->dtype);
+        Weed::cos_grad(*(a_grad.get()), *(_a.get()), *(out_grad.get()));
+        a->grad = a_grad;
+      });
 }
 
 TensorPtr Tensor::max(TensorPtr a) {

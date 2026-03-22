@@ -63,6 +63,16 @@
     pdi->add(i, (*po)[i] * (ONE_R1 - y * y));                                  \
   }
 
+#define CPU_SIN_GRAD()                                                         \
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
+    pdi->add(i, std::cos((*pi)[i]) * (*po)[i]);                                \
+  }
+
+#define CPU_COS_GRAD()                                                         \
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
+    pdi->add(i, -std::sin((*pi)[i]) * (*po)[i]);                               \
+  }
+
 namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
   CPU_INIT_2(RealTensor, RealTensor);
@@ -230,6 +240,113 @@ static void gpu_tanh_grad_mixed(Tensor &din, const Tensor &in,
 }
 #endif
 
+static void cpu_sin(const Tensor &a, Tensor &out) {
+  CPU_INIT_2(RealTensor, RealTensor);
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {
+    po->write(i, std::sin((*pa)[i]));
+  };
+  SPARSE_CPU_2_RUN(SparseCpuRealStorage);
+}
+template <typename T1, typename T2>
+static void cpu_sin_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+  CPU_GRAD_INIT_3(T1, RealTensor, T2);
+  CPU_SIN_GRAD();
+  SPARSE_CPU_GRAD_3_RUN(SparseCpuRealStorage, SparseCpuRealStorage);
+}
+static inline void cpu_sin_grad_real(Tensor &din, const Tensor &in,
+                                     const Tensor &dout) {
+  cpu_sin_grad<RealTensor, RealTensor>(din, in, dout);
+}
+static inline void cpu_sin_grad_complex(Tensor &din, const Tensor &in,
+                                        const Tensor &dout) {
+  cpu_sin_grad<ComplexTensor, ComplexTensor>(din, in, dout);
+}
+static inline void cpu_sin_grad_mixed(Tensor &din, const Tensor &in,
+                                      const Tensor &dout) {
+  cpu_relu_grad<ComplexTensor, RealTensor>(din, in, dout);
+}
+#if ENABLE_GPU
+static void gpu_sin(const Tensor &a, Tensor &out) {
+  const tcapint args[10U]{
+      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
+      0U,       0U,           0U};
+  GpuRealStoragePtr a_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
+  GpuRealStoragePtr o_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
+  a_storage->dev->RequestKernel(OCLAPI::OCL_API_SIN, args, a.get_size(),
+                                {a_storage->buffer, o_storage->buffer});
+}
+static void gpu_sin_grad_real(Tensor &din, const Tensor &in,
+                              const Tensor &dout) {
+  GPU_GRAD(GpuRealStorage, GpuRealStorage, GpuRealStorage,
+           OCL_API_SIN_GRAD_REAL);
+}
+static void gpu_sin_grad_complex(Tensor &din, const Tensor &in,
+                                 const Tensor &dout) {
+  GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuComplexStorage,
+           OCL_API_SIN_GRAD_COMPLEX);
+}
+static void gpu_sin_grad_mixed(Tensor &din, const Tensor &in,
+                               const Tensor &dout) {
+  GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuRealStorage,
+           OCL_API_SIN_GRAD_MIXED);
+}
+#endif
+static void cpu_cos(const Tensor &a, Tensor &out) {
+  CPU_INIT_2(RealTensor, RealTensor);
+  const auto fn = [&](const tcapint &i, const unsigned &cpu) {
+    po->write(i, std::cos((*pa)[i]));
+  };
+  SPARSE_CPU_2_RUN(SparseCpuRealStorage);
+}
+template <typename T1, typename T2>
+static void cpu_cos_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+  CPU_GRAD_INIT_3(T1, RealTensor, T2);
+  CPU_COS_GRAD();
+  SPARSE_CPU_GRAD_3_RUN(SparseCpuRealStorage, SparseCpuRealStorage);
+}
+static inline void cpu_cos_grad_real(Tensor &din, const Tensor &in,
+                                     const Tensor &dout) {
+  cpu_cos_grad<RealTensor, RealTensor>(din, in, dout);
+}
+static inline void cpu_cos_grad_complex(Tensor &din, const Tensor &in,
+                                        const Tensor &dout) {
+  cpu_cos_grad<ComplexTensor, ComplexTensor>(din, in, dout);
+}
+static inline void cpu_cos_grad_mixed(Tensor &din, const Tensor &in,
+                                      const Tensor &dout) {
+  cpu_relu_grad<ComplexTensor, RealTensor>(din, in, dout);
+}
+#if ENABLE_GPU
+static void gpu_cos(const Tensor &a, Tensor &out) {
+  const tcapint args[10U]{
+      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
+      0U,       0U,           0U};
+  GpuRealStoragePtr a_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
+  GpuRealStoragePtr o_storage =
+      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
+  a_storage->dev->RequestKernel(OCLAPI::OCL_API_COS, args, a.get_size(),
+                                {a_storage->buffer, o_storage->buffer});
+}
+static void gpu_cos_grad_real(Tensor &din, const Tensor &in,
+                              const Tensor &dout) {
+  GPU_GRAD(GpuRealStorage, GpuRealStorage, GpuRealStorage,
+           OCL_API_COS_GRAD_REAL);
+}
+static void gpu_cos_grad_complex(Tensor &din, const Tensor &in,
+                                 const Tensor &dout) {
+  GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuComplexStorage,
+           OCL_API_COS_GRAD_COMPLEX);
+}
+static void gpu_cos_grad_mixed(Tensor &din, const Tensor &in,
+                               const Tensor &dout) {
+  GPU_GRAD(GpuComplexStorage, GpuRealStorage, GpuRealStorage,
+           OCL_API_COS_GRAD_MIXED);
+}
+#endif
+
 void RealUnaryKernel::unary(const Tensor &a, Tensor &out) {
   validate_all_same_device({&a, &out}, "RealUnaryKernel::unary");
   if (a.get_broadcast_size() != out.get_broadcast_size()) {
@@ -341,6 +458,30 @@ RealUnaryKernel tanh_kernel = {cpu_tanh,
 #endif
 };
 
+RealUnaryKernel sin_kernel = {cpu_sin,
+                              cpu_sin_grad_real,
+                              cpu_sin_grad_complex,
+                              cpu_sin_grad_mixed,
+#if ENABLE_GPU
+                              gpu_sin,
+                              gpu_sin_grad_real,
+                              gpu_sin_grad_complex,
+                              gpu_sin_grad_mixed
+#endif
+};
+
+RealUnaryKernel cos_kernel = {cpu_cos,
+                              cpu_cos_grad_real,
+                              cpu_cos_grad_complex,
+                              cpu_cos_grad_mixed,
+#if ENABLE_GPU
+                              gpu_cos,
+                              gpu_cos_grad_real,
+                              gpu_cos_grad_complex,
+                              gpu_cos_grad_mixed
+#endif
+};
+
 void relu(const Tensor &a, Tensor &out) { relu_kernel.unary(a, out); }
 void relu_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   relu_kernel.unary_grad(din, in, dout);
@@ -354,5 +495,15 @@ void sigmoid_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
 void tanh(const Tensor &a, Tensor &out) { tanh_kernel.unary(a, out); }
 void tanh_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
   tanh_kernel.unary_grad(din, in, dout);
+}
+
+void sin(const Tensor &a, Tensor &out) { sin_kernel.unary(a, out); }
+void sin_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+  sin_kernel.unary_grad(din, in, dout);
+}
+
+void cos(const Tensor &a, Tensor &out) { cos_kernel.unary(a, out); }
+void cos_grad(Tensor &din, const Tensor &in, const Tensor &dout) {
+  cos_kernel.unary_grad(din, in, dout);
 }
 } // namespace Weed

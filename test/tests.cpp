@@ -341,6 +341,66 @@ TEST_CASE("test_scalar_tanh_mixed_grad") {
   REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(1.0));
 }
 
+TEST_CASE("test_scalar_sin") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
+  TensorPtr y = Tensor::sin(x);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(0));
+  REQUIRE(GET_REAL(x->grad) == R(1.0));
+}
+
+TEST_CASE("test_scalar_sin_complex_grad") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
+  TensorPtr y = Tensor::sin(x);
+  TensorPtr z = std::make_shared<ComplexScalar>(R(1), true, TEST_DTAG);
+  TensorPtr w = y * z;
+  Tensor::backward(w);
+
+  REQUIRE(GET_REAL(y) == R(0));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(1.0));
+}
+
+TEST_CASE("test_scalar_sin_mixed_grad") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
+  TensorPtr y = Tensor::sin(x);
+  x->grad->upcast(DType::COMPLEX);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(0));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(0));
+}
+
+TEST_CASE("test_scalar_cos") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
+  TensorPtr y = Tensor::cos(x);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(1.0));
+  REQUIRE(GET_REAL(x->grad) == R(0));
+}
+
+TEST_CASE("test_scalar_cos_complex_grad") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
+  TensorPtr y = Tensor::cos(x);
+  TensorPtr z = std::make_shared<ComplexScalar>(R(1), true, TEST_DTAG);
+  TensorPtr w = y * z;
+  Tensor::backward(w);
+
+  REQUIRE(GET_REAL(y) == R(1.0));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(0));
+}
+
+TEST_CASE("test_scalar_cos_mixed_grad") {
+  TensorPtr x = std::make_shared<RealScalar>(R(0), true, TEST_DTAG);
+  TensorPtr y = Tensor::cos(x);
+  x->grad->upcast(DType::COMPLEX);
+  Tensor::backward(y);
+
+  REQUIRE(GET_REAL(y) == R(1.0));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(0));
+}
+
 TEST_CASE("test_max") {
   TensorPtr x =
       std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},

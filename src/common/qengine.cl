@@ -427,6 +427,40 @@ void kernel wtanh_grad_mixed(global real1* din, global real1* in, global real1* 
     din[(i_X * I_A + O_A) << 1U] += (ONE_R1 - yi * yi) * dout[i_X * I_C + O_C];
 }
 
+void kernel wsin(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+{
+    out[i_X * I_B + O_B] = sin(a[i_X * I_A + O_A]);
+}
+void kernel wsin_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+}
+void kernel wsin_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+}
+void kernel wsin_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+}
+
+void kernel wcos(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+{
+    out[i_X * I_B + O_B] = cos(a[i_X * I_A + O_A]);
+}
+void kernel wcos_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+}
+void kernel wcos_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+}
+void kernel wcos_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+{
+    din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+}
+
 void kernel match_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs, constant real1* m)
 {
     if (*m == in[i_X * I_B + O_B]) {

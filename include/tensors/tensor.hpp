@@ -494,6 +494,18 @@ struct Tensor : public BaseTensor {
   static void make_relu_node(TensorPtr a, TensorPtr out);
 
   /**
+   * Element-wise sine
+   */
+  static TensorPtr sin(TensorPtr a);
+  static void make_sin_node(TensorPtr a, TensorPtr out);
+
+  /**
+   * Element-wise cosine
+   */
+  static TensorPtr cos(TensorPtr a);
+  static void make_cos_node(TensorPtr a, TensorPtr out);
+
+  /**
    * Element-wise clamp
    */
   static TensorPtr clamp(TensorPtr a, real1 lo, real1 hi);

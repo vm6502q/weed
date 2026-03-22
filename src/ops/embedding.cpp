@@ -30,16 +30,11 @@
   }
 
 #define DISPATCH_GPU_KERNEL(type1, type2, type3, api_call)                     \
-  const tcapint args[10U]{indices.offset,                                      \
-                          indices.stride[0U],                                  \
-                          out.offset,                                          \
-                          out.stride[0U],                                      \
-                          weight.stride.back(),                                \
-                          out.stride[1U],                                      \
-                          weight.offset,                                       \
-                          out.shape[1U],                                       \
-                          weight.stride[0U],                                   \
-                          0U};                                                 \
+  const tcapint args[10U]{indices.offset,       indices.stride[0U],            \
+                          out.offset,           out.stride[0U],                \
+                          weight.stride.back(), out.stride[1U],                \
+                          weight.offset,        out.shape[1U],                 \
+                          weight.stride[0U],    0U};                           \
   std::shared_ptr<type1> a_storage =                                           \
       std::dynamic_pointer_cast<type1>(indices.storage);                       \
   std::shared_ptr<type2> b_storage =                                           \

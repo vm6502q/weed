@@ -55,4 +55,22 @@ void tanh(const Tensor &a, Tensor &out);
  * Hyberbolic tangent activation function gradient
  */
 void tanh_grad(Tensor &din, const Tensor &in, const Tensor &dout);
+
+/**
+ * Element-wise sine
+ */
+void sin(const Tensor &a, Tensor &out);
+/**
+ * Element-wise sine gradient
+ */
+void sin_grad(Tensor &din, const Tensor &in, const Tensor &dout);
+
+/**
+ * Element-wise cosine
+ */
+void cos(const Tensor &a, Tensor &out);
+/**
+ * Element-wise cosine gradient
+ */
+void cos_grad(Tensor &din, const Tensor &in, const Tensor &dout);
 } // namespace Weed
