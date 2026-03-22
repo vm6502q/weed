@@ -22,6 +22,7 @@ struct MultiHeadAttention : public Module {
   symint d_model;
   symint num_heads;
   symint head_dim;
+  real1_f mask_val;
 
   LinearPtr W_q;
   LinearPtr W_k;
@@ -35,9 +36,10 @@ struct MultiHeadAttention : public Module {
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
                      tcapint head_dim_ = 0U, DeviceTag dtag = DEFAULT_DEVICE,
-                     RoPEPtr r = nullptr)
+                     RoPEPtr r = nullptr, real1_f mask_val_ = ZERO_R1)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
         head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
+        mask_val(mask_val_),
         W_q(std::make_shared<Linear>(d_model_, d_model_, true, true,
                                      DType::REAL, dtag)),
         W_k(std::make_shared<Linear>(d_model_, d_model_, true, true,
@@ -58,6 +60,16 @@ struct MultiHeadAttention : public Module {
     add(W_k->parameters());
     add(W_v->parameters());
     add(W_o->parameters());
+
+    if (mask_val == ZERO_R1) {
+#if WEED_FPPOW > 5
+      mask_val = -8.988465674e307; // -2^1023
+#elif WEED_FPPOW > 4
+      mask_val = -1.701411835e38; // -2^127
+#else
+      mask_val = -65536; // -2^16
+#endif
+    }
   }
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }

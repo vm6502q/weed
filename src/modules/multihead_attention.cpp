@@ -55,13 +55,7 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // Causal mask — only when seq_len > 1
   if (T > 1) {
     TensorPtr mask = Tensor::zeros({(tcapint)T, (tcapint)T});
-#if WEED_FPPOW > 5
-    Weed::triu_fill(*mask, -8.988465674e307; // -2^1023
-#elif WEED_FPPOW > 4
-    Weed::triu_fill(*mask, -1.701411835e38); // -2^127
-#else
-    Weed::triu_fill(*mask, -65536); // -2^16
-#endif
+    Weed::triu_fill(*mask, mask_val);
     scores = scores + mask;
   }
 
@@ -82,6 +76,7 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
 }
 void MultiHeadAttention::save(std::ostream &os) const {
   Module::save(os);
+  Serializer::write_real1_f(os, mask_val);
   Serializer::write_symint(os, d_model);
   Serializer::write_symint(os, num_heads);
   Serializer::write_symint(os, head_dim);

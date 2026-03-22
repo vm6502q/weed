@@ -230,6 +230,7 @@ ModulePtr Module::load(std::istream &is) {
   }
   case ModuleType::MULTIHEAD_ATTENTION_T: {
     MultiHeadAttentionPtr m = std::make_shared<MultiHeadAttention>();
+    Serializer::read_real1_f(is, m->mask_val);
     Serializer::read_symint(is, m->d_model);
     Serializer::read_symint(is, m->num_heads);
     Serializer::read_symint(is, m->head_dim);
