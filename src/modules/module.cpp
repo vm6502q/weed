@@ -239,6 +239,12 @@ ModulePtr Module::load(std::istream &is) {
     m->W_v = std::dynamic_pointer_cast<Linear>(Linear::load(is));
     m->W_o = std::dynamic_pointer_cast<Linear>(Linear::load(is));
 
+    bool has_rope;
+    Serializer::read_bool(is, has_rope);
+    if (has_rope) {
+      m->rope = std::dynamic_pointer_cast<RoPE>(Module::load(is));
+    }
+
     return m;
   }
   case ModuleType::TRANSFORMER_ENCODER_LAYER_T: {
