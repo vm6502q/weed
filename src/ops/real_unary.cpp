@@ -263,7 +263,7 @@ static inline void cpu_sin_grad_complex(Tensor &din, const Tensor &in,
 }
 static inline void cpu_sin_grad_mixed(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  cpu_relu_grad<ComplexTensor, RealTensor>(din, in, dout);
+  cpu_sin_grad<ComplexTensor, RealTensor>(din, in, dout);
 }
 #if ENABLE_GPU
 static void gpu_sin(const Tensor &a, Tensor &out) {
@@ -316,7 +316,7 @@ static inline void cpu_cos_grad_complex(Tensor &din, const Tensor &in,
 }
 static inline void cpu_cos_grad_mixed(Tensor &din, const Tensor &in,
                                       const Tensor &dout) {
-  cpu_relu_grad<ComplexTensor, RealTensor>(din, in, dout);
+  cpu_cos_grad<ComplexTensor, RealTensor>(din, in, dout);
 }
 #if ENABLE_GPU
 static void gpu_cos(const Tensor &a, Tensor &out) {

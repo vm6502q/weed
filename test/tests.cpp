@@ -368,7 +368,7 @@ TEST_CASE("test_scalar_sin_mixed_grad") {
   Tensor::backward(y);
 
   REQUIRE(GET_REAL(y) == R(0));
-  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(0));
+  REQUIRE_CMPLX(GET_COMPLEX(x->grad), R(1.0));
 }
 
 TEST_CASE("test_scalar_cos") {
