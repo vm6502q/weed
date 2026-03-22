@@ -35,6 +35,7 @@ add_library (weed STATIC
     src/modules/module.cpp
     src/modules/multihead_attention.cpp
     src/modules/positional_encoding.cpp
+    src/modules/rope.cpp
     src/modules/sequential.cpp
     src/modules/transformer_encoder_layer.cpp
     src/ops/abs.cpp
@@ -261,6 +262,7 @@ install (FILES
     include/modules/positional_encoding.hpp
     include/modules/relu.hpp
     include/modules/rms_norm.hpp
+    include/modules/rope.hpp
     include/modules/qrack_neuron.hpp
     include/modules/qrack_neuron_layer.hpp
     include/modules/sequential.hpp

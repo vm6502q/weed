@@ -9,17 +9,8 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "common/serializer.hpp"
-#include "modules/module.hpp"
-
-#include "modules/dropout.hpp"
-#include "modules/embedding.hpp"
-#include "modules/layernorm.hpp"
-#include "modules/linear.hpp"
-#include "modules/relu.hpp"
 #include "modules/sequential.hpp"
-#include "modules/sigmoid.hpp"
-#include "modules/tanh.hpp"
+#include "common/serializer.hpp"
 
 namespace Weed {
 void Sequential::save(std::ostream &os) const {

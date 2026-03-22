@@ -48,6 +48,7 @@ enum ModuleType {
   MEAN_CENTER_T = 27,
   FLATTEN_T = 28,
   LEARNED_POSITIONAL_ENCODING_T = 29,
-  RMS_NORM_T = 30
+  RMS_NORM_T = 30,
+  ROPE_T = 31
 };
 } // namespace Weed

@@ -47,6 +47,12 @@ struct Serializer {
   static void read_real(std::istream &in, real1 &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(real1));
   }
+  static void write_real1_f(std::ostream &out, const real1_f &x) {
+    out.write(reinterpret_cast<const char *>(&x), sizeof(real1_f));
+  }
+  static void read_real1_f(std::istream &in, real1_f &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(real1_f));
+  }
   static void write_complex(std::ostream &out, const complex &z) {
     write_real(out, z.real());
     write_real(out, z.imag());

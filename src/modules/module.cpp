@@ -33,6 +33,7 @@
 #include "modules/relu.hpp"
 #include "modules/reshape.hpp"
 #include "modules/rms_norm.hpp"
+#include "modules/rope.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
 #include "modules/softmax.hpp"
@@ -204,6 +205,15 @@ ModulePtr Module::load(std::istream &is) {
       Serializer::read_symint(is, shape[i]);
     }
     return std::make_shared<Reshape>(shape);
+  }
+  case ModuleType::ROPE_T: {
+    RoPEPtr r = std::make_shared<RoPE>();
+    Serializer::read_tcapint(is, r->head_dim);
+    Serializer::read_tcapint(is, r->max_seq_len);
+    Serializer::read_real1_f(is, r->base);
+    r->_build_tables();
+
+    return r;
   }
   case ModuleType::MULTIHEAD_ATTENTION_T: {
     MultiHeadAttentionPtr m = std::make_shared<MultiHeadAttention>();
