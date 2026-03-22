@@ -16,6 +16,7 @@
 #include "modules/relu.hpp"
 #include "modules/sigmoid.hpp"
 #include "modules/tanh.hpp"
+#include "modules/swiglu.hpp"
 
 namespace Weed {
 TransformerEncoderLayer::TransformerEncoderLayer(
@@ -39,6 +40,9 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     break;
   case RELU_FN:
     activation = std::make_shared<ReLU>();
+    break;
+  case SWIGLU_FN:
+    activation = std::make_shared<SwiGLU>();
     break;
   case GELU_FN:
   default:

@@ -22,6 +22,7 @@ enum ActivationFunctionType {
   SIGMOID_FN = 1,
   TANH_FN = 2,
   RELU_FN = 3,
-  GELU_FN = 4
+  GELU_FN = 4,
+  SWIGLU_FN = 5
 };
 } // namespace Weed
