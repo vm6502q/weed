@@ -32,6 +32,7 @@
 #include "modules/positional_encoding.hpp"
 #include "modules/relu.hpp"
 #include "modules/reshape.hpp"
+#include "modules/rms_norm.hpp"
 #include "modules/sequential.hpp"
 #include "modules/sigmoid.hpp"
 #include "modules/softmax.hpp"
@@ -186,6 +187,14 @@ ModulePtr Module::load(std::istream &is) {
     symint axis;
     Serializer::read_symint(is, axis);
     return std::make_shared<Stddev>(axis);
+  }
+  case ModuleType::RMS_NORM_T: {
+    RMSNormPtr r = std::make_shared<RMSNorm>();
+    Serializer::read_symint(is, r->axis);
+    Serializer::read_tcapint(is, r->hidden_size);
+    r->weight = Parameter::load(is);
+
+    return r;
   }
   case ModuleType::RESHAPE_T: {
     tcapint sz;
