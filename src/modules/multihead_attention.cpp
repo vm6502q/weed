@@ -37,16 +37,14 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   K = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(K, 1, 2));
   V = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(V, 1, 2));
 
-  // scores = Q K^T
-  TensorPtr Kt = Tensor::transpose(K, -2, -1);
-
   // optional RoPE (like for Qwen)
   if (rope) {
     Q = rope->forward(Q);
     K = rope->forward(K);
   }
 
-  // compute scores
+  // scores = Q K^T
+  TensorPtr Kt = Tensor::transpose(K, -2, -1);
   TensorPtr scores = Q >> Kt;
 
   // scale
@@ -74,6 +72,7 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // final projection
   return W_o->forward(out);
 }
+
 void MultiHeadAttention::save(std::ostream &os) const {
   Module::save(os);
   Serializer::write_real1_f(os, mask_val);
