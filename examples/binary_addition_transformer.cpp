@@ -20,6 +20,8 @@
 #include "tensors/real_scalar.hpp"
 #include "tensors/symbol_tensor.hpp"
 
+#include <iostream>
+
 #define GET_REAL(ptr) static_cast<RealScalar *>((ptr).get())->get_item()
 
 #define R(v) real1(v)
