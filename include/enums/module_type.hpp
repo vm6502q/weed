@@ -50,6 +50,7 @@ enum ModuleType {
   LEARNED_POSITIONAL_ENCODING_T = 29,
   RMS_NORM_T = 30,
   ROPE_T = 31,
-  SWIGLU_T = 32
+  SWIGLU_T = 32,
+  QWEN_DECODER_LAYER_T = 33
 };
 } // namespace Weed

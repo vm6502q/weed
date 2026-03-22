@@ -39,6 +39,14 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
 
   // scores = Q K^T
   TensorPtr Kt = Tensor::transpose(K, -2, -1);
+
+  // optional RoPE (like for Qwen)
+  if (rope) {
+    Q = rope->forward(Q);
+    K = rope->forward(K);
+  }
+
+  // compute scores
   TensorPtr scores = Q >> Kt;
 
   // scale
@@ -81,5 +89,9 @@ void MultiHeadAttention::save(std::ostream &os) const {
   W_k->save(os);
   W_v->save(os);
   W_o->save(os);
+  Serializer::write_bool(os, (bool)rope);
+  if (rope) {
+    rope->save(os);
+  }
 }
 } // namespace Weed

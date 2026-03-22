@@ -39,6 +39,7 @@ add_library (weed STATIC
     src/modules/sequential.cpp
     src/modules/swiglu.cpp
     src/modules/transformer_encoder_layer.cpp
+    src/modules/qwen_decoder_layer.cpp
     src/ops/abs.cpp
     src/ops/clamp.cpp
     src/ops/commuting.cpp
@@ -272,6 +273,7 @@ install (FILES
     include/modules/softmax.hpp
     include/modules/tanh.hpp
     include/modules/transformer_encoder_layer.hpp
+    include/modules/qwen_decoder_layer.hpp
     include/ops/abs.hpp
     include/ops/clamp.hpp
     include/ops/commuting.hpp

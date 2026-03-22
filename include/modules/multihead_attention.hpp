@@ -12,7 +12,7 @@
 #pragma once
 
 #include "modules/linear.hpp"
-#include "modules/module.hpp"
+#include "modules/rope.hpp"
 
 namespace Weed {
 /**
@@ -28,13 +28,16 @@ struct MultiHeadAttention : public Module {
   LinearPtr W_v;
   LinearPtr W_o;
 
+  RoPEPtr rope;
+
   std::vector<ParameterPtr> param_vector;
 
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
-                     DeviceTag dtag = DEFAULT_DEVICE)
+                     tcapint head_dim_ = 0U, DeviceTag dtag = DEFAULT_DEVICE,
+                     RoPEPtr r = nullptr)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
-        head_dim(d_model_ / num_heads_),
+        head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
         W_q(std::make_shared<Linear>(d_model_, d_model_, true, true,
                                      DType::REAL, dtag)),
         W_k(std::make_shared<Linear>(d_model_, d_model_, true, true,
@@ -42,7 +45,8 @@ struct MultiHeadAttention : public Module {
         W_v(std::make_shared<Linear>(d_model_, d_model_, true, true,
                                      DType::REAL, dtag)),
         W_o(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag)) {
+                                     DType::REAL, dtag)),
+        rope(r) {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
     }

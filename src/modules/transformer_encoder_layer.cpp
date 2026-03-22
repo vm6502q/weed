@@ -15,8 +15,8 @@
 #include "modules/gelu.hpp"
 #include "modules/relu.hpp"
 #include "modules/sigmoid.hpp"
-#include "modules/tanh.hpp"
 #include "modules/swiglu.hpp"
+#include "modules/tanh.hpp"
 
 namespace Weed {
 TransformerEncoderLayer::TransformerEncoderLayer(
@@ -24,7 +24,7 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     const DeviceTag &dtag, const ActivationFunctionType &afn)
     : Module(TRANSFORMER_ENCODER_LAYER_T), d_model(d_model_), d_ff(d_ff_),
       num_heads(num_heads_), self_attn(std::make_shared<MultiHeadAttention>(
-                                 d_model_, num_heads_, dtag)),
+                                 d_model_, num_heads_, 0U, dtag)),
       ff1(std::make_shared<Linear>(d_model_, d_ff_, true, true, DType::REAL,
                                    dtag)),
       ff2(std::make_shared<Linear>(d_ff_, d_model_, true, true, DType::REAL,

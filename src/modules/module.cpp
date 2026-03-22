@@ -30,6 +30,7 @@
 #include "modules/min.hpp"
 #include "modules/multihead_attention.hpp"
 #include "modules/positional_encoding.hpp"
+#include "modules/qwen_decoder_layer.hpp"
 #include "modules/relu.hpp"
 #include "modules/reshape.hpp"
 #include "modules/rms_norm.hpp"
@@ -271,6 +272,28 @@ ModulePtr Module::load(std::istream &is) {
     l->pos_encoding = Parameter::load(is);
 
     return l;
+  }
+  case ModuleType::QWEN_DECODER_LAYER_T: {
+    QwenDecoderLayerPtr q = std::make_shared<QwenDecoderLayer>();
+    Serializer::read_tcapint(is, q->d_model);
+    Serializer::read_tcapint(is, q->num_heads);
+    Serializer::read_tcapint(is, q->num_kv_heads);
+    q->self_attn =
+        std::dynamic_pointer_cast<MultiHeadAttention>(Module::load(is));
+    q->rope = std::dynamic_pointer_cast<RoPE>(Module::load(is));
+    q->self_attn->rope = q->rope; // wire RoPE into attention
+    q->mlp = std::dynamic_pointer_cast<SwiGLU>(Module::load(is));
+    q->input_layernorm = std::dynamic_pointer_cast<RMSNorm>(Module::load(is));
+    q->post_attention_layernorm =
+        std::dynamic_pointer_cast<RMSNorm>(Module::load(is));
+
+    bool has_rope;
+    Serializer::read_bool(is, has_rope);
+    if (has_rope) {
+      q->rope = std::dynamic_pointer_cast<RoPE>(Module::load(is));
+    }
+
+    return q;
   }
 #if QRACK_AVAILABLE
   case QRACK_NEURON_LAYER_T: {
