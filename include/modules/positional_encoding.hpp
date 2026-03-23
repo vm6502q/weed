@@ -18,11 +18,13 @@ namespace Weed {
 struct PositionalEncoding : public Module {
   tcapint max_seq_len;
   tcapint d_model;
+  real1_f pos_val;
 
   // [max_seq_len, d_model], requires_grad=false
   ParameterPtr pe;
 
   PositionalEncoding(tcapint max_seq_len, tcapint d_model,
+                     real1_f pos_val_ = 8192.0,
                      DeviceTag device = DEFAULT_DEVICE);
 
   TensorPtr forward(const TensorPtr x) override;

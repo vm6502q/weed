@@ -266,7 +266,10 @@ ModulePtr Module::load(std::istream &is) {
     tcapint max_seq_len, d_model;
     Serializer::read_tcapint(is, max_seq_len);
     Serializer::read_tcapint(is, d_model);
-    return std::make_shared<PositionalEncoding>(max_seq_len, d_model);
+    real1_f pos_val;
+    Serializer::read_real1_f(is, pos_val);
+
+    return std::make_shared<PositionalEncoding>(max_seq_len, d_model, pos_val);
   }
   case LEARNED_POSITIONAL_ENCODING_T: {
     LearnedPositionalEncodingPtr l =

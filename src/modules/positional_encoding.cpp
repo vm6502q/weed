@@ -14,9 +14,9 @@
 
 namespace Weed {
 PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
-                                       DeviceTag device)
+                                       real1_f pos_val_, DeviceTag device)
     : Module(POSITIONAL_ENCODING_T), max_seq_len(max_seq_len_),
-      d_model(d_model_) {
+      d_model(d_model_), pos_val(pos_val_) {
 
   const tcapint max_i = d_model >> 1U;
   std::vector<real1> values(max_seq_len * d_model);
@@ -24,14 +24,14 @@ PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
     for (tcapint i = 0; i < max_i; ++i) {
       const tcapint idx = pos * d_model + (i << 1U);
       const real1 coeff =
-          (real1)(1.0 / std::pow(8192.0, ((real1)(i << 1U)) / d_model));
+          (real1)(1.0 / std::pow(pos_val, ((real1)(i << 1U)) / d_model));
 
       values[idx] = std::cos(coeff * pos);
       values[idx + 1U] = std::sin(coeff * pos);
     }
     if (d_model & 1U) {
       const tcapint idx = pos * d_model + (max_i << 1U);
-      const real1 div = (real1)std::pow(8192.0, (2.0 * max_i) / d_model);
+      const real1 div = (real1)std::pow(pos_val, (2.0 * max_i) / d_model);
       values[idx] = std::cos(pos / div);
     }
   }
@@ -56,5 +56,6 @@ void PositionalEncoding::save(std::ostream &os) const {
   Module::save(os);
   Serializer::write_tcapint(os, max_seq_len);
   Serializer::write_tcapint(os, d_model);
+  Serializer::write_real1_f(os, pos_val);
 }
 } // namespace Weed
