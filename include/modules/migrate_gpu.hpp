@@ -19,7 +19,9 @@ namespace Weed {
  * Convenience wrapper on migration to GPU
  */
 struct MigrateGpu : public Module {
-  MigrateGpu() : Module(MIGRATE_GPU_T) {}
+  symint device_id;
+  MigrateGpu(const symint device_id_ = -1)
+      : Module(MIGRATE_GPU_T), device_id(-1) {}
   TensorPtr forward(const TensorPtr x) override;
 };
 typedef std::shared_ptr<MigrateGpu> MigrateGpuPtr;

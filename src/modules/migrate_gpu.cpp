@@ -16,7 +16,7 @@
 namespace Weed {
 TensorPtr MigrateGpu::forward(const TensorPtr x) {
   TensorPtr out = std::make_shared<Tensor>(*(x.get()));
-  out->storage = out->storage->gpu();
+  out->storage = out->storage->gpu(device_id);
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out] {
     const DeviceTag dtag = Tensor::get_dtag_by_presidence({x->grad, out->grad});

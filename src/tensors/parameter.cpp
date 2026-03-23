@@ -14,6 +14,7 @@
 
 namespace Weed {
 void Parameter::save(std::ostream &out) {
+  Serializer::write_symint(out, storage->get_device_id());
   for (size_t i = 0U; i < stride.size(); ++i) {
     if (!stride[i]) {
       shape[i] = 1U;
@@ -28,6 +29,9 @@ void Parameter::save(std::ostream &out) {
   storage->save(out);
 }
 ParameterPtr Parameter::load(std::istream &in) {
+  symint did;
+  Serializer::read_symint(in, did);
+
   tcapint offset;
   Serializer::read_tcapint(in, offset);
 
@@ -44,8 +48,8 @@ ParameterPtr Parameter::load(std::istream &in) {
 
   StoragePtr storage = Storage::load(in);
 
-  ParameterPtr p = std::make_shared<Parameter>(shape, stride, true,
-                                               storage->dtype, storage->device);
+  ParameterPtr p = std::make_shared<Parameter>(
+      shape, stride, true, storage->dtype, storage->device, did);
   p->storage = storage;
 
   return p;

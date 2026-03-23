@@ -24,6 +24,7 @@
 namespace Weed {
 void Storage::save(std::ostream &os) const {
   write_storage_type(os, stype);
+  Serializer::write_symint(os, get_device_id());
   Serializer::write_tcapint(os, size);
   // Needs the inheriting struct to do the rest
 }
@@ -31,6 +32,9 @@ void Storage::save(std::ostream &os) const {
 StoragePtr Storage::load(std::istream &is) {
   StorageType stype;
   read_storage_type(is, stype);
+
+  symint did;
+  Serializer::read_symint(is, did);
 
   tcapint size;
   Serializer::read_tcapint(is, size);
@@ -89,21 +93,21 @@ StoragePtr Storage::load(std::istream &is) {
     for (tcapint i = 0U; i < size; ++i) {
       Serializer::read_real(is, v[i]);
     }
-    return std::make_shared<GpuRealStorage>(v);
+    return std::make_shared<GpuRealStorage>(v, did);
   }
   case StorageType::COMPLEX_GPU_DENSE: {
     std::vector<complex> v(size);
     for (tcapint i = 0U; i < size; ++i) {
       Serializer::read_complex(is, v[i]);
     }
-    return std::make_shared<GpuComplexStorage>(v);
+    return std::make_shared<GpuComplexStorage>(v, did);
   }
   case StorageType::INT_GPU_DENSE: {
     std::vector<symint> v(size);
     for (tcapint i = 0U; i < size; ++i) {
       Serializer::read_symint(is, v[i]);
     }
-    return std::make_shared<GpuIntStorage>(v);
+    return std::make_shared<GpuIntStorage>(v, did);
   }
 #endif
   case StorageType::NONE_STORAGE_TYPE:
