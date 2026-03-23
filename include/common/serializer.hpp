@@ -41,6 +41,12 @@ struct Serializer {
   static void read_symint(std::istream &in, symint &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(symint));
   }
+  static void write_int64(std::ostream &out, const symint &x) {
+    out.write(reinterpret_cast<const char *>(&x), sizeof(int64_t));
+  }
+  static void read_int64(std::istream &in, symint &x) {
+    in.read(reinterpret_cast<char *>(&x), sizeof(int64_t));
+  }
   static void write_real(std::ostream &out, const real1 &x) {
     out.write(reinterpret_cast<const char *>(&x), sizeof(real1));
   }

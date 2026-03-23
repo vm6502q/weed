@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "enums/activation_function_type.hpp"
 #include "modules/multihead_attention.hpp"
 #include "modules/rms_norm.hpp"
 #include "modules/rope.hpp"
@@ -37,13 +38,13 @@ struct QwenDecoderLayer : public Module {
                    const tcapint &num_kv_heads_, const tcapint &d_ff_,
                    const tcapint &max_seq_len = 2048U,
                    const real1_f &rope_base = 10000.0f,
-                   const real1_f &eps = 1e-6f)
+                   const real1_f &eps = 1e-6f, const int64_t &did = -1)
       : Module(QWEN_DECODER_LAYER_T), d_model(d_model_), num_heads(num_heads_),
         num_kv_heads(num_kv_heads_) {
     const tcapint head_dim = d_model_ / num_heads_;
-    self_attn =
-        std::make_shared<MultiHeadAttention>(d_model_, num_heads_, head_dim);
     rope = std::make_shared<RoPE>(head_dim, max_seq_len, rope_base);
+    self_attn = std::make_shared<MultiHeadAttention>(
+        d_model_, num_heads_, head_dim, DEFAULT_DEVICE, rope, ZERO_R1, did);
     mlp = std::make_shared<SwiGLU>(d_model_, d_ff_);
     input_layernorm = std::make_shared<RMSNorm>(d_model_, -1);
     post_attention_layernorm = std::make_shared<RMSNorm>(d_model_, -1);

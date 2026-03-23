@@ -43,7 +43,8 @@ struct TransformerEncoderLayer : public Module {
   TransformerEncoderLayer(const tcapint &d_model_, const tcapint &num_heads_,
                           const tcapint &d_ff_,
                           const DeviceTag &dtag = DEFAULT_DEVICE,
-                          const ActivationFunctionType &afn = GELU_FN);
+                          const ActivationFunctionType &afn = GELU_FN,
+                          const int64_t &did = -1);
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 

@@ -26,14 +26,16 @@ struct LayerNorm : Module {
 
   LayerNorm() : Module(LAYERNORM_T) {}
   LayerNorm(const tcapint &f, const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
-            const real1 &e = FP_NORM_EPSILON)
+            const real1 &e = FP_NORM_EPSILON, const int64_t &did = -1)
       : Module(LAYERNORM_T), features(f), eps(e) {
-    gamma = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
-                                        std::vector<tcapint>{1U, 1U, f}, dtag);
+    gamma =
+        std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
+                                    std::vector<tcapint>{1U, 1U, f}, dtag, did);
     gamma->storage->FillOnes();
 
-    beta = std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
-                                       std::vector<tcapint>{1U, 1U, f}, dtag);
+    beta =
+        std::make_shared<Parameter>(std::vector<real1>(f, real1(ZERO_R1)),
+                                    std::vector<tcapint>{1U, 1U, f}, dtag, did);
     beta->storage->FillZeros();
   }
 

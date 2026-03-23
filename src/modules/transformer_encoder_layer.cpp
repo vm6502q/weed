@@ -21,16 +21,18 @@
 namespace Weed {
 TransformerEncoderLayer::TransformerEncoderLayer(
     const tcapint &d_model_, const tcapint &num_heads_, const tcapint &d_ff_,
-    const DeviceTag &dtag, const ActivationFunctionType &afn)
+    const DeviceTag &dtag, const ActivationFunctionType &afn,
+    const int64_t &did)
     : Module(TRANSFORMER_ENCODER_LAYER_T), d_model(d_model_), d_ff(d_ff_),
-      num_heads(num_heads_), self_attn(std::make_shared<MultiHeadAttention>(
-                                 d_model_, num_heads_, 0U, dtag)),
+      num_heads(num_heads_),
+      self_attn(std::make_shared<MultiHeadAttention>(
+          d_model_, num_heads_, 0U, dtag, nullptr, ZERO_R1, did)),
       ff1(std::make_shared<Linear>(d_model_, d_ff_, true, true, DType::REAL,
-                                   dtag)),
+                                   dtag, did)),
       ff2(std::make_shared<Linear>(d_ff_, d_model_, true, true, DType::REAL,
-                                   dtag)),
-      norm1(std::make_shared<LayerNorm>(d_model_, dtag)),
-      norm2(std::make_shared<LayerNorm>(d_model_, dtag)) {
+                                   dtag, did)),
+      norm1(std::make_shared<LayerNorm>(d_model_, dtag, FP_NORM_EPSILON, did)),
+      norm2(std::make_shared<LayerNorm>(d_model_, dtag, FP_NORM_EPSILON, did)) {
   switch (afn) {
   case SIGMOID_FN:
     activation = std::make_shared<Sigmoid>();

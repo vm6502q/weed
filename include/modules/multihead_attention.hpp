@@ -36,18 +36,19 @@ struct MultiHeadAttention : public Module {
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
                      tcapint head_dim_ = 0U, DeviceTag dtag = DEFAULT_DEVICE,
-                     RoPEPtr r = nullptr, real1_f mask_val_ = ZERO_R1)
+                     RoPEPtr r = nullptr, real1_f mask_val_ = ZERO_R1,
+                     const int64_t did = -1)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
         head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
         mask_val(mask_val_),
         W_q(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag)),
+                                     DType::REAL, dtag, did)),
         W_k(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag)),
+                                     DType::REAL, dtag, did)),
         W_v(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag)),
+                                     DType::REAL, dtag, did)),
         W_o(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag)),
+                                     DType::REAL, dtag, did)),
         rope(r) {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
