@@ -44,13 +44,20 @@ namespace Weed {
 /// "Weed::OCLEngine" manages the single OpenCL context
 
 // Public singleton methods to get pointers to various methods
-DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t &dev) {
+DeviceContextPtr OCLEngine::GetDeviceContextPtr(int64_t dev) {
   if (dev == -1) {
+    // Default device
     return default_device_context;
   }
 
+  if (dev < 0) {
+    // Indexing from back starts at -2
+    ++dev;
+  }
+  dev %= all_device_contexts.size();
+
   // Loop device list in case stored model does not match current system
-  return all_device_contexts[dev % all_device_contexts.size()];
+  return all_device_contexts[dev];
 }
 
 // clang-format off

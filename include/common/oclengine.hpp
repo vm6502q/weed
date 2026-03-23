@@ -291,7 +291,7 @@ public:
 
   /// Get a pointer one of the available OpenCL contexts, by its index in the
   /// list of all contexts.
-  DeviceContextPtr GetDeviceContextPtr(const int64_t &dev = -1);
+  DeviceContextPtr GetDeviceContextPtr(int64_t dev = -1);
   /// Get the list of all available devices (and their supporting objects).
   std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
   /** Set the list of DeviceContextPtr object available for use. If one takes
