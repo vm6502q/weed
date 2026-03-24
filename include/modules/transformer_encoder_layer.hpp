@@ -65,9 +65,7 @@ struct TransformerEncoderLayer : public Module {
     activation->eval();
   }
 
-  void reset_cache() override {
-    self_attn->reset_cache();
-  }
+  void reset_cache() override { self_attn->reset_cache(); }
 
   TensorPtr forward(const TensorPtr x) override;
 

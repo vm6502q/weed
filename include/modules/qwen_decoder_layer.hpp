@@ -61,6 +61,29 @@ struct QwenDecoderLayer : public Module {
     param_vector.insert(param_vector.end(), w2.begin(), w2.end());
   }
 
+  void train() override {
+    self_attn->train();
+    rope->train();
+    mlp->train();
+    input_layernorm->train();
+    post_attention_layernorm->train();
+    for (auto &p : param_vector) {
+      p->train();
+    }
+  }
+  void eval() override {
+    self_attn->eval();
+    rope->eval();
+    mlp->eval();
+    input_layernorm->eval();
+    post_attention_layernorm->eval();
+    for (auto &p : param_vector) {
+      p->eval();
+    }
+  }
+
+  void reset_cache() override { self_attn->reset_cache(); }
+
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 
   TensorPtr forward(const TensorPtr x) override {
