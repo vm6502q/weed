@@ -95,6 +95,12 @@ struct Module {
       p->eval();
     }
   }
+
+  /**
+   * Reset KV cache
+   */
+  virtual void reset_cache() {}
+
   /**
    * Serialize storage to ostream
    */

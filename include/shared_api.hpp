@@ -55,4 +55,5 @@ MICROSOFT_QUANTUM_DECL void
 train_step(_In_ uintw mid, _In_ uintw n, _In_reads_(n) uintw *shape,
            _In_ intw *input_ids, _In_ uintw n_target,
            _In_reads_(n_target) intw *target_ids, _In_ double learning_rate);
+MICROSOFT_QUANTUM_DECL void reset_kv_cache(_In_ uintw mid);
 }

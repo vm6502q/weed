@@ -421,4 +421,16 @@ train_step(_In_ uintw mid, _In_ uintw n, _In_reads_(n) uintw *shape,
     module_results[mid]->error = 1;
   }
 }
+
+/// Reset KV cache
+MICROSOFT_QUANTUM_DECL void reset_kv_cache(_In_ uintw mid) {
+  MODULE_LOCK_GUARD_VOID(mid);
+  module_results[mid]->error = 0;
+  try {
+    module_results[mid]->m->reset_cache();
+  } catch (const std::exception &ex) {
+    std::cout << ex.what() << std::endl;
+    module_results[mid]->error = 1;
+  }
+}
 }

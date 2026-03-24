@@ -11,6 +11,7 @@
 
 #include "modules/multihead_attention.hpp"
 #include "common/serializer.hpp"
+#include "ops/in_place.hpp"
 #include "ops/triu_fill.hpp"
 
 namespace Weed {
@@ -43,6 +44,44 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
     K = rope->forward(K);
   }
 
+  if (use_kv_cache) {
+    if (!k_cache) {
+      // First step — initialize cache from current K, V
+      k_cache = K;
+      v_cache = V;
+    } else {
+      // Subsequent steps — append new K, V to cache
+      // Allocate new cache of size seq_so_far + T
+      const tcapint T_cached = k_cache->shape[2];
+      const tcapint T_new = T;
+      const tcapint T_total = T_cached + T_new;
+
+      TensorPtr k_new =
+          Tensor::zeros({1, (tcapint)num_heads, T_total, (tcapint)head_dim});
+      TensorPtr v_new =
+          Tensor::zeros({1, (tcapint)num_heads, T_total, (tcapint)head_dim});
+
+      // Copy old cache into first T_cached positions
+      TensorPtr k_old_slice = Tensor::slice(k_new, 2, 0, T_cached);
+      TensorPtr v_old_slice = Tensor::slice(v_new, 2, 0, T_cached);
+      Weed::add_in_place(*k_old_slice, *k_cache);
+      Weed::add_in_place(*v_old_slice, *v_cache);
+
+      // Copy new K, V into remaining positions
+      TensorPtr k_new_slice = Tensor::slice(k_new, 2, T_cached, T_new);
+      TensorPtr v_new_slice = Tensor::slice(v_new, 2, T_cached, T_new);
+      Weed::add_in_place(*k_new_slice, *K);
+      Weed::add_in_place(*v_new_slice, *V);
+
+      k_cache = k_new;
+      v_cache = v_new;
+    }
+
+    // Use cache for attention
+    K = k_cache;
+    V = v_cache;
+  }
+
   // scores = Q K^T
   TensorPtr Kt = Tensor::transpose(K, -2, -1);
   TensorPtr scores = Q >> Kt;
@@ -52,7 +91,9 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
 
   // Causal mask — only when seq_len > 1
   if (T > 1) {
-    TensorPtr mask = Tensor::zeros({(tcapint)T, (tcapint)T});
+    const tcapint T_q = (tcapint)T;
+    const tcapint T_k = use_kv_cache ? (tcapint)K->shape[2] : T_q;
+    TensorPtr mask = Tensor::zeros({T_q, T_k});
     Weed::triu_fill(*mask, mask_val);
     scores = scores + mask;
   }

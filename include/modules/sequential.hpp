@@ -40,6 +40,12 @@ struct Sequential : public Module {
     }
   }
 
+  void reset_cache() override {
+    for (const ModulePtr &m : layers) {
+      m->reset_cache();
+    }
+  }
+
   TensorPtr forward(const TensorPtr x) override {
     TensorPtr tmp = x;
     for (size_t i = 0U; i < layers.size(); ++i) {

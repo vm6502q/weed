@@ -31,13 +31,17 @@ struct MultiHeadAttention : public Module {
 
   RoPEPtr rope;
 
+  bool use_kv_cache;
+  TensorPtr k_cache; // [1, num_heads, seq_so_far, head_dim]
+  TensorPtr v_cache; // [1, num_heads, seq_so_far, head_dim]
+
   std::vector<ParameterPtr> param_vector;
 
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
                      tcapint head_dim_ = 0U, DeviceTag dtag = DEFAULT_DEVICE,
                      RoPEPtr r = nullptr, real1_f mask_val_ = ZERO_R1,
-                     const int64_t did = -1)
+                     const int64_t did = -1, const bool _use_kv_cache = true)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
         head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
         mask_val(mask_val_),
@@ -49,7 +53,7 @@ struct MultiHeadAttention : public Module {
                                      DType::REAL, dtag, did)),
         W_o(std::make_shared<Linear>(d_model_, d_model_, true, true,
                                      DType::REAL, dtag, did)),
-        rope(r) {
+        rope(r), use_kv_cache(_use_kv_cache) {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
     }
@@ -86,6 +90,11 @@ struct MultiHeadAttention : public Module {
     W_k->eval();
     W_v->eval();
     W_o->eval();
+  }
+
+  void reset_cache() override {
+    k_cache = nullptr;
+    v_cache = nullptr;
   }
 
   TensorPtr forward(const TensorPtr x) override;
