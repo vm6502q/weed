@@ -120,6 +120,7 @@ void MultiHeadAttention::save(std::ostream &os) const {
   Serializer::write_symint(os, d_model);
   Serializer::write_symint(os, num_heads);
   Serializer::write_symint(os, head_dim);
+  Serializer::write_bool(os, use_kv_cache);
   W_q->save(os);
   W_k->save(os);
   W_v->save(os);
