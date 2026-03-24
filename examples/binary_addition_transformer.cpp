@@ -138,6 +138,7 @@ int main() {
     }
 
     zero_grad(params);
+    model.reset_cache();
     ++epoch;
   }
 
