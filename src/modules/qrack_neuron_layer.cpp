@@ -87,22 +87,36 @@ QrackNeuronLayer::QrackNeuronLayer(
     const size_t &lowest_combo, const size_t &highest_combo,
     const QuantumFunctionType pre_fn, const QuantumFunctionType post_fn,
     const Qrack::QNeuronActivationFn &activation,
+    const Qrack::QCircuitPtr pre_init_circ_,
+    const Qrack::QCircuitPtr post_init_circ_,
     const std::function<void(Qrack::QInterfacePtr)> &pre_init,
     const std::function<void(Qrack::QInterfacePtr)> &post_init, const bool &md,
     const bool &sd, const bool &bdt, const bool &tn, const bool &hp,
     const bool &sp)
     : Module(QRACK_NEURON_LAYER_T), lowest_cmb(lowest_combo),
       highest_cmb(highest_combo), pre_qfn(pre_fn), post_qfn(post_fn),
+      pre_init_circ(pre_init_circ_), post_init_circ(post_init_circ_),
       activation_fn(activation), input_indices(input_q),
       hidden_indices(hidden_q), output_indices(output_q), requires_grad(true) {
 
-  if (pre_init && (pre_fn != CUSTOM_QFN)) {
-    throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
-                                "pre_init without pre_fn = CUSTOM_QFN!");
+  if ((pre_init || pre_init_circ) && (pre_fn != CUSTOM_QFN)) {
+    throw std::invalid_argument(
+        "Cannot specify a custom QrackNeuronLayer "
+        "pre_init or pre_init_circ without pre_fn = CUSTOM_QFN!");
   }
-  if (post_init && (post_fn != CUSTOM_QFN)) {
+  if ((post_init || post_init_circ) && (post_fn != CUSTOM_QFN)) {
+    throw std::invalid_argument(
+        "Cannot specify a custom QrackNeuronLayer "
+        "post_init or post_init_circ without pre_fn = CUSTOM_QFN!");
+  }
+
+  if (pre_init && pre_init_circ) {
     throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
-                                "pre_init without pre_fn = CUSTOM_QFN!");
+                                "with both pre_init and pre_fn_circ!");
+  }
+  if (post_init && post_init_circ) {
+    throw std::invalid_argument("Cannot specify a custom QrackNeuronLayer "
+                                "with both post_init and post_init_circ!");
   }
 
   const bitLenInt num_qubits = input_q + output_q + hidden_q;
@@ -160,6 +174,8 @@ QrackNeuronLayer::QrackNeuronLayer(
 
   if (pre_init) {
     pre_init(prototype);
+  } else if (pre_init_circ) {
+    pre_init_circ->Run(prototype);
   } else {
     choose_quantum_fn(pre_qfn)(prototype);
   }
@@ -197,7 +213,11 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
       sim->RY(PI_R1 * v, input_indices[i]);
     }
 
-    post_init_fn(sim);
+    if (post_init_circ) {
+      post_init_circ->Run(sim);
+    } else {
+      post_init_fn(sim);
+    }
 
     for (size_t o = 0U; o < output_indices.size(); ++o) {
       real1 phi = init_phi;
@@ -225,6 +245,14 @@ void QrackNeuronLayer::save(std::ostream &os) const {
 
   Module::save(os);
 
+  Serializer::write_bool(os, (bool)pre_init_circ);
+  if (pre_init_circ) {
+    os << pre_init_circ;
+  }
+  Serializer::write_bool(os, (bool)post_init_circ);
+  if (post_init_circ) {
+    os << post_init_circ;
+  }
   Serializer::write_tcapint(os, (tcapint)(input_indices.size()));
   Serializer::write_tcapint(os, (tcapint)(output_indices.size()));
   Serializer::write_tcapint(os, (tcapint)(hidden_indices.size()));

@@ -332,7 +332,8 @@ ModulePtr Module::load(std::istream &is) {
 
     QrackNeuronLayerPtr qnl = std::make_shared<QrackNeuronLayer>(
         input_q, output_q, hidden_q, lowest_combo, highest_combo, pre_qfn,
-        post_qfn, activation_fn, nullptr, nullptr, md, sd, bdt, tn, hp, sp);
+        post_qfn, activation_fn, nullptr, nullptr, nullptr, nullptr, md, sd,
+        bdt, tn, hp, sp);
 
     for (size_t i = 0U; i < qnl->neurons.size(); ++i) {
       const auto &n = qnl->neurons[i];

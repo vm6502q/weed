@@ -30,6 +30,8 @@ struct QrackNeuronLayer : public Module {
   size_t highest_cmb;
   QuantumFunctionType pre_qfn;
   QuantumFunctionType post_qfn;
+  Qrack::QCircuitPtr pre_init_circ;
+  Qrack::QCircuitPtr post_init_circ;
   Qrack::QNeuronActivationFn activation_fn;
 
   Qrack::QInterfacePtr prototype;
@@ -50,6 +52,8 @@ struct QrackNeuronLayer : public Module {
       const QuantumFunctionType post_fn = NONE_QFN,
       const Qrack::QNeuronActivationFn &activation =
           Qrack::QNeuronActivationFn::Sigmoid,
+      const Qrack::QCircuitPtr pre_init_circ_ = nullptr,
+      const Qrack::QCircuitPtr post_init_circ_ = nullptr,
       const std::function<void(Qrack::QInterfacePtr)> &pre_init = nullptr,
       const std::function<void(Qrack::QInterfacePtr)> &post_init = nullptr,
       const bool &md = false, const bool &sd = true, const bool &bdt = false,
