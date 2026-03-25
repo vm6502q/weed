@@ -238,7 +238,8 @@ TensorPtr QrackNeuronLayer::forward(const TensorPtr x) {
 }
 
 void QrackNeuronLayer::save(std::ostream &os) const {
-  if ((pre_qfn == CUSTOM_QFN) || (post_qfn == CUSTOM_QFN)) {
+  if (((pre_qfn == CUSTOM_QFN) && !pre_init_circ) ||
+      ((post_qfn == CUSTOM_QFN) && !post_init_circ)) {
     throw std::domain_error("Can't serialize QrackNeuronLayer with custom "
                             "pre-or-post-initialization functions!");
   }
