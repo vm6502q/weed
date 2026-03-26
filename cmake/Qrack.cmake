@@ -2,8 +2,11 @@ option(WEED_ENABLE_QRACK "Enable Qrack, if available" ON)
 
 if (NOT QRACK_DIR)
 set(QRACK_DIR "/usr/local/lib/qrack")
-set(QRACK_INCLUDE "/usr/local/include")
 endif (NOT QRACK_DIR)
+
+if (NOT QRACK_INCLUDE)
+set(QRACK_INCLUDE "/usr/local/include")
+endif (NOT QRACK_INCLUDE)
 
 find_library(QRACK_LIB
     NAMES qrack libqrack
