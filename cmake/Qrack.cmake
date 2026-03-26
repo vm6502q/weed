@@ -1,11 +1,11 @@
 option(WEED_ENABLE_QRACK "Enable Qrack, if available" ON)
 
 if (NOT QRACK_DIR)
-set(QRACK_DIR "/usr/local/lib/qrack")
+    set(QRACK_DIR "/usr/local/lib/qrack")
 endif (NOT QRACK_DIR)
 
 if (NOT QRACK_INCLUDE)
-set(QRACK_INCLUDE "/usr/local/include")
+    set(QRACK_INCLUDE "/usr/local/include")
 endif (NOT QRACK_INCLUDE)
 
 find_library(QRACK_LIB
@@ -22,4 +22,6 @@ if (QRACK_LIB AND WEED_ENABLE_QRACK)
         src/modules/qrack_neuron.cpp
         src/modules/qrack_neuron_layer.cpp
         )
+else (QRACK_LIB AND WEED_ENABLE_QRACK)
+    set(WEED_ENABLE_QRACK OFF)
 endif (QRACK_LIB AND WEED_ENABLE_QRACK)
