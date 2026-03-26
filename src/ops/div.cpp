@@ -65,7 +65,7 @@ static inline void cpu_mixed_c_left(const Tensor &a, const Tensor &b,
 }
 static inline void cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                      Tensor &out) {
-  cpu_div<ComplexTensor, RealTensor, SparseCpuRealStorage,
+  cpu_div<ComplexTensor, ComplexTensor, SparseCpuRealStorage,
           SparseCpuComplexStorage>(a, b, out);
 }
 

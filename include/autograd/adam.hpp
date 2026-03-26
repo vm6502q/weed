@@ -76,7 +76,12 @@ void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
       (real1)(ONE_R1 - std::pow((real1_s)opt.beta2, (real1_s)opt.t));
 
   for (auto &p : params) {
-    AdamState &s = opt.state[p];
+    const auto it = opt.state.find(p);
+    if (it == opt.state.end()) {
+      throw std::invalid_argument("Parameter passed to adam_step that was not "
+                                  "registered with optimizer!");
+    }
+    AdamState &s = it->second;
     TensorPtr g = p->grad;
 
     // m = beta1 * m + (1 - beta1) * g

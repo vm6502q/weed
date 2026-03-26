@@ -64,6 +64,9 @@ static void cpu_real_exp(const Tensor &a, const real1 &b, Tensor &out) {
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
 static void cpu_real_log(const Tensor &a, const real1 &b, Tensor &out) {
+  if (b <= ZERO_R1) {
+    throw std::invalid_argument("Log base must be positive!");
+  }
   CPU_INIT_2(RealTensor, RealTensor);
   const real1 inv_log_b = (real1)(ONE_R1 / std::log((real1_s)b));
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {

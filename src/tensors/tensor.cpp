@@ -273,7 +273,7 @@ Tensor::Tensor(const ComplexSparseVector &val, const std::vector<tcapint> &shp,
 }
 
 TensorPtr Tensor::operator[](const tcapint &idx) const {
-  if (idx > shape.back()) {
+  if (idx >= shape.back()) {
     throw std::invalid_argument("Tensor index out-of-range!");
   }
 
