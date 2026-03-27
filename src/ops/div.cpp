@@ -65,8 +65,9 @@ static inline void cpu_mixed_c_left(const Tensor &a, const Tensor &b,
 }
 static inline void cpu_mixed_c_right(const Tensor &a, const Tensor &b,
                                      Tensor &out) {
-  cpu_div<ComplexTensor, ComplexTensor, SparseCpuRealStorage,
-          SparseCpuComplexStorage>(a, b, out);
+  CPU_INIT_3(RealTensor, ComplexTensor, ComplexTensor);
+  DIV_KERNEL();
+  SPARSE_CPU_3_RUN(SparseCpuRealStorage, SparseCpuComplexStorage);
 }
 
 #if ENABLE_GPU

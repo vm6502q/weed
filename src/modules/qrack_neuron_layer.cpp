@@ -90,14 +90,18 @@ QrackNeuronLayer::QrackNeuronLayer(
     const Qrack::QCircuitPtr pre_init_circ_,
     const Qrack::QCircuitPtr post_init_circ_,
     const std::function<void(Qrack::QInterfacePtr)> &pre_init,
-    const std::function<void(Qrack::QInterfacePtr)> &post_init, const bool &md,
-    const bool &sd, const bool &bdt, const bool &tn, const bool &hp,
-    const bool &sp)
+    const std::function<void(Qrack::QInterfacePtr)> &post_init,
+    const bitLenInt &ace_qubits, const Qrack::real1_f &sdrp_,
+    const Qrack::real1_f &ncrp_, const size_t &sparse_mb_,
+    const Qrack::real1_f sparse_fl_, const bool &md, const bool &sd,
+    const bool &bdt, const bool &tn, const bool &hp, const bool &sp)
     : Module(QRACK_NEURON_LAYER_T), lowest_cmb(lowest_combo),
-      highest_cmb(highest_combo), pre_qfn(pre_fn), post_qfn(post_fn),
-      pre_init_circ(pre_init_circ_), post_init_circ(post_init_circ_),
-      activation_fn(activation), input_indices(input_q),
-      hidden_indices(hidden_q), output_indices(output_q), requires_grad(true) {
+      highest_cmb(highest_combo), sparse_mb(sparse_mb_), sdrp(sdrp_),
+      ncrp(ncrp_), sparse_fl(sparse_fl_), ace_qb(ace_qubits), pre_qfn(pre_fn),
+      post_qfn(post_fn), pre_init_circ(pre_init_circ_),
+      post_init_circ(post_init_circ_), activation_fn(activation),
+      input_indices(input_q), hidden_indices(hidden_q),
+      output_indices(output_q), requires_grad(true) {
 
   if ((pre_init || pre_init_circ) && (pre_fn != CUSTOM_QFN)) {
     throw std::invalid_argument(
@@ -171,6 +175,22 @@ QrackNeuronLayer::QrackNeuronLayer(
   }
 
   update_param_vector();
+
+  if (sdrp > ZERO_R1_F) {
+    prototype->SetSdrp(sdrp);
+  }
+  if (ncrp > ZERO_R1_F) {
+    prototype->SetNcrp(ncrp);
+  }
+  if (ace_qb > 0U) {
+    prototype->SetAceMaxQubits(ace_qb);
+  }
+  if (sparse_mb > 0U) {
+    prototype->SetSparseAceMaxMb(sparse_mb);
+  }
+  if (sparse_fl > ZERO_R1_F) {
+    prototype->SetSparseProbabilityFloor(sparse_fl);
+  }
 
   if (pre_init) {
     pre_init(prototype);
@@ -254,6 +274,11 @@ void QrackNeuronLayer::save(std::ostream &os) const {
   if (post_init_circ) {
     os << post_init_circ;
   }
+  Serializer::write_real1_f(os, sdrp);
+  Serializer::write_real1_f(os, ncrp);
+  Serializer::write_bitLenInt(os, ace_qb);
+  Serializer::write_size_t(os, sparse_mb);
+  Serializer::write_real1_f(os, sparse_fl);
   Serializer::write_tcapint(os, (tcapint)(input_indices.size()));
   Serializer::write_tcapint(os, (tcapint)(output_indices.size()));
   Serializer::write_tcapint(os, (tcapint)(hidden_indices.size()));

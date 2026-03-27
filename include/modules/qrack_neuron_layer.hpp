@@ -28,6 +28,11 @@ namespace Weed {
 struct QrackNeuronLayer : public Module {
   size_t lowest_cmb;
   size_t highest_cmb;
+  size_t sparse_mb;
+  Qrack::real1_f sdrp;
+  Qrack::real1_f ncrp;
+  Qrack::real1_f sparse_fl;
+  bitLenInt ace_qb;
   QuantumFunctionType pre_qfn;
   QuantumFunctionType post_qfn;
   Qrack::QCircuitPtr pre_init_circ;
@@ -56,8 +61,11 @@ struct QrackNeuronLayer : public Module {
       const Qrack::QCircuitPtr post_init_circ_ = nullptr,
       const std::function<void(Qrack::QInterfacePtr)> &pre_init = nullptr,
       const std::function<void(Qrack::QInterfacePtr)> &post_init = nullptr,
-      const bool &md = false, const bool &sd = true, const bool &bdt = false,
-      const bool &tn = true, const bool &hp = false, const bool &sp = false);
+      const bitLenInt &ace_qubits = 0U, const Qrack::real1_f &sdrp_ = ZERO_R1_F,
+      const Qrack::real1_f &ncrp_ = ZERO_R1_F, const size_t &sparse_mb_ = 0U,
+      const Qrack::real1_f sparse_fl_ = ZERO_R1_F, const bool &md = false,
+      const bool &sd = true, const bool &bdt = false, const bool &tn = true,
+      const bool &hp = false, const bool &sp = false);
 
   void update_param_vector() {
     param_vector.clear();

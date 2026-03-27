@@ -319,6 +319,16 @@ ModulePtr Module::load(std::istream &is) {
     if (b) {
       is >> post;
     }
+    Qrack::real1_f sdrp;
+    Serializer::read_real1_f(is, sdrp);
+    Qrack::real1_f ncrp;
+    Serializer::read_real1_f(is, ncrp);
+    bitLenInt ace_qb;
+    Serializer::read_bitLenInt(is, ace_qb);
+    size_t sparse_mb;
+    Serializer::read_size_t(is, sparse_mb);
+    Qrack::real1_f sparse_fl;
+    Serializer::read_real1_f(is, sparse_fl);
     tcapint input_q, output_q, hidden_q;
     Serializer::read_tcapint(is, input_q);
     Serializer::read_tcapint(is, output_q);
@@ -343,8 +353,8 @@ ModulePtr Module::load(std::istream &is) {
 
     QrackNeuronLayerPtr qnl = std::make_shared<QrackNeuronLayer>(
         input_q, output_q, hidden_q, lowest_combo, highest_combo, pre_qfn,
-        post_qfn, activation_fn, pre, post, nullptr, nullptr, md, sd, bdt, tn,
-        hp, sp);
+        post_qfn, activation_fn, pre, post, nullptr, nullptr, ace_qb, sdrp,
+        ncrp, sparse_mb, sparse_fl, md, sd, bdt, tn, hp, sp);
 
     for (size_t i = 0U; i < qnl->neurons.size(); ++i) {
       const auto &n = qnl->neurons[i];
