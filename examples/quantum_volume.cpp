@@ -14,8 +14,8 @@
 #include "qrack/qfactory.hpp"
 
 #include "autograd/adam.hpp"
-#include "autograd/bci_with_logits_loss.hpp"
-// #include "autograd/mse_loss.hpp"
+// #include "autograd/bci_with_logits_loss.hpp"
+#include "autograd/mse_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
 #include "modules/qrack_neuron_layer.hpp"
@@ -47,43 +47,31 @@ bitLenInt pickRandomBit(real1_f rand, std::vector<bitLenInt> *unusedBitsPtr) {
   return result;
 }
 
-real1_f fix_range(real1_f theta) {
-  while (theta <= -PI_R1) {
-    theta += 2 * PI_R1;
-  }
-  while (theta > PI_R1) {
-    theta -= 2 * PI_R1;
-  }
-
-  return theta;
-}
-
 int main() {
   const bitLenInt n = 2;
   const int depth = n; // QV uses square circuits
   const int p = 3 * n;
-  const int s = 32;
+  const int s = p;
 
   std::vector<bitLenInt> allBits(n);
   std::iota(allBits.begin(), allBits.end(), 0U);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(p, n),
-      std::make_shared<Tanh>(),
-      std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, BELL_GHZ_QFN),
+      std::make_shared<Linear>(p, n), std::make_shared<Tanh>(),
+      std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, QFT_QFN),
       std::make_shared<Linear>(n, n)};
 
   Sequential model(mv);
 
   std::vector<ParameterPtr> params = model.parameters();
 
-  Adam opt(R(0.1));
+  Adam opt(R(0.001));
   opt.register_parameters(params);
 
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 2000) && (loss_r > 0.01)) {
+  while ((epoch <= 5000) && (loss_r > 0.01)) {
     std::vector<real1> a_th;
     std::vector<real1> a_ph;
     std::vector<real1> a_lm;
@@ -116,9 +104,9 @@ int main() {
           s_lambda[i] = lambda;
 
           // Accumulate own contribution
-          det_theta[i] = fix_range(det_theta[i] + theta);
-          det_phi[i] = fix_range(det_phi[i] + phi);
-          det_lambda[i] = fix_range(det_lambda[i] + lambda);
+          det_theta[i] += theta;
+          det_phi[i] += phi;
+          det_lambda[i] += lambda;
         }
 
         // Two-qubit layer
@@ -129,16 +117,16 @@ int main() {
           qReg->CNOT(b1, b2);
 
           // Forward: propagate each parameter of control into target
-          det_theta[b2] = fix_range(det_theta[b2] + s_theta[b1]);
-          det_phi[b2] = fix_range(det_phi[b2] + s_phi[b1]);
-          det_lambda[b2] = fix_range(det_lambda[b2] + s_lambda[b1]);
+          det_theta[b2] += s_theta[b1];
+          det_phi[b2] += s_phi[b1];
+          det_lambda[b2] += s_lambda[b1];
 
           // Reverse kickback: cos(theta_b2/2) scales back into control
           // Applied to all three parameters of the control qubit
           const real1_f kickback = (PI_R1 + theta_last[b2]) / 2;
-          det_theta[b1] = fix_range(det_theta[b1] + kickback);
-          det_phi[b1] = fix_range(det_phi[b1] + kickback);
-          det_lambda[b1] = fix_range(det_lambda[b1] + kickback);
+          det_theta[b1] += kickback;
+          det_phi[b1] += kickback;
+          det_lambda[b1] += kickback;
         }
 
         // Unpaired qubit — already accumulated in single-qubit pass
@@ -163,8 +151,8 @@ int main() {
     TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{s, n});
 
     TensorPtr y_pred = model.forward(x);
-    TensorPtr loss = bci_with_logits_loss(y_pred, y);
-    // TensorPtr loss = mse_loss(y_pred, y);
+    // TensorPtr loss = bci_with_logits_loss(y_pred, y);
+    TensorPtr loss = mse_loss(y_pred, y);
 
     Tensor::backward(loss);
     adam_step(opt, params);
@@ -178,6 +166,7 @@ int main() {
     ++epoch;
   }
 
+  --epoch;
   if (epoch % 100) {
     std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
   }
