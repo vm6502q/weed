@@ -57,9 +57,13 @@ real1_f fix_range(real1_f theta) {
 }
 
 int main() {
+  const bitLenInt n = 2;
+  const int depth = n; // QV uses square circuits
+  const int p = 3 * n;
+
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(6, 6),
-      std::make_shared<QrackNeuronLayer>(6, 2, 0, 6, 6, BELL_GHZ_QFN)};
+      std::make_shared<Linear>(p, p),
+      std::make_shared<QrackNeuronLayer>(p, n, 0, p, p, BELL_GHZ_QFN)};
 
   Sequential model(mv);
 
@@ -70,9 +74,6 @@ int main() {
 
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
-
-  const bitLenInt n = 2;
-  const int depth = n; // QV uses square circuits
 
   while ((epoch <= 2000) && (loss_r > 0.01)) {
     Qrack::QInterfacePtr qReg = Qrack::CreateQuantumInterface(
@@ -143,8 +144,8 @@ int main() {
       y_vec.push_back(qReg->Prob(i));
     }
 
-    TensorPtr x = std::make_shared<Tensor>(x_vec, std::vector<tcapint>{1, 6});
-    TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{1, 2});
+    TensorPtr x = std::make_shared<Tensor>(x_vec, std::vector<tcapint>{1, p});
+    TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{1, n});
 
     TensorPtr y_pred = model.forward(x);
     TensorPtr loss = mse_loss(y_pred, y);
@@ -153,16 +154,10 @@ int main() {
     adam_step(opt, params);
 
     loss_r = GET_REAL(loss);
-    if ((epoch % 100) == 0U) {
-      std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
-    }
+    std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
 
     zero_grad(params);
     ++epoch;
-  }
-
-  if (epoch % 100) {
-    std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
   }
 
   std::ofstream o("quantum_volume.qml");
