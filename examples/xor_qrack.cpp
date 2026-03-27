@@ -9,8 +9,6 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
-#include "tensors/symbol_tensor.hpp"
-
 #include "autograd/adam.hpp"
 #include "autograd/bci_with_logits_loss.hpp"
 #include "autograd/zero_grad.hpp"

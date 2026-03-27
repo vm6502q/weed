@@ -36,4 +36,15 @@ if (QRACK_LIB AND WEED_ENABLE_QRACK)
         PRIVATE ${QRACK_LIB}
     )
     target_compile_options (xor_qrack PUBLIC ${EXAMPLE_COMPILE_OPTS})
+    add_executable (quantum_volume
+        examples/quantum_volume.cpp
+    )
+    set_target_properties(quantum_volume PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+    target_link_libraries (quantum_volume
+        PRIVATE weed
+        PRIVATE ${QRACK_LIB}
+    )
+    target_compile_options (quantum_volume PUBLIC ${EXAMPLE_COMPILE_OPTS})
 endif (QRACK_LIB AND WEED_ENABLE_QRACK)
