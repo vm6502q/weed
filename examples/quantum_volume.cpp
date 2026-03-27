@@ -14,7 +14,6 @@
 #include "qrack/qfactory.hpp"
 
 #include "autograd/adam.hpp"
-// #include "autograd/bci_loss.hpp"
 #include "autograd/mse_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
@@ -52,17 +51,16 @@ int main() {
   const bitLenInt n = 2;
   const int depth = n; // QV uses square circuits
   const int p = 3 * n;
-  const int s = p;
+  const int s = p << 2;
 
   std::vector<bitLenInt> allBits(n);
   std::iota(allBits.begin(), allBits.end(), 0U);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(p, n, true, false),
+      std::make_shared<Linear>(p, p, true, false),
       std::make_shared<Tanh>(),
-      std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, BELL_GHZ_QFN),
-      std::make_shared<Linear>(n, n, true, false),
-      std::make_shared<Sigmoid>()};
+      std::make_shared<QrackNeuronLayer>(p, n, 0, n, n, BELL_GHZ_QFN),
+      std::make_shared<Linear>(n, n, true, false)};
 
   Sequential model(mv);
 
@@ -74,7 +72,7 @@ int main() {
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 5000) && (loss_r > 0.001)) {
+  while ((epoch <= 1000) && (loss_r > 0.001)) {
     std::vector<real1> a_th;
     std::vector<real1> a_ph;
     std::vector<real1> a_lm;
@@ -141,7 +139,8 @@ int main() {
       a_lm.insert(a_lm.end(), det_lambda.begin(), det_lambda.end());
 
       for (bitLenInt i = 0U; i < n; ++i) {
-        y_vec.push_back(qReg->Prob(i));
+        const real1_f prb = qReg->Prob(i);
+        y_vec.push_back(std::log(prb / (1 - prb)));
       }
     }
 
@@ -154,7 +153,6 @@ int main() {
     TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{s, n});
 
     TensorPtr y_pred = model.forward(x);
-    // TensorPtr loss = bci_loss(y_pred, y);
     TensorPtr loss = mse_loss(y_pred, y);
 
     Tensor::backward(loss);
