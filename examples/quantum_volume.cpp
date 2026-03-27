@@ -60,6 +60,10 @@ int main() {
   const bitLenInt n = 2;
   const int depth = n; // QV uses square circuits
   const int p = 3 * n;
+  const int s = 32;
+
+  std::vector<bitLenInt> allBits(n);
+  std::iota(allBits.begin(), allBits.end(), 0U);
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<Linear>(p, p),
@@ -75,77 +79,84 @@ int main() {
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 2000) && (loss_r > 0.0001)) {
-    Qrack::QInterfacePtr qReg = Qrack::CreateQuantumInterface(
-        Qrack::QINTERFACE_TENSOR_NETWORK, n, Qrack::ZERO_BCI);
+  while ((epoch <= 2000) && (loss_r > 0.01)) {
+    std::vector<real1> a_th;
+    std::vector<real1> a_ph;
+    std::vector<real1> a_lm;
+    std::vector<real1> y_vec;
 
-    std::vector<bitLenInt> allBits(n);
-    std::iota(allBits.begin(), allBits.end(), 0U);
+    for (int b = 0; b < s; ++b) {
+      Qrack::QInterfacePtr qReg = Qrack::CreateQuantumInterface(
+          Qrack::QINTERFACE_TENSOR_NETWORK, n, Qrack::ZERO_BCI);
 
-    // Three parallel running products, one per U3 parameter
-    std::vector<real1> det_theta(n, 0.0);
-    std::vector<real1> det_phi(n, 0.0);
-    std::vector<real1> det_lambda(n, 0.0);
+      // Three parallel running products, one per U3 parameter
+      std::vector<real1> det_theta(n, 0.0);
+      std::vector<real1> det_phi(n, 0.0);
+      std::vector<real1> det_lambda(n, 0.0);
 
-    // Per-layer sin values, kept separate
-    std::vector<real1_f> s_theta(n), s_phi(n), s_lambda(n);
-    std::vector<real1_f> theta_last(n, 0.0);
+      // Per-layer sin values, kept separate
+      std::vector<real1_f> s_theta(n), s_phi(n), s_lambda(n);
+      std::vector<real1_f> theta_last(n, 0.0);
 
-    for (int d = 0; d < depth; ++d) {
-      // Single-qubit layer
+      for (int d = 0; d < depth; ++d) {
+        // Single-qubit layer
+        for (bitLenInt i = 0U; i < n; ++i) {
+          const real1_f theta = 2 * PI_R1 * qReg->Rand() - PI_R1;
+          const real1_f phi = 2 * PI_R1 * qReg->Rand() - PI_R1;
+          const real1_f lambda = 2 * PI_R1 * qReg->Rand() - PI_R1;
+          qReg->U(i, theta, phi, lambda);
+
+          theta_last[i] = theta;
+          s_theta[i] = theta;
+          s_phi[i] = phi;
+          s_lambda[i] = lambda;
+
+          // Accumulate own contribution
+          det_theta[i] = fix_range(det_theta[i] + theta);
+          det_phi[i] = fix_range(det_phi[i] + phi);
+          det_lambda[i] = fix_range(det_lambda[i] + lambda);
+        }
+
+        // Two-qubit layer
+        std::vector<bitLenInt> unusedBits(allBits);
+        while (unusedBits.size() > 1U) {
+          const bitLenInt b1 = pickRandomBit(qReg->Rand(), &unusedBits);
+          const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
+          qReg->CNOT(b1, b2);
+
+          // Forward: propagate each parameter of control into target
+          det_theta[b2] = fix_range(det_theta[b2] + s_theta[b1]);
+          det_phi[b2] = fix_range(det_phi[b2] + s_phi[b1]);
+          det_lambda[b2] = fix_range(det_lambda[b2] + s_lambda[b1]);
+
+          // Reverse kickback: cos(theta_b2/2) scales back into control
+          // Applied to all three parameters of the control qubit
+          const real1_f kickback = (PI_R1 + theta_last[b2]) / 2;
+          det_theta[b1] = fix_range(det_theta[b1] + kickback);
+          det_phi[b1] = fix_range(det_phi[b1] + kickback);
+          det_lambda[b1] = fix_range(det_lambda[b1] + kickback);
+        }
+
+        // Unpaired qubit — already accumulated in single-qubit pass
+        // nothing extra needed
+      }
+
+      a_th.insert(a_th.end(), det_theta.begin(), det_theta.end());
+      a_ph.insert(a_ph.end(), det_phi.begin(), det_phi.end());
+      a_lm.insert(a_lm.end(), det_lambda.begin(), det_lambda.end());
+
       for (bitLenInt i = 0U; i < n; ++i) {
-        const real1_f theta = 2 * PI_R1 * qReg->Rand() - PI_R1;
-        const real1_f phi = 2 * PI_R1 * qReg->Rand() - PI_R1;
-        const real1_f lambda = 2 * PI_R1 * qReg->Rand() - PI_R1;
-        qReg->U(i, theta, phi, lambda);
-
-        theta_last[i] = theta;
-        s_theta[i] = theta;
-        s_phi[i] = phi;
-        s_lambda[i] = lambda;
-
-        // Accumulate own contribution
-        det_theta[i] = fix_range(det_theta[i] + theta);
-        det_phi[i] = fix_range(det_phi[i] + phi);
-        det_lambda[i] = fix_range(det_lambda[i] + lambda);
+        y_vec.push_back(qReg->Prob(i));
       }
-
-      // Two-qubit layer
-      std::vector<bitLenInt> unusedBits(allBits);
-      while (unusedBits.size() > 1U) {
-        const bitLenInt b1 = pickRandomBit(qReg->Rand(), &unusedBits);
-        const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
-        qReg->CNOT(b1, b2);
-
-        // Forward: propagate each parameter of control into target
-        det_theta[b2] = fix_range(det_theta[b2] + s_theta[b1]);
-        det_phi[b2] = fix_range(det_phi[b2] + s_phi[b1]);
-        det_lambda[b2] = fix_range(det_lambda[b2] + s_lambda[b1]);
-
-        // Reverse kickback: cos(theta_b2/2) scales back into control
-        // Applied to all three parameters of the control qubit
-        const real1_f kickback = (PI_R1 + theta_last[b2]) / 2;
-        det_theta[b1] = fix_range(det_theta[b1] + kickback);
-        det_phi[b1] = fix_range(det_phi[b1] + kickback);
-        det_lambda[b1] = fix_range(det_lambda[b1] + kickback);
-      }
-
-      // Unpaired qubit — already accumulated in single-qubit pass
-      // nothing extra needed
     }
 
     std::vector<real1> x_vec;
-    x_vec.insert(x_vec.end(), det_theta.begin(), det_theta.end());
-    x_vec.insert(x_vec.end(), det_phi.begin(), det_phi.end());
-    x_vec.insert(x_vec.end(), det_lambda.begin(), det_lambda.end());
+    x_vec.insert(x_vec.end(), a_th.begin(), a_th.end());
+    x_vec.insert(x_vec.end(), a_ph.begin(), a_ph.end());
+    x_vec.insert(x_vec.end(), a_lm.begin(), a_lm.end());
 
-    std::vector<real1> y_vec;
-    for (bitLenInt i = 0U; i < n; ++i) {
-      y_vec.push_back(qReg->Prob(i));
-    }
-
-    TensorPtr x = std::make_shared<Tensor>(x_vec, std::vector<tcapint>{1, p});
-    TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{1, n});
+    TensorPtr x = std::make_shared<Tensor>(x_vec, std::vector<tcapint>{s, p});
+    TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{s, n});
 
     TensorPtr y_pred = model.forward(x);
     TensorPtr loss = mse_loss(y_pred, y);
