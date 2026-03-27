@@ -14,12 +14,13 @@
 #include "qrack/qfactory.hpp"
 
 #include "autograd/adam.hpp"
-// #include "autograd/bci_with_logits_loss.hpp"
+// #include "autograd/bci_loss.hpp"
 #include "autograd/mse_loss.hpp"
 #include "autograd/zero_grad.hpp"
 #include "modules/linear.hpp"
 #include "modules/qrack_neuron_layer.hpp"
 #include "modules/sequential.hpp"
+#include "modules/sigmoid.hpp"
 #include "modules/tanh.hpp"
 #include "tensors/real_scalar.hpp"
 
@@ -57,10 +58,12 @@ int main() {
   std::iota(allBits.begin(), allBits.end(), 0U);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(p, n, true, false), std::make_shared<Tanh>(),
+      std::make_shared<Linear>(p, n, true, false),
+      std::make_shared<Tanh>(),
       std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, NONE_QFN, BELL_GHZ_QFN),
       std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, NONE_QFN, BELL_GHZ_QFN),
-      std::make_shared<Linear>(n, n, true, false)};
+      std::make_shared<Linear>(n, n, true, false),
+      std::make_shared<Sigmoid>()};
 
   Sequential model(mv);
 
@@ -152,7 +155,7 @@ int main() {
     TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{s, n});
 
     TensorPtr y_pred = model.forward(x);
-    // TensorPtr loss = bci_with_logits_loss(y_pred, y);
+    // TensorPtr loss = bci_loss(y_pred, y);
     TensorPtr loss = mse_loss(y_pred, y);
 
     Tensor::backward(loss);
