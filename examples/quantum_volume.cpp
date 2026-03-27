@@ -57,9 +57,10 @@ int main() {
   std::iota(allBits.begin(), allBits.end(), 0U);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(p, n), std::make_shared<Tanh>(),
-      std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, BELL_GHZ_QFN),
-      std::make_shared<Linear>(n, n)};
+      std::make_shared<Linear>(p, n, true, false), std::make_shared<Tanh>(),
+      std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, NONE_QFN, BELL_GHZ_QFN),
+      std::make_shared<QrackNeuronLayer>(n, n, 0, n, n, NONE_QFN, BELL_GHZ_QFN),
+      std::make_shared<Linear>(n, n, true, false)};
 
   Sequential model(mv);
 
@@ -71,7 +72,7 @@ int main() {
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 5000) && (loss_r > 0.01)) {
+  while ((epoch <= 5000) && (loss_r > 0.001)) {
     std::vector<real1> a_th;
     std::vector<real1> a_ph;
     std::vector<real1> a_lm;
