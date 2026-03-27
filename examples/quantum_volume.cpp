@@ -75,7 +75,7 @@ int main() {
   size_t epoch = 1;
   real1 loss_r = ONE_R1;
 
-  while ((epoch <= 2000) && (loss_r > 0.01)) {
+  while ((epoch <= 2000) && (loss_r > 0.0001)) {
     Qrack::QInterfacePtr qReg = Qrack::CreateQuantumInterface(
         Qrack::QINTERFACE_TENSOR_NETWORK, n, Qrack::ZERO_BCI);
 
@@ -154,10 +154,16 @@ int main() {
     adam_step(opt, params);
 
     loss_r = GET_REAL(loss);
-    std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
+    if ((epoch % 100) == 0) {
+      std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
+    }
 
     zero_grad(params);
     ++epoch;
+  }
+
+  if (epoch % 100) {
+    std::cout << "Epoch " << epoch << ", Loss: " << loss_r << std::endl;
   }
 
   std::ofstream o("quantum_volume.qml");
