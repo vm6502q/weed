@@ -58,7 +58,7 @@ int main() {
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<Linear>(p, p, true, false),
-      std::make_shared<Tanh>(),
+      std::make_shared<Sigmoid>(),
       std::make_shared<QrackNeuronLayer>(p, n, 0, n, n, BELL_GHZ_QFN),
       std::make_shared<Linear>(n, n, true, false)};
 
