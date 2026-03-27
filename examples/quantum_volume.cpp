@@ -19,6 +19,7 @@
 #include "modules/linear.hpp"
 #include "modules/qrack_neuron_layer.hpp"
 #include "modules/sequential.hpp"
+#include "modules/tanh.hpp"
 #include "tensors/real_scalar.hpp"
 
 #include <cmath>
@@ -67,6 +68,7 @@ int main() {
 
   const std::vector<ModulePtr> mv = {
       std::make_shared<Linear>(p, p),
+      std::make_shared<Tanh>(),
       std::make_shared<QrackNeuronLayer>(p, n, 0, p, p, BELL_GHZ_QFN)};
 
   Sequential model(mv);
