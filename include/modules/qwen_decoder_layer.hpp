@@ -43,7 +43,7 @@ struct QwenDecoderLayer : public Module {
     const tcapint head_dim = d_model_ / num_heads_;
     RoPEPtr rope = std::make_shared<RoPE>(head_dim, max_seq_len, rope_base);
     self_attn = std::make_shared<MultiHeadAttention>(
-        d_model_, num_heads_, head_dim, DEFAULT_DEVICE, rope, ZERO_R1, did);
+        d_model_, num_heads_, num_kv_heads_, head_dim, DEFAULT_DEVICE, rope, ZERO_R1, did);
     mlp = std::make_shared<SwiGLU>(d_model_, d_ff_);
     input_layernorm = std::make_shared<RMSNorm>(d_model_, -1);
     post_attention_layernorm = std::make_shared<RMSNorm>(d_model_, -1);

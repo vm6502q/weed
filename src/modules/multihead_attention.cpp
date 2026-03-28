@@ -25,18 +25,13 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   TensorPtr K = W_k->forward(x);
   TensorPtr V = W_v->forward(x);
 
-  // (B, T, H, head_dim)
-  Q = std::dynamic_pointer_cast<Tensor>(
-      Tensor::reshape(Q, {B, T, num_heads, head_dim}));
-  K = std::dynamic_pointer_cast<Tensor>(
-      Tensor::reshape(K, {B, T, num_heads, head_dim}));
-  V = std::dynamic_pointer_cast<Tensor>(
-      Tensor::reshape(V, {B, T, num_heads, head_dim}));
+  Q = Tensor::reshape(Q, std::vector<symint>{B, T, num_heads, head_dim});
+  K = Tensor::reshape(K, std::vector<symint>{B, T, num_kv_heads,  head_dim});
+  V = Tensor::reshape(V, std::vector<symint>{B, T, num_kv_heads,  head_dim});
 
-  // (B, H, T, head_dim)
-  Q = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(Q, 1, 2));
-  K = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(K, 1, 2));
-  V = std::dynamic_pointer_cast<Tensor>(Tensor::transpose(V, 1, 2));
+  Q = Tensor::transpose(Q, 1, 2);  // [B, num_heads,  T, head_dim]
+  K = Tensor::transpose(K, 1, 2);  // [B, kv_heads,   T, head_dim]
+  V = Tensor::transpose(V, 1, 2);  // [B, kv_heads,   T, head_dim]
 
   // optional RoPE (like for Qwen)
   if (rope) {
@@ -82,6 +77,30 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
     V = v_cache;
   }
 
+  // GQA: broadcast K and V from kv_heads to num_heads
+  if (num_kv_heads < num_heads) {
+    const symint groups = num_heads / num_kv_heads;
+
+    // Allocate output container
+    TensorPtr K_rep = Tensor::zeros({(tcapint)B, (tcapint)num_heads, (tcapint)T, (tcapint)head_dim});
+    TensorPtr V_rep = Tensor::zeros({(tcapint)B, (tcapint)num_heads, (tcapint)T, (tcapint)head_dim});
+
+    for (symint g = 0; g < groups; ++g) {
+        // Slice destination: heads [g*num_kv_heads, (g+1)*num_kv_heads)
+        TensorPtr K_slice = Tensor::slice(K_rep, 1,
+            (tcapint)(g * num_kv_heads), (tcapint)num_kv_heads);
+        TensorPtr V_slice = Tensor::slice(V_rep, 1,
+            (tcapint)(g * num_kv_heads), (tcapint)num_kv_heads);
+
+        // Copy source K, V into each group slot
+        Weed::add_in_place(*K_slice, *K);
+        Weed::add_in_place(*V_slice, *V);
+    }
+
+    K = K_rep;
+    V = V_rep;
+  }
+
   // scores = Q K^T
   TensorPtr Kt = Tensor::transpose(K, -2, -1);
   TensorPtr scores = Q >> Kt;
@@ -119,6 +138,7 @@ void MultiHeadAttention::save(std::ostream &os) const {
   Serializer::write_real1_f(os, mask_val);
   Serializer::write_symint(os, d_model);
   Serializer::write_symint(os, num_heads);
+  Serializer::write_symint(os, num_kv_heads);
   Serializer::write_symint(os, head_dim);
   Serializer::write_bool(os, use_kv_cache);
   W_q->save(os);

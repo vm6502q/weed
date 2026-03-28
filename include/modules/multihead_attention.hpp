@@ -21,6 +21,7 @@ namespace Weed {
 struct MultiHeadAttention : public Module {
   symint d_model;
   symint num_heads;
+  symint num_kv_heads;
   symint head_dim;
   real1_f mask_val;
 
@@ -38,11 +39,12 @@ struct MultiHeadAttention : public Module {
   std::vector<ParameterPtr> param_vector;
 
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
-  MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
+  MultiHeadAttention(tcapint d_model_, tcapint num_heads_, tcapint num_kv_heads_=0,
                      tcapint head_dim_ = 0U, DeviceTag dtag = DEFAULT_DEVICE,
                      RoPEPtr r = nullptr, real1_f mask_val_ = ZERO_R1,
                      const int64_t did = -1, const bool _use_kv_cache = true)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
+        num_kv_heads(num_kv_heads_ ? num_kv_heads_ : num_heads),
         head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
         mask_val(mask_val_),
         W_q(std::make_shared<Linear>(d_model_, d_model_, true, true,

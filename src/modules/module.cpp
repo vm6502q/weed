@@ -233,6 +233,7 @@ ModulePtr Module::load(std::istream &is) {
     Serializer::read_real1_f(is, m->mask_val);
     Serializer::read_symint(is, m->d_model);
     Serializer::read_symint(is, m->num_heads);
+    Serializer::read_symint(is, m->num_kv_heads);
     Serializer::read_symint(is, m->head_dim);
     Serializer::read_bool(is, m->use_kv_cache);
     m->W_q = std::dynamic_pointer_cast<Linear>(Linear::load(is));
