@@ -26,12 +26,12 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   TensorPtr V = W_v->forward(x);
 
   Q = Tensor::reshape(Q, std::vector<symint>{B, T, num_heads, head_dim});
-  K = Tensor::reshape(K, std::vector<symint>{B, T, num_kv_heads,  head_dim});
-  V = Tensor::reshape(V, std::vector<symint>{B, T, num_kv_heads,  head_dim});
+  K = Tensor::reshape(K, std::vector<symint>{B, T, num_kv_heads, head_dim});
+  V = Tensor::reshape(V, std::vector<symint>{B, T, num_kv_heads, head_dim});
 
-  Q = Tensor::transpose(Q, 1, 2);  // [B, num_heads,  T, head_dim]
-  K = Tensor::transpose(K, 1, 2);  // [B, kv_heads,   T, head_dim]
-  V = Tensor::transpose(V, 1, 2);  // [B, kv_heads,   T, head_dim]
+  Q = Tensor::transpose(Q, 1, 2); // [B, num_heads,  T, head_dim]
+  K = Tensor::transpose(K, 1, 2); // [B, kv_heads,   T, head_dim]
+  V = Tensor::transpose(V, 1, 2); // [B, kv_heads,   T, head_dim]
 
   // optional RoPE (like for Qwen)
   if (rope) {
@@ -52,9 +52,9 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
       const tcapint T_total = T_cached + T_new;
 
       TensorPtr k_new =
-          Tensor::zeros({1, (tcapint)num_heads, T_total, (tcapint)head_dim});
+          Tensor::zeros({1, (tcapint)num_kv_heads, T_total, (tcapint)head_dim});
       TensorPtr v_new =
-          Tensor::zeros({1, (tcapint)num_heads, T_total, (tcapint)head_dim});
+          Tensor::zeros({1, (tcapint)num_kv_heads, T_total, (tcapint)head_dim});
 
       // Copy old cache into first T_cached positions
       TensorPtr k_old_slice = Tensor::slice(k_new, 2, 0, T_cached);
@@ -80,21 +80,20 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // GQA: broadcast K and V from kv_heads to num_heads
   if (num_kv_heads < num_heads) {
     const symint groups = num_heads / num_kv_heads;
+    const tcapint T_k = (tcapint)K->shape[2]; // ← use actual K length, not T
 
-    // Allocate output container
-    TensorPtr K_rep = Tensor::zeros({(tcapint)B, (tcapint)num_heads, (tcapint)T, (tcapint)head_dim});
-    TensorPtr V_rep = Tensor::zeros({(tcapint)B, (tcapint)num_heads, (tcapint)T, (tcapint)head_dim});
+    TensorPtr K_rep =
+        Tensor::zeros({(tcapint)B, (tcapint)num_heads, T_k, (tcapint)head_dim});
+    TensorPtr V_rep =
+        Tensor::zeros({(tcapint)B, (tcapint)num_heads, T_k, (tcapint)head_dim});
 
     for (symint g = 0; g < groups; ++g) {
-        // Slice destination: heads [g*num_kv_heads, (g+1)*num_kv_heads)
-        TensorPtr K_slice = Tensor::slice(K_rep, 1,
-            (tcapint)(g * num_kv_heads), (tcapint)num_kv_heads);
-        TensorPtr V_slice = Tensor::slice(V_rep, 1,
-            (tcapint)(g * num_kv_heads), (tcapint)num_kv_heads);
-
-        // Copy source K, V into each group slot
-        Weed::add_in_place(*K_slice, *K);
-        Weed::add_in_place(*V_slice, *V);
+      TensorPtr K_slice = Tensor::slice(K_rep, 1, (tcapint)(g * num_kv_heads),
+                                        (tcapint)num_kv_heads);
+      TensorPtr V_slice = Tensor::slice(V_rep, 1, (tcapint)(g * num_kv_heads),
+                                        (tcapint)num_kv_heads);
+      Weed::add_in_place(*K_slice, *K);
+      Weed::add_in_place(*V_slice, *V);
     }
 
     K = K_rep;
