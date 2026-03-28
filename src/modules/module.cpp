@@ -291,18 +291,10 @@ ModulePtr Module::load(std::istream &is) {
     Serializer::read_tcapint(is, q->num_kv_heads);
     q->self_attn =
         std::dynamic_pointer_cast<MultiHeadAttention>(Module::load(is));
-    q->rope = std::dynamic_pointer_cast<RoPE>(Module::load(is));
-    q->self_attn->rope = q->rope; // wire RoPE into attention
     q->mlp = std::dynamic_pointer_cast<SwiGLU>(Module::load(is));
     q->input_layernorm = std::dynamic_pointer_cast<RMSNorm>(Module::load(is));
     q->post_attention_layernorm =
         std::dynamic_pointer_cast<RMSNorm>(Module::load(is));
-
-    bool has_rope;
-    Serializer::read_bool(is, has_rope);
-    if (has_rope) {
-      q->rope = std::dynamic_pointer_cast<RoPE>(Module::load(is));
-    }
 
     return q;
   }

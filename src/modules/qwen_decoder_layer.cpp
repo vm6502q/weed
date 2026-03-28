@@ -21,7 +21,6 @@ void QwenDecoderLayer::save(std::ostream &os) const {
   Serializer::write_tcapint(os, num_heads);
   Serializer::write_tcapint(os, num_kv_heads);
   self_attn->save(os);
-  rope->save(os);
   mlp->save(os);
   input_layernorm->save(os);
   post_attention_layernorm->save(os);

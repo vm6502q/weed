@@ -26,7 +26,6 @@ struct QwenDecoderLayer : public Module {
   tcapint num_heads;
   tcapint num_kv_heads;
   MultiHeadAttentionPtr self_attn;
-  RoPEPtr rope;
   SwiGLUPtr mlp;
   RMSNormPtr input_layernorm;
   RMSNormPtr post_attention_layernorm;
@@ -42,7 +41,7 @@ struct QwenDecoderLayer : public Module {
       : Module(QWEN_DECODER_LAYER_T), d_model(d_model_), num_heads(num_heads_),
         num_kv_heads(num_kv_heads_) {
     const tcapint head_dim = d_model_ / num_heads_;
-    rope = std::make_shared<RoPE>(head_dim, max_seq_len, rope_base);
+    RoPEPtr rope = std::make_shared<RoPE>(head_dim, max_seq_len, rope_base);
     self_attn = std::make_shared<MultiHeadAttention>(
         d_model_, num_heads_, head_dim, DEFAULT_DEVICE, rope, ZERO_R1, did);
     mlp = std::make_shared<SwiGLU>(d_model_, d_ff_);
@@ -63,7 +62,6 @@ struct QwenDecoderLayer : public Module {
 
   void train() override {
     self_attn->train();
-    rope->train();
     mlp->train();
     input_layernorm->train();
     post_attention_layernorm->train();
@@ -73,7 +71,6 @@ struct QwenDecoderLayer : public Module {
   }
   void eval() override {
     self_attn->eval();
-    rope->eval();
     mlp->eval();
     input_layernorm->eval();
     post_attention_layernorm->eval();
