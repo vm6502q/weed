@@ -125,10 +125,11 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // (B, T, H, head_dim)
   out = Tensor::transpose(out, 1, 2);
 
-  // (B, T, d_model)
-  out = Tensor::reshape(out, {B, T, d_model});
+  // (B, T, num_heads * head_dim)
+  const symint attn_dim = (symint)num_heads * (symint)head_dim;
+  out = Tensor::reshape(out, {B, T, attn_dim});
 
-  // final projection
+  // final projection: attn_dim → d_model
   return W_o->forward(out);
 }
 
