@@ -47,18 +47,28 @@ bitLenInt pickRandomBit(real1_f rand, std::vector<bitLenInt> *unusedBitsPtr) {
   return result;
 }
 
+real1_f fix_range(real1_f theta) {
+  while (theta <= -PI_R1) {
+    theta += 2 * PI_R1;
+  }
+  while (theta > PI_R1) {
+    theta -= 2 * PI_R1;
+  }
+
+  return theta;
+}
+
 int main() {
   const bitLenInt n = 2;
   const int depth = n; // QV uses square circuits
-  const int p = 3 * n;
+  const int p = n << 1;
   const int s = p << 2;
 
   std::vector<bitLenInt> allBits(n);
   std::iota(allBits.begin(), allBits.end(), 0U);
 
   const std::vector<ModulePtr> mv = {
-      std::make_shared<Linear>(p, p, true, false),
-      std::make_shared<Sigmoid>(),
+      std::make_shared<Linear>(p, p, true, false), std::make_shared<Sigmoid>(),
       std::make_shared<QrackNeuronLayer>(p, n, 0, n, n, BELL_GHZ_QFN),
       std::make_shared<Linear>(n, n, true, false)};
 
@@ -75,39 +85,34 @@ int main() {
   while ((epoch <= 1000) && (loss_r > 0.001)) {
     std::vector<real1> a_th;
     std::vector<real1> a_ph;
-    std::vector<real1> a_lm;
     std::vector<real1> y_vec;
 
     for (int b = 0; b < s; ++b) {
       Qrack::QInterfacePtr qReg = Qrack::CreateQuantumInterface(
           Qrack::QINTERFACE_TENSOR_NETWORK, n, Qrack::ZERO_BCI);
 
-      // Three parallel running products, one per U3 parameter
-      std::vector<real1> det_theta(n, 0.0);
-      std::vector<real1> det_phi(n, 0.0);
-      std::vector<real1> det_lambda(n, 0.0);
+      // Two parallel running products, one per X/Z pair
+      std::vector<real1_f> det_th(n, 0.0);
+      std::vector<real1_f> det_ph(n, 0.0);
 
       // Per-layer sin values, kept separate
-      std::vector<real1_f> s_theta(n), s_phi(n), s_lambda(n);
-      std::vector<real1_f> theta_last(n, 0.0);
+      std::vector<real1_f> s_th(n), s_ph(n);
+      std::vector<real1_f> th_last(n, 0.0);
 
       for (int d = 0; d < depth; ++d) {
         // Single-qubit layer
         for (bitLenInt i = 0U; i < n; ++i) {
-          const real1_f theta = 2 * PI_R1 * qReg->Rand() - PI_R1;
-          const real1_f phi = 2 * PI_R1 * qReg->Rand() - PI_R1;
-          const real1_f lambda = 2 * PI_R1 * qReg->Rand() - PI_R1;
-          qReg->U(i, theta, phi, lambda);
+          const real1_f th = 2 * PI_R1 * qReg->Rand() - PI_R1;
+          const real1_f ph = 2 * PI_R1 * qReg->Rand() - PI_R1;
+          qReg->AI(i, th, ph);
 
-          theta_last[i] = theta;
-          s_theta[i] = theta;
-          s_phi[i] = phi;
-          s_lambda[i] = lambda;
+          th_last[i] = th;
+          s_th[i] = th;
+          s_ph[i] = ph;
 
           // Accumulate own contribution
-          det_theta[i] += theta;
-          det_phi[i] += phi;
-          det_lambda[i] += lambda;
+          det_th[i] = fix_range(det_th[i] + th);
+          det_ph[i] = fix_range(det_ph[i] + ph);
         }
 
         // Two-qubit layer
@@ -117,26 +122,19 @@ int main() {
           const bitLenInt b2 = pickRandomBit(qReg->Rand(), &unusedBits);
           qReg->CNOT(b1, b2);
 
-          // Forward: propagate each parameter of control into target
-          det_theta[b2] += s_theta[b1];
-          det_phi[b2] += s_phi[b1];
-          det_lambda[b2] += s_lambda[b1];
+          // Forward: propagate bit-flip state onto target
+          det_ph[b2] = fix_range(det_ph[b2] + s_ph[b1]);
 
-          // Reverse kickback: cos(theta_b2/2) scales back into control
-          // Applied to all three parameters of the control qubit
-          const real1_f kickback = (PI_R1 + theta_last[b2]) / 2;
-          det_theta[b1] += kickback;
-          det_phi[b1] += kickback;
-          det_lambda[b1] += kickback;
+          // Reverse kickback: propagate phase-flip state onto contro
+          det_th[b1] = fix_range(det_th[b1] + s_th[b2]);
         }
 
         // Unpaired qubit — already accumulated in single-qubit pass
         // nothing extra needed
       }
 
-      a_th.insert(a_th.end(), det_theta.begin(), det_theta.end());
-      a_ph.insert(a_ph.end(), det_phi.begin(), det_phi.end());
-      a_lm.insert(a_lm.end(), det_lambda.begin(), det_lambda.end());
+      a_th.insert(a_th.end(), det_th.begin(), det_th.end());
+      a_ph.insert(a_ph.end(), det_ph.begin(), det_ph.end());
 
       for (bitLenInt i = 0U; i < n; ++i) {
         const real1_f prb = qReg->Prob(i);
@@ -147,7 +145,6 @@ int main() {
     std::vector<real1> x_vec;
     x_vec.insert(x_vec.end(), a_th.begin(), a_th.end());
     x_vec.insert(x_vec.end(), a_ph.begin(), a_ph.end());
-    x_vec.insert(x_vec.end(), a_lm.begin(), a_lm.end());
 
     TensorPtr x = std::make_shared<Tensor>(x_vec, std::vector<tcapint>{s, p});
     TensorPtr y = std::make_shared<Tensor>(y_vec, std::vector<tcapint>{s, n});
