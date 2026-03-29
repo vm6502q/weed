@@ -122,7 +122,8 @@ void GpuDevice::clFinish(const bool &doHard) {
   if (doHard) {
     cl_int error = queue.finish();
     if (error != CL_SUCCESS) {
-      throw std::runtime_error("Failed to finish queue, error code: " + std::to_string(error));
+      throw std::runtime_error("Failed to finish queue, error code: " +
+                               std::to_string(error));
     }
   } else {
     device_context->WaitOnAllEvents();
@@ -144,7 +145,8 @@ void GpuDevice::tryOcl(const std::string &message,
     return;
   }
 
-  std::cout << "tryOcl retry, error code: " + std::to_string(error) << std::endl;
+  std::cout << "tryOcl retry, error code: " + std::to_string(error)
+            << std::endl;
 
   // Soft finish (just for this GpuDevice)
   clFinish();
@@ -156,7 +158,8 @@ void GpuDevice::tryOcl(const std::string &message,
     return;
   }
 
-  std::cout << "tryOcl retry, error code: " + std::to_string(error) << std::endl;
+  std::cout << "tryOcl retry, error code: " + std::to_string(error)
+            << std::endl;
 
   // Hard finish (for the unique OpenCL device)
   clFinish(true);

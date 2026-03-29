@@ -65,33 +65,22 @@ void ParallelFor::par_for(const ComplexSparseVector &sparseMap,
     keys.push_back(it->first);
   }
   par_for_inc(
-      0U, sparseMap.size(),
-      [&sparseMap, &keys](const tcapint &i) {
-        return keys[i];
-      },
-      fn);
+      0U, sparseMap.size(), [&keys](const tcapint &i) { return keys[i]; }, fn);
 }
 
 void ParallelFor::par_for(const RealSparseVector &sparseMap, ParallelFunc fn) {
+  std::vector<tcapint> keys;
+  for (auto it = sparseMap.begin(); it != sparseMap.end(); ++it) {
+    keys.push_back(it->first);
+  }
   par_for_inc(
-      0U, sparseMap.size(),
-      [&sparseMap](const tcapint &i) {
-        auto it = sparseMap.begin();
-        std::advance(it, i);
-        return it->first;
-      },
-      fn);
+      0U, sparseMap.size(), [&keys](const tcapint &i) { return keys[i]; }, fn);
 }
 
 void ParallelFor::par_for(const std::set<tcapint> &sparseSet, ParallelFunc fn) {
+  std::vector<tcapint> keys(sparseSet.begin(), sparseSet.end());
   par_for_inc(
-      0U, sparseSet.size(),
-      [&sparseSet](const tcapint &i) {
-        auto it = sparseSet.begin();
-        std::advance(it, i);
-        return (*it);
-      },
-      fn);
+      0U, sparseSet.size(), [&keys](const tcapint &i) { return keys[i]; }, fn);
 }
 
 #if WEED_ENABLE_PTHREAD
