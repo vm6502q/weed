@@ -150,7 +150,7 @@ void embedding_gather(const SymbolTensor &a, const Tensor &b, Tensor &o) {
 
 void embedding_scatter_add(Tensor &dW, const SymbolTensor &indices,
                            const Tensor &dout) {
-  validate_all_same_device({&dW, &indices, &dout}, "embedding_gather");
+  validate_all_same_device({&dW, &indices, &dout}, "embedding_scatter_add");
   const bool isAComplex = dW.storage->dtype == DType::COMPLEX;
   const bool isOComplex = dout.storage->dtype == DType::COMPLEX;
   if (isAComplex && !isOComplex) {
