@@ -657,8 +657,7 @@ TensorPtr Tensor::variance(TensorPtr a) {
 }
 
 TensorPtr Tensor::variance(TensorPtr a, const tcapint &axis) {
-  TensorPtr tmp = mean(a, axis);
-  tmp = a - tmp;
+  TensorPtr tmp = a - mean(a, axis);
 
   return mean(tmp * tmp, axis);
 }
