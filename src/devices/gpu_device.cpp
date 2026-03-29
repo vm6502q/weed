@@ -137,14 +137,6 @@ void GpuDevice::tryOcl(const std::string &message,
     return;
   }
 
-  // Soft finish (just for this GpuDevice)
-  clFinish();
-
-  if (oclCall() == CL_SUCCESS) {
-    // Success after clearing GpuDevice queue
-    return;
-  }
-
   // Hard finish (for the unique OpenCL device)
   clFinish(true);
 
