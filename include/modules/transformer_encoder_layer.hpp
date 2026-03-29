@@ -71,6 +71,7 @@ struct TransformerEncoderLayer : public Module {
     ff2->migrate_cpu();
     norm1->migrate_cpu();
     norm2->migrate_cpu();
+    activation->migrate_cpu();
   }
   void migrate_gpu() override {
     self_attn->migrate_gpu();
@@ -78,6 +79,7 @@ struct TransformerEncoderLayer : public Module {
     ff2->migrate_gpu();
     norm1->migrate_gpu();
     norm2->migrate_gpu();
+    activation->migrate_gpu();
   }
 
   void reset_cache() override { self_attn->reset_cache(); }

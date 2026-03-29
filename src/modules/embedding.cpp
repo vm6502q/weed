@@ -45,10 +45,9 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
 
   if (weight->requires_grad) {
     ParameterPtr w = weight;
-
     out->make_gradient();
     out->grad_node = std::make_shared<Node>(
-        std::vector<TensorPtr>{weight}, [indices, w, out]() {
+        std::vector<TensorPtr>{w}, [indices, w, out]() {
           const DeviceTag dtag =
               Tensor::get_dtag_by_presidence({w->grad, out->grad, indices});
           TensorPtr dW = w->grad->cast(dtag);

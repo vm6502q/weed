@@ -46,6 +46,28 @@ struct SwiGLU : public Module {
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 
+  void train() override {
+    gate_proj->train();
+    up_proj->train();
+    down_proj->train();
+  }
+  void eval() override {
+    gate_proj->eval();
+    up_proj->eval();
+    down_proj->eval();
+  }
+
+  void migrate_cpu() override {
+    gate_proj->migrate_cpu();
+    up_proj->migrate_cpu();
+    down_proj->migrate_cpu();
+  }
+  void migrate_gpu() override {
+    gate_proj->migrate_gpu();
+    up_proj->migrate_gpu();
+    down_proj->migrate_gpu();
+  }
+
   TensorPtr forward(const TensorPtr x) override {
     TensorPtr gate = gate_proj->forward(x);
     TensorPtr up = up_proj->forward(x);
