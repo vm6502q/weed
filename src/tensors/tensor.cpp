@@ -403,9 +403,7 @@ TensorPtr Tensor::softmax(const TensorPtr x, symint axis) {
     axis += x->shape.size();
   }
 
-  TensorPtr m = max(x, axis);
-  TensorPtr x_shifted = x - m;
-  TensorPtr ex = exp(x_shifted);
+  TensorPtr ex = exp(x - max(x, axis));
   TensorPtr denom = sum(ex, axis);
 
   return ex / denom;
