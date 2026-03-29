@@ -17,11 +17,8 @@ TensorPtr LayerNorm::forward(const TensorPtr x) {
   // x − μ
   TensorPtr xc = x - Tensor::mean(x, -1);
 
-  // σ²: (B, 1)
-  TensorPtr var = Tensor::mean(xc * xc, -1);
-
-  // normalized by sqrt(σ² + eps)
-  TensorPtr y = xc / ((var + eps) ^ real1(0.5f));
+  // Mean-centered and normalized by sqrt(σ² + eps)
+  TensorPtr y = xc / ((Tensor::mean(xc * xc, -1) + eps) ^ real1(0.5f));
 
   // affine transform
   y = y * gamma + beta;
