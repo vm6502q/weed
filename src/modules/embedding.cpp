@@ -31,28 +31,30 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
 
   Weed::embedding_gather(*(indices.get()), *(weight.get()), *(out.get()));
 
-  ParameterPtr w = weight;
+  if (weight->requires_grad) {
+    ParameterPtr w = weight;
 
-  out->make_gradient();
-  out->grad_node = std::make_shared<Node>(
-      std::vector<TensorPtr>{weight}, [indices, w, out]() {
-        const DeviceTag dtag =
-            Tensor::get_dtag_by_presidence({w->grad, out->grad, indices});
-        TensorPtr dW = w->grad->cast(dtag);
-        TensorPtr dout =
-            std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
-        SymbolTensorPtr _indices = indices->cast(dtag);
+    out->make_gradient();
+    out->grad_node = std::make_shared<Node>(
+        std::vector<TensorPtr>{weight}, [indices, w, out]() {
+          const DeviceTag dtag =
+              Tensor::get_dtag_by_presidence({w->grad, out->grad, indices});
+          TensorPtr dW = w->grad->cast(dtag);
+          TensorPtr dout =
+              std::make_shared<Tensor>(*(out->grad.get()))->cast(dtag);
+          SymbolTensorPtr _indices = indices->cast(dtag);
 
-        dout->match_shape(w);
-        dW->match_shape(w);
-        dW->materialize_broadcast();
+          dout->match_shape(w);
+          dW->match_shape(w);
+          dW->materialize_broadcast();
 
-        dW->upcast(dout->storage->dtype);
-        Weed::embedding_scatter_add(*(dW.get()), *(_indices.get()),
-                                    *(dout.get()));
-        w->grad = dW;
-        w->reduce_grad_broadcast();
-      });
+          dW->upcast(dout->storage->dtype);
+          Weed::embedding_scatter_add(*(dW.get()), *(_indices.get()),
+                                      *(dout.get()));
+          w->grad = dW;
+          w->reduce_grad_broadcast();
+        });
+  }
 
   return out;
 }
