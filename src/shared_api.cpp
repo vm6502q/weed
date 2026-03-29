@@ -132,6 +132,7 @@ MICROSOFT_QUANTUM_DECL void save_module(_In_ uintw mid, _In_ const char *f) {
   ModulePtr m;
   try {
     std::ofstream o(f);
+    module_results[mid]->m->train();
     module_results[mid]->m->save(o);
     o.close();
   } catch (const std::exception &ex) {
