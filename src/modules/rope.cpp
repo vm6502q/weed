@@ -87,7 +87,14 @@ TensorPtr RoPE::forward(const TensorPtr x) {
   TensorPtr cos_b = Tensor::reshape(c, {1, 1, T, (symint)head_dim});
   TensorPtr sin_b = Tensor::reshape(s, {1, 1, T, (symint)head_dim});
 
-  return x * cos_b + _rotate_half(x) * sin_b;
+  TensorPtr toRet = x * cos_b + _rotate_half(x) * sin_b;
+
+  sin_b = nullptr;
+  cos_b = nullptr;
+  s = nullptr;
+  c = nullptr;
+
+  return toRet;
 }
 
 void RoPE::save(std::ostream &os) const {

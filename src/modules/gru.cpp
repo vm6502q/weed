@@ -35,6 +35,11 @@ TensorPtr GRU::forward(const TensorPtr x) {
   // Final hidden state
   TensorPtr h = (Tensor::ones_like(z_t->shape) - z_t) * state + z_t * h_tilde;
 
+  h_tilde = nullptr;
+  r_t = nullptr;
+  z_t = nullptr;
+  z = nullptr;
+
   return h;
 }
 void GRU::save(std::ostream &os) const {

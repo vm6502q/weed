@@ -23,6 +23,8 @@ TensorPtr LayerNorm::forward(const TensorPtr x) {
   // affine transform
   y = y * gamma + beta;
 
+  xc = nullptr;
+
   return y;
 }
 

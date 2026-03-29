@@ -42,6 +42,13 @@ TensorPtr LSTM::forward(const TensorPtr x) {
   state.h = h;
   state.c = c;
 
+  c = nullptr;
+  o = nullptr;
+  g = nullptr;
+  i = nullptr;
+  f = nullptr;
+  z = nullptr;
+
   return h;
 }
 void LSTM::save(std::ostream &os) const {

@@ -47,10 +47,8 @@ TensorPtr PositionalEncoding::forward(const TensorPtr x) {
   const tcapint T = x->shape[1U];
 
   // slice pe -> [T, D]
-  TensorPtr pe_slice = Tensor::slice(pe, 0, 0, T);
-
   // broadcast pe_slice to [B, T, D] and add
-  return x + pe_slice;
+  return x + Tensor::slice(pe, 0, 0, T);
 }
 void PositionalEncoding::save(std::ostream &os) const {
   Module::save(os);

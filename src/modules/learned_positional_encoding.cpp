@@ -42,9 +42,7 @@ TensorPtr LearnedPositionalEncoding::forward(const TensorPtr x) {
   const symint T = sh[1];
 
   // Slice to actual sequence length if needed
-  TensorPtr pos = Tensor::slice(pos_encoding, 1, 0, T);
-
-  return x + pos;
+  return x + Tensor::slice(pos_encoding, 1, 0, T);
 }
 
 void LearnedPositionalEncoding::save(std::ostream &os) const {
