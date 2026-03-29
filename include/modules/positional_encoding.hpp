@@ -27,6 +27,9 @@ struct PositionalEncoding : public Module {
                      real1_f pos_val_ = 8192.0,
                      DeviceTag device = DEFAULT_DEVICE);
 
+  void migrate_cpu() override;
+  void migrate_gpu() override;
+
   TensorPtr forward(const TensorPtr x) override;
 
   void save(std::ostream &) const override;

@@ -51,6 +51,15 @@ struct GRU : public Module {
     W_h->eval();
   }
 
+  void migrate_cpu() override {
+    W_x->migrate_cpu();
+    W_h->migrate_cpu();
+  }
+  void migrate_gpu() override {
+    W_x->migrate_gpu();
+    W_h->migrate_gpu();
+  }
+
   TensorPtr forward(const TensorPtr) override;
 
   void save(std::ostream &) const override;

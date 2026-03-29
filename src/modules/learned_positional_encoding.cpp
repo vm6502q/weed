@@ -10,12 +10,13 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/learned_positional_encoding.hpp"
+#include "modules/migrate_cpu.hpp"
+#include "modules/migrate_gpu.hpp"
 #include "common/serializer.hpp"
 
 #include <random>
 
 namespace Weed {
-
 LearnedPositionalEncoding::LearnedPositionalEncoding(const tcapint &max_len_,
                                                      const tcapint &d_model_,
                                                      const DeviceTag &dtag)
@@ -34,6 +35,15 @@ LearnedPositionalEncoding::LearnedPositionalEncoding(const tcapint &max_len_,
 
   pos_encoding = std::make_shared<Parameter>(
       init, std::vector<tcapint>{1U, max_len, d_model}, dtag);
+}
+
+void LearnedPositionalEncoding::migrate_cpu() {
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  pos_encoding = mc->pforward(pos_encoding);
+}
+void LearnedPositionalEncoding::migrate_gpu() {
+  MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
+  pos_encoding = mg->pforward(pos_encoding);
 }
 
 TensorPtr LearnedPositionalEncoding::forward(const TensorPtr x) {

@@ -39,6 +39,9 @@ struct LayerNorm : Module {
     beta->storage->FillZeros();
   }
 
+  void migrate_cpu() override;
+  void migrate_gpu() override;
+
   TensorPtr forward(const TensorPtr x) override;
 
   std::vector<ParameterPtr> parameters() override { return {gamma, beta}; }

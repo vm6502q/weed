@@ -40,6 +40,17 @@ struct Sequential : public Module {
     }
   }
 
+  void migrate_cpu() override {
+    for (const ModulePtr &m : layers) {
+      m->migrate_cpu();
+    }
+  }
+  void migrate_gpu() override {
+    for (const ModulePtr &m : layers) {
+      m->migrate_gpu();
+    }
+  }
+
   void reset_cache() override {
     for (const ModulePtr &m : layers) {
       m->reset_cache();

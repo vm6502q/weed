@@ -60,12 +60,52 @@ TransformerEncoderLayer::TransformerEncoderLayer(
   add(norm1->parameters());
   add(norm2->parameters());
 }
-TensorPtr TransformerEncoderLayer::forward(const TensorPtr x) {
-  TensorPtr x1 = x + self_attn->forward(norm1->forward(x));
-  TensorPtr ff = ff1->forward(norm2->forward(x1));
+TensorPtr TransformerEncoderLayer::forward(const TensorPtr x_) {
+  std::vector<BaseTensorPtr> t_vec{x_};
+  for (const auto& p : param_vector) {
+    t_vec.push_back(p);
+  }
+  const DeviceTag dtag = Tensor::get_dtag_by_presidence(t_vec);
+  TensorPtr x = x_->cast(dtag);
+
+  if (dtag == GPU) {
+    norm1->migrate_gpu();
+  }
+  TensorPtr x1 = norm1->forward(x);
+  if (dtag == GPU) {
+    norm1->migrate_cpu();
+    self_attn->migrate_gpu();
+  }
+  x1 = self_attn->forward(x1);
+  if (dtag == GPU) {
+    self_attn->migrate_cpu();
+  }
+  x1 = x + x1;
+
+  if (dtag == GPU) {
+    norm2->migrate_gpu();
+  }
+  TensorPtr ff = norm2->forward(x1);
+  if (dtag == GPU) {
+    norm2->migrate_cpu();
+    ff1->migrate_gpu();
+  }
+  ff = ff1->forward(ff);
+  if (dtag == GPU) {
+    ff1->migrate_cpu();
+    activation->migrate_gpu();
+  }
   ff = activation->forward(ff);
+  if (dtag == GPU) {
+    activation->migrate_cpu();
+    ff2->migrate_gpu();
+  }
   ff = ff2->forward(ff);
+  if (dtag == GPU) {
+    ff2->migrate_cpu();
+  }
   ff = x1 + ff;
+
   x1 = nullptr;
 
   return ff;

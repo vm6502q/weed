@@ -9,14 +9,22 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
+#include "modules/embedding.hpp"
 #include "modules/migrate_cpu.hpp"
 #include "modules/migrate_gpu.hpp"
-#include "modules/embedding.hpp"
 #include "autograd/node.hpp"
 #include "common/serializer.hpp"
 #include "ops/embedding.hpp"
 
 namespace Weed {
+void Embedding::migrate_cpu() {
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  weight = mc->pforward(weight);
+}
+void Embedding::migrate_gpu() {
+  MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
+  weight = mg->pforward(weight);
+}
 TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
   // Output shape = indices.shape + [embedding_dim]
   std::vector<tcapint> out_shape = indices_->shape;
@@ -26,8 +34,7 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
   const DeviceTag dtag = Tensor::get_dtag_by_presidence({indices_, weight});
   SymbolTensorPtr indices = indices_->cast(dtag);
   if (dtag == GPU) {
-    MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
-    weight = mg->pforward(weight);
+    migrate_gpu();
   }
 
   TensorPtr out = Tensor::allocate_like(
@@ -61,8 +68,7 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
         });
   }
 
-  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
-  weight = mc->pforward(weight);
+  migrate_cpu();
 
   return out;
 }

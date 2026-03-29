@@ -37,7 +37,8 @@ struct Embedding : public Module {
   }
   TensorPtr forward(const SymbolTensorPtr t) override;
   std::vector<ParameterPtr> parameters() override { return {weight}; }
-
+  void migrate_cpu() override;
+  void migrate_gpu() override;
   void save(std::ostream &) const override;
 };
 typedef std::shared_ptr<Embedding> EmbeddingPtr;

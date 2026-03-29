@@ -80,6 +80,19 @@ struct QwenDecoderLayer : public Module {
     }
   }
 
+  void migrate_cpu() override {
+    self_attn->migrate_cpu();
+    mlp->migrate_cpu();
+    input_layernorm->migrate_cpu();
+    post_attention_layernorm->migrate_cpu();
+  }
+  void migrate_gpu() override {
+    self_attn->migrate_gpu();
+    mlp->migrate_gpu();
+    input_layernorm->migrate_gpu();
+    post_attention_layernorm->migrate_gpu();
+  }
+
   void reset_cache() override { self_attn->reset_cache(); }
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }

@@ -32,6 +32,9 @@ struct LearnedPositionalEncoding : public Module {
   LearnedPositionalEncoding(const tcapint &max_len_, const tcapint &d_model_,
                             const DeviceTag &dtag = DEFAULT_DEVICE);
 
+  void migrate_cpu() override;
+  void migrate_gpu() override;
+
   TensorPtr forward(const TensorPtr x) override;
 
   std::vector<ParameterPtr> parameters() override { return {pos_encoding}; }

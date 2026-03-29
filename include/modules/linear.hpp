@@ -29,6 +29,9 @@ struct Linear : public Module {
          bool init_rand = true, DType dtype = DType::REAL,
          DeviceTag device = DeviceTag::DEFAULT_DEVICE, int64_t device_id = -1);
 
+  void migrate_cpu() override;
+  void migrate_gpu() override;
+
   TensorPtr forward(const TensorPtr x) override;
   std::vector<ParameterPtr> parameters() override;
   /**

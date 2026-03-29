@@ -10,9 +10,22 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/layernorm.hpp"
+#include "modules/migrate_cpu.hpp"
+#include "modules/migrate_gpu.hpp"
 #include "common/serializer.hpp"
 
 namespace Weed {
+void LayerNorm::migrate_cpu() {
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  gamma = mc->pforward(gamma);
+  beta = mc->pforward(beta);
+}
+void LayerNorm::migrate_gpu() {
+  MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
+  gamma = mg->pforward(gamma);
+  beta = mg->pforward(beta);
+}
+
 TensorPtr LayerNorm::forward(const TensorPtr x) {
   // x − μ
   TensorPtr xc = x - Tensor::mean(x, -1);

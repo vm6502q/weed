@@ -87,17 +87,42 @@ struct MultiHeadAttention : public Module {
     W_k->train();
     W_v->train();
     W_o->train();
+    if (rope) {
+      rope->train();
+    }
   }
   void eval() override {
     W_q->eval();
     W_k->eval();
     W_v->eval();
     W_o->eval();
+    if (rope) {
+      rope->eval();
+    }
   }
 
   void reset_cache() override {
     k_cache = nullptr;
     v_cache = nullptr;
+  }
+
+  void migrate_cpu() override {
+    W_q->migrate_cpu();
+    W_k->migrate_cpu();
+    W_v->migrate_cpu();
+    W_o->migrate_cpu();
+    if (rope) {
+      rope->migrate_cpu();
+    }
+  }
+  void migrate_gpu() override {
+    W_q->migrate_gpu();
+    W_k->migrate_gpu();
+    W_v->migrate_gpu();
+    W_o->migrate_gpu();
+    if (rope) {
+      rope->migrate_gpu();
+    }
   }
 
   TensorPtr forward(const TensorPtr x) override;

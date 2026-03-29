@@ -10,9 +10,19 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/positional_encoding.hpp"
+#include "modules/migrate_cpu.hpp"
+#include "modules/migrate_gpu.hpp"
 #include "common/serializer.hpp"
 
 namespace Weed {
+void PositionalEncoding::migrate_cpu() {
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  pe = mc->pforward(pe);
+}
+void PositionalEncoding::migrate_gpu() {
+  MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
+  pe = mg->pforward(pe);
+}
 PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
                                        real1_f pos_val_, DeviceTag device)
     : Module(POSITIONAL_ENCODING_T), max_seq_len(max_seq_len_),

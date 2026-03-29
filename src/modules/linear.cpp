@@ -10,6 +10,8 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/linear.hpp"
+#include "modules/migrate_cpu.hpp"
+#include "modules/migrate_gpu.hpp"
 #include "common/serializer.hpp"
 #include "storage/all_storage.hpp"
 
@@ -63,6 +65,21 @@ Linear::Linear(tcapint in_f, tcapint out_f, bool use_bias, bool init_rand,
     bias->storage->FillZeros();
   } else {
     bias = nullptr;
+  }
+}
+
+void Linear::migrate_cpu() {
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  weight = mc->pforward(weight);
+  if (bias) {
+    bias = mc->pforward(bias);
+  }
+}
+void Linear::migrate_gpu() {
+  MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
+  weight = mg->pforward(weight);
+  if (bias) {
+    bias = mg->pforward(bias);
   }
 }
 

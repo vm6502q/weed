@@ -65,6 +65,21 @@ struct TransformerEncoderLayer : public Module {
     activation->eval();
   }
 
+  void migrate_cpu() override {
+    self_attn->migrate_cpu();
+    ff1->migrate_cpu();
+    ff2->migrate_cpu();
+    norm1->migrate_cpu();
+    norm2->migrate_cpu();
+  }
+  void migrate_gpu() override {
+    self_attn->migrate_gpu();
+    ff1->migrate_gpu();
+    ff2->migrate_gpu();
+    norm1->migrate_gpu();
+    norm2->migrate_gpu();
+  }
+
   void reset_cache() override { self_attn->reset_cache(); }
 
   TensorPtr forward(const TensorPtr x) override;
