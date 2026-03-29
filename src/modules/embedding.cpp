@@ -15,11 +15,15 @@
 #include "ops/embedding.hpp"
 
 namespace Weed {
-TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
+TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
   // Output shape = indices.shape + [embedding_dim]
-  std::vector<tcapint> out_shape = indices->shape;
+  std::vector<tcapint> out_shape = indices_->shape;
   out_shape.push_back(embedding_dim);
   std::vector<tcapint> out_stride = Tensor::full_contiguous_stride(out_shape);
+
+  const DeviceTag dtag = Tensor::get_dtag_by_presidence({indices_, weight});
+  SymbolTensorPtr indices = indices_->cast(dtag);
+  weight->cast_in_place(dtag);
 
   TensorPtr out = Tensor::allocate_like(
       out_shape, out_stride, *(weight.get()), weight->storage->dtype,
