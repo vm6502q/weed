@@ -11,6 +11,8 @@
 
 #include "devices/gpu_device.hpp"
 
+#include <iostream>
+
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)               \
   tryOcl("Failed to write buffer", [&] {                                       \
     return queue.enqueueWriteBuffer(buff, CL_FALSE, 0U, size, array,           \
@@ -135,23 +137,31 @@ void GpuDevice::tryOcl(const std::string &message,
                        const std::function<int()> &oclCall) {
   CheckCallbackError();
 
-  if (oclCall() == CL_SUCCESS) {
+  cl_int error = oclCall();
+
+  if (error == CL_SUCCESS) {
     // Success
     return;
   }
 
+  std::cout << "tryOcl retry, error code: " + std::to_string(error) << std::endl;
+
   // Soft finish (just for this GpuDevice)
   clFinish();
 
-  if (oclCall() == CL_SUCCESS) {
+  error = oclCall();
+
+  if (error == CL_SUCCESS) {
     // Success after clearing GpuDevice queue
     return;
   }
 
+  std::cout << "tryOcl retry, error code: " + std::to_string(error) << std::endl;
+
   // Hard finish (for the unique OpenCL device)
   clFinish(true);
 
-  cl_int error = oclCall();
+  error = oclCall();
   if (error == CL_SUCCESS) {
     // Success after clearing all queues for the OpenCL device
     return;
