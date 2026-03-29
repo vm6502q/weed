@@ -94,6 +94,8 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
     throw std::domain_error("Don't use GPU-based Storage::add()!");
   }
 
+  bool is_gpu() override { return true; }
+
   StoragePtr gpu(const int64_t &did = -1) override {
     return TypedStorage<T>::get_ptr();
   }

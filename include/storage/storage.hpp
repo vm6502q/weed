@@ -88,6 +88,11 @@ struct Storage : public std::enable_shared_from_this<Storage> {
   virtual StoragePtr Upcast(const DType &dt) = 0;
 
   /**
+   * Is this storage on GPU?
+   */
+  virtual bool is_gpu() = 0;
+
+  /**
    * Migrate storage to CPU
    */
   virtual StoragePtr cpu() = 0;

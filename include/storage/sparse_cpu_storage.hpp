@@ -29,6 +29,8 @@ template <typename T> struct SparseCpuStorage : TypedStorage<T> {
 
   bool is_sparse() const override { return default_value == T(); }
 
+  bool is_gpu() override { return false; }
+
   /**
    * Return the sparse element count
    */

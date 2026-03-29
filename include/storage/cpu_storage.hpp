@@ -60,6 +60,8 @@ template <typename T> struct CpuStorage : TypedStorage<T> {
     std::fill(data.get(), data.get() + TypedStorage<T>::size, v);
   }
 
+  bool is_gpu() override { return false; }
+
   StoragePtr cpu() override { return TypedStorage<T>::get_ptr(); }
 };
 } // namespace Weed
