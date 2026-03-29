@@ -312,7 +312,7 @@ void softmax_grad(const tcapint &index, Tensor &din, const Tensor &out,
       DEVICE_SWITCH_SOFTMAX_BWD(cpu_softmax_bwd_complex,
                                 gpu_softmax_bwd_complex);
 #else
-      cpu_softmax_bwd_complex(index, din, in, dout, out);
+      cpu_softmax_bwd_complex(index, din, out, dout);
 #endif
       break;
     case DType::REAL:
@@ -320,7 +320,7 @@ void softmax_grad(const tcapint &index, Tensor &din, const Tensor &out,
 #if ENABLE_GPU
       DEVICE_SWITCH_SOFTMAX_BWD(cpu_softmax_bwd_mixed, gpu_softmax_bwd_mixed);
 #else
-      cpu_softmax_bwd_mixed(index, din, in, dout, out);
+      cpu_softmax_bwd_mixed(index, din, out, dout);
 #endif
     }
     break;
@@ -329,7 +329,7 @@ void softmax_grad(const tcapint &index, Tensor &din, const Tensor &out,
 #if ENABLE_GPU
     DEVICE_SWITCH_SOFTMAX_BWD(cpu_softmax_bwd_real, gpu_softmax_bwd_real);
 #else
-    cpu_softmax_bwd_real(index, din, in, dout, out);
+    cpu_softmax_bwd_real(index, din, out, dout);
 #endif
   }
 }

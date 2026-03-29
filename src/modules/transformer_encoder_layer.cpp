@@ -65,8 +65,10 @@ TensorPtr TransformerEncoderLayer::forward(const TensorPtr x) {
   TensorPtr ff = ff1->forward(norm2->forward(x1));
   ff = activation->forward(ff);
   ff = ff2->forward(ff);
+  ff = x1 + ff;
+  x1 = nullptr;
 
-  return x1 + ff;
+  return ff;
 }
 void TransformerEncoderLayer::save(std::ostream &os) const {
   Module::save(os);

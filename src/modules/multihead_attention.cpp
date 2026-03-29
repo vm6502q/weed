@@ -136,8 +136,11 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   const symint attn_dim = (symint)num_heads * (symint)head_dim;
   out = Tensor::reshape(out, {B, T, attn_dim});
 
+  TensorPtr toRet = W_o->forward(out);
+  out = nullptr;
+
   // final projection: attn_dim → d_model
-  return W_o->forward(out);
+  return toRet;
 }
 
 void MultiHeadAttention::save(std::ostream &os) const {
