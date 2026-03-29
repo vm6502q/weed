@@ -14,11 +14,8 @@
 
 namespace Weed {
 TensorPtr LayerNorm::forward(const TensorPtr x) {
-  // μ: (B, 1)
-  TensorPtr mu = Tensor::mean(x, -1);
-
   // x − μ
-  TensorPtr xc = x - mu;
+  TensorPtr xc = x - Tensor::mean(x, -1);
 
   // σ²: (B, 1)
   TensorPtr var = Tensor::mean(xc * xc, -1);
