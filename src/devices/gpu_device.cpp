@@ -118,7 +118,10 @@ void GpuDevice::clFinish(const bool &doHard) {
   }
 
   if (doHard) {
-    tryOcl("Failed to finish queue", [&] { return queue.finish(); });
+    cl_int error = queue.finish();
+    if (error != CL_SUCCESS) {
+      throw std::runtime_error("Failed to finish queue, error code: " + std::to_string(error));
+    }
   } else {
     device_context->WaitOnAllEvents();
     CheckCallbackError();
@@ -134,6 +137,14 @@ void GpuDevice::tryOcl(const std::string &message,
 
   if (oclCall() == CL_SUCCESS) {
     // Success
+    return;
+  }
+
+  // Soft finish (just for this GpuDevice)
+  clFinish();
+
+  if (oclCall() == CL_SUCCESS) {
+    // Success after clearing GpuDevice queue
     return;
   }
 
