@@ -414,8 +414,7 @@ TensorPtr Tensor::logsoftmax(const TensorPtr x, symint axis) {
     axis += x->shape.size();
   }
 
-  TensorPtr m = Tensor::max(x, axis);
-  TensorPtr x_shifted = x - m;
+  TensorPtr x_shifted = x - Tensor::max(x, axis);
   TensorPtr logsum = Tensor::log(Tensor::sum(Tensor::exp(x_shifted), axis));
 
   return x_shifted - logsum;
