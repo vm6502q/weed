@@ -9,6 +9,8 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
+#include "modules/migrate_cpu.hpp"
+#include "modules/migrate_gpu.hpp"
 #include "modules/embedding.hpp"
 #include "autograd/node.hpp"
 #include "common/serializer.hpp"
@@ -23,7 +25,10 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
 
   const DeviceTag dtag = Tensor::get_dtag_by_presidence({indices_, weight});
   SymbolTensorPtr indices = indices_->cast(dtag);
-  weight->cast_in_place(dtag);
+  if (dtag == GPU) {
+    MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
+    weight = mg->pforward(weight);
+  }
 
   TensorPtr out = Tensor::allocate_like(
       out_shape, out_stride, *(weight.get()), weight->storage->dtype,
@@ -55,6 +60,9 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
           w->reduce_grad_broadcast();
         });
   }
+
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  weight = mc->pforward(weight);
 
   return out;
 }

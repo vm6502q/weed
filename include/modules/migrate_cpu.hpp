@@ -12,7 +12,7 @@
 #pragma once
 
 #include "modules/module.hpp"
-#include "tensors/tensor.hpp"
+#include "tensors/parameter.hpp"
 
 namespace Weed {
 /**
@@ -21,6 +21,7 @@ namespace Weed {
 struct MigrateCpu : public Module {
   MigrateCpu() : Module(MIGRATE_CPU_T) {}
   TensorPtr forward(const TensorPtr x) override;
+  ParameterPtr pforward(const ParameterPtr x);
 };
 typedef std::shared_ptr<MigrateCpu> MigrateCpuPtr;
 } // namespace Weed

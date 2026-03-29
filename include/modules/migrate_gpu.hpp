@@ -12,7 +12,7 @@
 #pragma once
 
 #include "modules/module.hpp"
-#include "tensors/tensor.hpp"
+#include "tensors/parameter.hpp"
 
 namespace Weed {
 /**
@@ -23,6 +23,7 @@ struct MigrateGpu : public Module {
   MigrateGpu(const symint device_id_ = -1)
       : Module(MIGRATE_GPU_T), device_id(-1) {}
   TensorPtr forward(const TensorPtr x) override;
+  ParameterPtr pforward(const ParameterPtr x);
 };
 typedef std::shared_ptr<MigrateGpu> MigrateGpuPtr;
 } // namespace Weed
