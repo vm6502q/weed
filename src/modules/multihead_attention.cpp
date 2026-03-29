@@ -9,6 +9,7 @@
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
+#include "modules/migrate_cpu.hpp"
 #include "modules/multihead_attention.hpp"
 #include "common/serializer.hpp"
 #include "ops/in_place.hpp"
@@ -135,12 +136,13 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // (B, T, num_heads * head_dim)
   const symint attn_dim = (symint)num_heads * (symint)head_dim;
   out = Tensor::reshape(out, {B, T, attn_dim});
+  out = W_o->forward(out);
 
-  TensorPtr toRet = W_o->forward(out);
-  out = nullptr;
+  MigrateCpuPtr mc = std::make_shared<MigrateCpu>();
+  out = mc->forward(out);
 
   // final projection: attn_dim → d_model
-  return toRet;
+  return out;
 }
 
 void MultiHeadAttention::save(std::ostream &os) const {
