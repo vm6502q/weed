@@ -60,12 +60,14 @@ void ParallelFor::par_for(const tcapint &begin, const tcapint &end,
 
 void ParallelFor::par_for(const ComplexSparseVector &sparseMap,
                           ParallelFunc fn) {
+  std::vector<tcapint> keys;
+  for (auto it = sparseMap.begin(); it != sparseMap.end(); ++it) {
+    keys.push_back(it->first);
+  }
   par_for_inc(
       0U, sparseMap.size(),
-      [&sparseMap](const tcapint &i) {
-        auto it = sparseMap.begin();
-        std::advance(it, i);
-        return it->first;
+      [&sparseMap, &keys](const tcapint &i) {
+        return keys[i];
       },
       fn);
 }
