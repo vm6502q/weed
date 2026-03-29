@@ -25,17 +25,11 @@ void Embedding::migrate_gpu() {
   MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
   weight = mg->pforward(weight);
 }
-TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
+TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
   // Output shape = indices.shape + [embedding_dim]
-  std::vector<tcapint> out_shape = indices_->shape;
+  std::vector<tcapint> out_shape = indices->shape;
   out_shape.push_back(embedding_dim);
   std::vector<tcapint> out_stride = Tensor::full_contiguous_stride(out_shape);
-
-  const DeviceTag dtag = Tensor::get_dtag_by_presidence({indices_, weight});
-  SymbolTensorPtr indices = indices_->cast(dtag);
-  if (dtag == GPU) {
-    migrate_gpu();
-  }
 
   TensorPtr out = Tensor::allocate_like(
       out_shape, out_stride, *(weight.get()), weight->storage->dtype,
@@ -66,8 +60,6 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
           w->reduce_grad_broadcast();
         });
   }
-
-  migrate_cpu();
 
   return out;
 }
