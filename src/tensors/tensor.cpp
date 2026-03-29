@@ -21,6 +21,7 @@
 #include "ops/real_extremum.hpp"
 #include "ops/real_unary.hpp"
 #include "ops/reduce.hpp"
+#include "ops/softmax.hpp"
 #include "ops/sub.hpp"
 #include "ops/sum.hpp"
 #include "tensors/real_scalar.hpp"
@@ -402,11 +403,28 @@ TensorPtr Tensor::softmax(const TensorPtr x, symint axis) {
   while (axis < 0) {
     axis += x->shape.size();
   }
+  const bool rg = x->requires_grad;
+  TensorPtr out = allocate_like(*x, x->storage->dtype, rg, IS_SPARSE(x));
+  Weed::softmax((tcapint)axis, *x, *out);
+  if (rg) {
+    make_softmax_node(x, out, axis);
+  }
+  return out;
+}
 
-  TensorPtr ex = exp(x - max(x, axis));
-  TensorPtr denom = sum(ex, axis);
+void Tensor::make_softmax_node(TensorPtr x, TensorPtr out, symint axis) {
+  out->make_gradient();
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out,
+                                                                      axis]() {
+    const DeviceTag dtag = get_dtag_by_presidence({x, x->grad, out->grad});
 
-  return ex / denom;
+    TensorPtr x_grad = x->grad->cast(dtag);
+    TensorPtr out_grad = out->grad->cast(dtag);
+
+    Weed::softmax_grad(axis, *(x_grad.get()), *(out.get()), *(out_grad.get()));
+
+    x->grad = x_grad;
+  });
 }
 
 TensorPtr Tensor::logsoftmax(const TensorPtr x, symint axis) {

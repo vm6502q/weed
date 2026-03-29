@@ -377,6 +377,7 @@ struct Tensor : public BaseTensor {
    * Softmax activation function
    */
   static TensorPtr softmax(const TensorPtr x, symint axis);
+  static void make_softmax_node(TensorPtr x, TensorPtr out, symint axis);
 
   /**
    * Logarithmic softmax activation function

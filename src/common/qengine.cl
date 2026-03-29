@@ -126,12 +126,12 @@ void kernel fill_value_complex(global cmplx* a, constant cmplx* v)
 {
     a[i_X] = *v;
 }
-void kernel real_to_complex_buffer(global real1* a, global cmplx* b)
+void kernel real_to_complex_buffer(global const real1* a, global cmplx* b)
 {
     b[i_X] = (cmplx)(a[i_X], ZERO_R1);
 }
 
-void kernel reduce_real(global real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel reduce_real(global const real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint base = O_A;
@@ -155,7 +155,7 @@ void kernel reduce_real(global real1* a, global real1* b, constant tcapint* shap
   }
   b[i_X * I_B + O_B] = sum;
 }
-void kernel reduce_complex(global cmplx* a, global cmplx* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel reduce_complex(global const cmplx* a, global cmplx* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint base = O_A;
@@ -173,13 +173,13 @@ void kernel reduce_complex(global cmplx* a, global cmplx* b, constant tcapint* s
     base += i_d * stride[d];
   }
 
-  cmplx sum = ZERO_R1;
+  cmplx sum = (cmplx)(ZERO_R1);
   for (tcapint j = 0U; j < shape[id]; ++j) {
     sum += a[base + j * stride[id]];
   }
   b[i_X * I_B + O_B] = sum;
 }
-void kernel reduce_grad_real(global real1* din, global real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel reduce_grad_real(global real1* din, global const real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint o = 0U;
@@ -199,7 +199,7 @@ void kernel reduce_grad_real(global real1* din, global real1* dout, constant tca
 
   din[i_X * I_B + O_B] += dout[o];
 }
-void kernel reduce_grad_complex(global cmplx* din, global cmplx* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel reduce_grad_complex(global cmplx* din, global const cmplx* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint o = 0U;
@@ -219,7 +219,7 @@ void kernel reduce_grad_complex(global cmplx* din, global cmplx* dout, constant 
 
   din[i_X * I_B + O_B] += dout[o];
 }
-void kernel reduce_grad_mixed(global real1* din, global real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel reduce_grad_mixed(global real1* din, global const real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint o = 0U;
@@ -239,7 +239,7 @@ void kernel reduce_grad_mixed(global real1* din, global real1* dout, constant tc
 
   din[(i_X * I_B + O_B) << 1U] += dout[o];
 }
-void kernel axis_max(global real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_max(global const real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint base = O_A;
@@ -266,7 +266,7 @@ void kernel axis_max(global real1* a, global real1* b, constant tcapint* shape, 
   }
   b[i_X * I_B + O_B] = m;
 }
-void kernel axis_min(global real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_min(global const real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint base = O_A;
@@ -293,7 +293,7 @@ void kernel axis_min(global real1* a, global real1* b, constant tcapint* shape, 
   }
   b[i_X * I_B + O_B] = m;
 }
-void kernel axis_match_grad_real(global real1* din, global real1* dout, global real1* in, global real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_match_grad_real(global real1* din, global const real1* dout, global const real1* in, global const real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint o = 0U;
@@ -316,7 +316,7 @@ void kernel axis_match_grad_real(global real1* din, global real1* dout, global r
     din[i] += dout[o];
   }
 }
-void kernel axis_match_grad_complex(global cmplx* din, global cmplx* dout, global real1* in, global real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_match_grad_complex(global cmplx* din, global const cmplx* dout, global const real1* in, global const real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint o = 0U;
@@ -339,7 +339,7 @@ void kernel axis_match_grad_complex(global cmplx* din, global cmplx* dout, globa
     din[i] += dout[o];
   }
 }
-void kernel axis_match_grad_mixed(global real1* din, global real1* dout, global real1* in, global real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_match_grad_mixed(global real1* din, global const real1* dout, global const real1* in, global const real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
   tcapint tmp = i_X;
   tcapint o = 0U;
@@ -363,130 +363,130 @@ void kernel axis_match_grad_mixed(global real1* din, global real1* dout, global 
   }
 }
 
-void kernel relu(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel relu(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     const real1 tmp = a[i_X * I_A + O_A];
     out[i_X * I_B + O_B] = (tmp > 0) ? tmp : ZERO_R1;
 }
-void kernel relu_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel relu_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     if (in[i_X * I_B + O_B] > ZERO_R1) {
       din[i_X * I_A + O_A] += dout[i_X * I_C + O_C];
     }
 }
-void kernel relu_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel relu_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     if (in[i_X * I_B + O_B] > ZERO_R1) {
       din[i_X * I_A + O_A] += dout[i_X * I_C + O_C];
     }
 }
-void kernel relu_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel relu_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     if (in[i_X * I_B + O_B] > 0) {
       din[(i_X * I_A + O_A) << 1U] += dout[i_X * I_C + O_C];
     }
 }
 
-void kernel sigmoid(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel sigmoid(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_B + O_B] = ONE_R1 / (ONE_R1 + (real1)exp((real1_f)(-a[i_X * I_A + O_A])));
 }
-void kernel sigmoid_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel sigmoid_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
     din[i_X * I_A + O_A] += yi * (ONE_R1 - yi) * dout[i_X * I_C + O_C];
 }
-void kernel sigmoid_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel sigmoid_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
     din[i_X * I_A + O_A] += yi * (ONE_R1 - yi) * dout[i_X * I_C + O_C];
 }
-void kernel sigmoid_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel sigmoid_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
     din[(i_X * I_A + O_A) << 1U] += yi * (ONE_R1 - yi) * dout[i_X * I_C + O_C];
 }
 
-void kernel wtanh(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel wtanh(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_B + O_B] = tanh(a[i_X * I_A + O_A]);
 }
-void kernel wtanh_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel wtanh_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
     din[i_X * I_A + O_A] += (ONE_R1 - yi * yi) * dout[i_X * I_C + O_C];
 }
-void kernel wtanh_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel wtanh_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
     din[i_X * I_A + O_A] += (ONE_R1 - yi * yi) * dout[i_X * I_C + O_C];
 }
-void kernel wtanh_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel wtanh_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 yi = in[i_X * I_B + O_B];
     din[(i_X * I_A + O_A) << 1U] += (ONE_R1 - yi * yi) * dout[i_X * I_C + O_C];
 }
 
-void kernel wsin(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel wsin(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_B + O_B] = sin(a[i_X * I_A + O_A]);
 }
-void kernel wsin_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel wsin_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
-void kernel wsin_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel wsin_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
-void kernel wsin_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel wsin_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
 
-void kernel wcos(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel wcos(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_B + O_B] = cos(a[i_X * I_A + O_A]);
 }
-void kernel wcos_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel wcos_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
-void kernel wcos_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel wcos_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
-void kernel wcos_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel wcos_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
 
-void kernel match_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs, constant real1* m)
+void kernel match_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs, constant real1* m)
 {
     if (*m == in[i_X * I_B + O_B]) {
       din[i_X * I_A + O_A] += dout[i_X * I_C + O_C];
     }
 }
-void kernel match_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs, constant real1* m)
+void kernel match_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs, constant real1* m)
 {
     if (*m == in[i_X * I_B + O_B]) {
       din[i_X * I_A + O_A] += dout[i_X * I_C + O_C];
     }
 }
-void kernel match_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs, constant real1* m)
+void kernel match_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs, constant real1* m)
 {
     if (*m == in[i_X * I_B + O_B]) {
       din[(i_X * I_A + O_A) << 1U] += dout[i_X * I_C + O_C];
     }
 }
 
-void kernel clamp_real(global real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant cmplx* p)
+void kernel clamp_real(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant cmplx* p)
 {
     const real1 tmp = a[i_X * I_A + O_A];
     const cmplx b = *p;
     out[i_X * I_B + O_B] = (tmp > b.x) ? ((tmp < b.y) ? tmp  : b.y) : b.x;
 }
-void kernel clamp_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
+void kernel clamp_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
 {
     const real1 xi = in[i_X * I_B + O_B];
     const cmplx b = *p;
@@ -494,7 +494,7 @@ void kernel clamp_grad_real(global real1* din, global real1* in, global real1* d
       din[i_X * I_C + O_C] += dout[i_X * I_A + O_A];
     }
 }
-void kernel clamp_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
+void kernel clamp_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
 {
     const real1 xi = in[i_X * I_B + O_B];
     const cmplx b = *p;
@@ -502,7 +502,7 @@ void kernel clamp_grad_complex(global cmplx* din, global real1* in, global cmplx
       din[i_X * I_C + O_C] += dout[i_X * I_A + O_A];
     }
 }
-void kernel clamp_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
+void kernel clamp_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
 {
     const real1 xi = in[i_X * I_B + O_B];
     const cmplx b = *p;
@@ -511,17 +511,17 @@ void kernel clamp_grad_mixed(global real1* din, global real1* in, global real1* 
     }
 }
 
-void kernel abs_real(global real1* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel abs_real(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     const real1 tmp = a[i_X * I_A + O_A];
     out[i_X * I_B + O_B] = (tmp < 0) ? -tmp : tmp;
 }
-void kernel abs_complex(global cmplx* a, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel abs_complex(global const cmplx* a, global real1* out, constant tcapint* vecCapIntArgs)
 {
     const cmplx tmp = a[i_X * I_A + O_A];
     out[i_X * I_B + O_B] = sqrt(dot(tmp, tmp));
 }
-void kernel abs_real_grad_real(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel abs_real_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 tmp = in[i_X * I_B + O_B];
     if (tmp != ZERO_R1) {
@@ -529,7 +529,7 @@ void kernel abs_real_grad_real(global real1* din, global real1* in, global real1
       din[i_X * I_A + O_A] += (tmp > ZERO_R1) ? tmp_o : -tmp_o;
     }
 }
-void kernel abs_real_grad_complex(global cmplx* din, global real1* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel abs_real_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 tmp = in[i_X * I_B + O_B];
     if (tmp != ZERO_R1) {
@@ -537,7 +537,7 @@ void kernel abs_real_grad_complex(global cmplx* din, global real1* in, global cm
       din[i_X * I_A + O_A] += (tmp > ZERO_R1) ? tmp_o : -tmp_o;
     }
 }
-void kernel abs_real_grad_mixed(global real1* din, global real1* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel abs_real_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const real1 tmp = in[i_X * I_B + O_B];
     if (tmp != ZERO_R1) {
@@ -545,21 +545,21 @@ void kernel abs_real_grad_mixed(global real1* din, global real1* in, global real
       din[(i_X * I_A + O_A) << 1U] += (tmp > ZERO_R1) ? tmp_o : -tmp_o;
     }
 }
-void kernel abs_complex_grad_real(global cmplx* din, global cmplx* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel abs_complex_grad_real(global cmplx* din, global const cmplx* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const cmplx tmp = in[i_X * I_B + O_B];
     if ((tmp.x != ZERO_R1) || (tmp.y != ZERO_R1)) {
       din[i_X * I_A + O_A] += (dout[i_X * I_C + O_C] / sqrt(dot(tmp, tmp))) * tmp;
     }
 }
-void kernel abs_complex_grad_complex(global cmplx* din, global cmplx* in, global cmplx* dout, constant tcapint* vecCapIntArgs)
+void kernel abs_complex_grad_complex(global cmplx* din, global const cmplx* in, global const cmplx* dout, constant tcapint* vecCapIntArgs)
 {
     const cmplx tmp = in[i_X * I_B + O_B];
     if ((tmp.x != ZERO_R1) || (tmp.y != ZERO_R1)) {
       din[i_X * I_A + O_A] += zmul(dout[i_X * I_C + O_C], tmp) / sqrt(dot(tmp, tmp));
     }
 }
-void kernel abs_complex_grad_mixed(global cmplx* din, global cmplx* in, global real1* dout, constant tcapint* vecCapIntArgs)
+void kernel abs_complex_grad_mixed(global cmplx* din, global const cmplx* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
     const cmplx tmp = in[i_X * I_B + O_B];
     if ((tmp.x != ZERO_R1) || (tmp.y != ZERO_R1)) {
@@ -567,33 +567,33 @@ void kernel abs_complex_grad_mixed(global cmplx* din, global cmplx* in, global r
     }
 }
 
-void kernel add_real(global real1* a, global real1* b, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel add_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] + b[i_X * I_B + O_B];
 }
-void kernel add_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel add_complex(global const cmplx* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] + b[i_X * I_B + O_B];
 }
-void kernel add_mixed(global cmplx* a, global real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel add_mixed(global const cmplx* a, global const real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] + (cmplx)(b[i_X * I_B + O_B], 0);
 }
 
-void kernel mul_real(global real1* a, global real1* b, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel mul_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] * b[i_X * I_B + O_B];
 }
-void kernel mul_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel mul_complex(global const cmplx* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = zmul(a[i_X * I_A + O_A], b[i_X * I_B + O_B]);
 }
-void kernel mul_mixed(global cmplx* a, global real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel mul_mixed(global const cmplx* a, global const real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = b[i_X * I_B + O_B] * a[i_X * I_A + O_A];
 }
 
-void kernel matmul_real(global real1* a, global real1* b, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)
 {
     real1 sum = ZERO_R1;
     for (tcapint k = 0; k < K; ++k) {
@@ -604,9 +604,9 @@ void kernel matmul_real(global real1* a, global real1* b, global real1* out, con
     const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
     out[o_idx] = sum;
 }
-void kernel matmul_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_complex(global const cmplx* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
-    cmplx sum = ZERO_R1;
+    cmplx sum = (cmplx)(ZERO_R1);
     for (tcapint k = 0; k < K; ++k) {
         const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
         const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
@@ -615,9 +615,9 @@ void kernel matmul_complex(global cmplx* a, global cmplx* b, global cmplx* out, 
     const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
     out[o_idx] = sum;
 }
-void kernel matmul_mixed_c_left(global cmplx* a, global real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_mixed_c_left(global const cmplx* a, global const real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
-    cmplx sum = ZERO_R1;
+    cmplx sum = (cmplx)(ZERO_R1);
     for (tcapint k = 0; k < K; ++k) {
         const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
         const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
@@ -626,9 +626,9 @@ void kernel matmul_mixed_c_left(global cmplx* a, global real1* b, global cmplx* 
     const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
     out[o_idx] = sum;
 }
-void kernel matmul_mixed_c_right(global real1* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_mixed_c_right(global const real1* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
-    cmplx sum = ZERO_R1;
+    cmplx sum = (cmplx)(ZERO_R1);
     for (tcapint k = 0; k < K; ++k) {
         const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
         const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
@@ -638,92 +638,92 @@ void kernel matmul_mixed_c_right(global real1* a, global cmplx* b, global cmplx*
     out[o_idx] = sum;
 }
 
-void kernel sub_real(global real1* a, global real1* b, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel sub_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] - b[i_X * I_B + O_B];
 }
-void kernel sub_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel sub_complex(global const cmplx* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] - b[i_X * I_B + O_B];
 }
-void kernel sub_mixed_c_left(global cmplx* a, global real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel sub_mixed_c_left(global const cmplx* a, global const real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] - (cmplx)(b[i_X * I_B + O_B], ZERO_R1);
 }
-void kernel sub_mixed_c_right(global real1* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel sub_mixed_c_right(global const real1* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = (cmplx)(a[i_X * I_A + O_A], ZERO_R1) - b[i_X * I_B + O_B];
 }
 
-void kernel div_real(global real1* a, global real1* b, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel div_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] / b[i_X * I_B + O_B];
 }
-void kernel div_complex(global cmplx* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel div_complex(global const cmplx* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = zdiv(a[i_X * I_A + O_A], b[i_X * I_B + O_B]);
 }
-void kernel div_mixed_c_left(global cmplx* a, global real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel div_mixed_c_left(global const cmplx* a, global const real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = a[i_X * I_A + O_A] / b[i_X * I_B + O_B];
 }
-void kernel div_mixed_c_right(global real1* a, global cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel div_mixed_c_right(global const real1* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
 {
     out[i_X * I_C + O_C] = zdiv((cmplx)(a[i_X * I_A + O_A], ZERO_R1), b[i_X * I_B + O_B]);
 }
 
-void kernel add_in_place_real(global real1* a, global real1* b, constant tcapint* vecCapIntArgs)
+void kernel add_in_place_real(global real1* a, global const real1* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] += b[i_X * I_B + O_B];
 }
-void kernel add_in_place_complex(global cmplx* a, global cmplx* b, constant tcapint* vecCapIntArgs)
+void kernel add_in_place_complex(global cmplx* a, global const cmplx* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] += b[i_X * I_B + O_B];
 }
-void kernel add_in_place_mixed(global cmplx* a, global real1* b, constant tcapint* vecCapIntArgs)
+void kernel add_in_place_mixed(global cmplx* a, global const real1* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] += (cmplx)(b[i_X * I_B + O_B], 0);
 }
 
-void kernel sub_in_place_real(global real1* a, global real1* b, constant tcapint* vecCapIntArgs)
+void kernel sub_in_place_real(global real1* a, global const real1* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] -= b[i_X * I_B + O_B];
 }
-void kernel sub_in_place_complex(global cmplx* a, global cmplx* b, constant tcapint* vecCapIntArgs)
+void kernel sub_in_place_complex(global cmplx* a, global const cmplx* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] -= b[i_X * I_B + O_B];
 }
-void kernel sub_in_place_mixed(global cmplx* a, global real1* b, constant tcapint* vecCapIntArgs)
+void kernel sub_in_place_mixed(global cmplx* a, global const real1* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] -= (cmplx)(b[i_X * I_B + O_B], 0);
 }
 
-void kernel pow_real(global real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant real1* p)
+void kernel pow_real(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant real1* p)
 {
     out[i_X * I_B + O_B] = (real1)pow((real1_f)a[i_X * I_A + O_A], (real1_f)*p);
 }
-void kernel pow_complex(global cmplx* a, global cmplx* out, constant tcapint* vecCapIntArgs, constant real1* p)
+void kernel pow_complex(global const cmplx* a, global cmplx* out, constant tcapint* vecCapIntArgs, constant real1* p)
 {
     out[i_X * I_B + O_B] = zpow_real(a[i_X * I_A + O_A], *p);
 }
-void kernel exp_real(global real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant real1* log_b)
+void kernel exp_real(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant real1* log_b)
 {
     out[i_X * I_B + O_B] = ((real1)exp((real1_f)(a[i_X * I_A + O_A]) * (*log_b)));
 }
-void kernel exp_complex(global cmplx* a, global cmplx* out, constant tcapint* vecCapIntArgs, constant real1* log_b)
+void kernel exp_complex(global const cmplx* a, global cmplx* out, constant tcapint* vecCapIntArgs, constant real1* log_b)
 {
     out[i_X * I_B + O_B] = zexp(a[i_X * I_A + O_A] * (*log_b));
 }
-void kernel log_real(global real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant real1* inv_log_b)
+void kernel log_real(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs, constant real1* inv_log_b)
 {
     out[i_X * I_B + O_B] = ((real1)log((real1_f)a[i_X * I_A + O_A])) * (*inv_log_b);
 }
-void kernel log_complex(global cmplx* a, global cmplx* out, constant tcapint* vecCapIntArgs, constant real1* inv_log_b)
+void kernel log_complex(global const cmplx* a, global cmplx* out, constant tcapint* vecCapIntArgs, constant real1* inv_log_b)
 {
     out[i_X * I_B + O_B] = zlog(a[i_X * I_A + O_A]) * (*inv_log_b);
 }
 
-void kernel embedding_real(global symint* idx, global real1* W, global real1* O, constant tcapint* vecCapIntArgs)
+void kernel embedding_real(global const symint* idx, global const real1* W, global real1* O, constant tcapint* vecCapIntArgs)
 {
     const tcapint token = idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
@@ -732,7 +732,7 @@ void kernel embedding_real(global symint* idx, global real1* W, global real1* O,
       O[o_base + d * I_C] = W[w_base + d * O_C];
     }
 }
-void kernel embedding_complex(global symint* idx, global cmplx* W, global cmplx* O, constant tcapint* vecCapIntArgs)
+void kernel embedding_complex(global const symint* idx, global const cmplx* W, global cmplx* O, constant tcapint* vecCapIntArgs)
 {
     const tcapint token = idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
@@ -741,7 +741,7 @@ void kernel embedding_complex(global symint* idx, global cmplx* W, global cmplx*
       O[o_base + d * I_C] = W[w_base + d * O_C];
     }
 }
-void kernel embedding_grad_real(global symint* idx, global real1* dW, global real1* dO, constant tcapint* vecCapIntArgs)
+void kernel embedding_grad_real(global const symint* idx, global real1* dW, global const real1* dO, constant tcapint* vecCapIntArgs)
 {
     const tcapint token = idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
@@ -750,7 +750,7 @@ void kernel embedding_grad_real(global symint* idx, global real1* dW, global rea
       dW[w_base + d * O_C] += dO[o_base + d * I_C];
     }
 }
-void kernel embedding_grad_complex(global symint* idx, global cmplx* dW, global cmplx* dO, constant tcapint* vecCapIntArgs)
+void kernel embedding_grad_complex(global const symint* idx, global cmplx* dW, global const cmplx* dO, constant tcapint* vecCapIntArgs)
 {
     const tcapint token = idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
@@ -759,7 +759,7 @@ void kernel embedding_grad_complex(global symint* idx, global cmplx* dW, global 
       dW[w_base + d * O_C] += dO[o_base + d * I_C];
     }
 }
-void kernel embedding_grad_mixed(global symint* idx, global real1* dW, global real1* dO, constant tcapint* vecCapIntArgs)
+void kernel embedding_grad_mixed(global const symint* idx, global real1* dW, global const real1* dO, constant tcapint* vecCapIntArgs)
 {
     const tcapint token = idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
@@ -769,24 +769,148 @@ void kernel embedding_grad_mixed(global symint* idx, global real1* dW, global re
     }
 }
 
-void kernel copy_real(global real1* a, global real1* b, constant tcapint* vecCapIntArgs)
+void kernel copy_real(global real1* a, global const real1* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] = b[i_X * I_B + O_B];
 }
-void kernel copy_complex(global cmplx* a, global cmplx* b, constant tcapint* vecCapIntArgs)
+void kernel copy_complex(global cmplx* a, global const cmplx* b, constant tcapint* vecCapIntArgs)
 {
     a[i_X * I_A + O_A] = b[i_X * I_B + O_B];
 }
 
-void kernel triu_fill_real(global real1* a, global cmplx* val, constant tcapint* vecCapIntArgs)
+void kernel triu_fill_real(global real1* a, global const cmplx* val, constant tcapint* vecCapIntArgs)
 {
     if ((i_X + O_A) <= i_Y) {
       a[i_X * S_X + i_Y] = val->x;
     }
 }
-void kernel triu_fill_complex(global cmplx* a, global cmplx* val, constant tcapint* vecCapIntArgs)
+void kernel triu_fill_complex(global cmplx* a, global const cmplx* val, constant tcapint* vecCapIntArgs)
 {
     if ((i_X + O_A) <= i_Y) {
       a[i_X * S_X + i_Y] = *val;
+    }
+}
+
+kernel void softmax_forward(global const real1 *x, global real1 *out, global const tcapint *vciArgs)
+{
+    const tcapint x_off      = vciArgs[0];
+    const tcapint x_stride   = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint outer_str  = vciArgs[5];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint x_base   = x_off   + outer * outer_str;
+    const tcapint out_base = out_off  + outer * outer_str;
+
+    // Pass 1: find max
+    real1 mx = x[x_base];
+    for (tcapint i = 1; i < axis_size; ++i) {
+        const real1 v = x[x_base + i * x_stride];
+        if (v > mx) mx = v;
+    }
+
+    // Pass 2: sum of exp(x - max)
+    real1 s = ZERO_R1;
+    for (tcapint i = 0; i < axis_size; ++i) {
+        s += exp(x[x_base + i * x_stride] - mx);
+    }
+
+    // Pass 3: write normalized output
+    for (tcapint i = 0; i < axis_size; ++i) {
+        out[out_base + i * out_stride] =
+            exp(x[x_base + i * x_stride] - mx) / s;
+    }
+}
+kernel void softmax_backward_real(global real1 *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+{
+    const tcapint dx_off     = vciArgs[0];
+    const tcapint dx_stride  = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint dy_off     = vciArgs[5];
+    const tcapint dy_stride  = vciArgs[6];
+    const tcapint outer_str  = vciArgs[7];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint dx_base  = dx_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint dy_base  = dy_off  + outer * outer_str;
+
+    // dot = sum(dy * out)
+    real1 dt = ZERO_R1;
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dt += dy[dy_base + i * dy_stride] * out[out_base + i * out_stride];
+    }
+
+    // dx += out * (dy - dot)
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dx[dx_base + i * dx_stride] +=
+            out[out_base + i * out_stride] *
+            (dy[dy_base + i * dy_stride] - dt);
+    }
+}
+kernel void softmax_backward_complex(global cmplx *dx, global const real1 *out, global const cmplx *dy, global const tcapint *vciArgs)
+{
+    const tcapint dx_off     = vciArgs[0];
+    const tcapint dx_stride  = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint dy_off     = vciArgs[5];
+    const tcapint dy_stride  = vciArgs[6];
+    const tcapint outer_str  = vciArgs[7];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint dx_base  = dx_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint dy_base  = dy_off  + outer * outer_str;
+
+    // dot = sum(dy * out)
+    cmplx dt = (cmplx)(ZERO_R1);
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dt += dy[dy_base + i * dy_stride] * out[out_base + i * out_stride];
+    }
+
+    // dx += out * (dy - dot)
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dx[dx_base + i * dx_stride] +=
+            out[out_base + i * out_stride] *
+            (dy[dy_base + i * dy_stride] - dt);
+    }
+}
+kernel void softmax_backward_mixed(global cmplx *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+{
+    const tcapint dx_off     = vciArgs[0];
+    const tcapint dx_stride  = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint dy_off     = vciArgs[5];
+    const tcapint dy_stride  = vciArgs[6];
+    const tcapint outer_str  = vciArgs[7];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint dx_base  = dx_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint dy_base  = dy_off  + outer * outer_str;
+
+    // dot = sum(dy * out)
+    real1 dt = ZERO_R1;
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dt += dy[dy_base + i * dy_stride] * out[out_base + i * out_stride];
+    }
+
+    // dx += out * (dy - dot)
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dx[dx_base + i * dx_stride].x +=
+            out[out_base + i * out_stride] *
+            (dy[dy_base + i * dy_stride] - dt);
     }
 }

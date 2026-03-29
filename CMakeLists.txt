@@ -51,6 +51,7 @@ add_library (weed STATIC
     src/ops/reduce.cpp
     src/ops/real_extremum.cpp
     src/ops/real_unary.cpp
+    src/ops/softmax.cpp
     src/ops/sub.cpp
     src/ops/sum.cpp
     src/ops/pow.cpp
@@ -286,6 +287,7 @@ install (FILES
     include/ops/reduce.hpp
     include/ops/real_extremum.hpp
     include/ops/real_unary.hpp
+    include/ops/softmax.hpp
     include/ops/sub.hpp
     include/ops/sum.hpp
     include/ops/triu_fill.hpp
