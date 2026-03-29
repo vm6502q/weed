@@ -61,9 +61,7 @@ TransformerEncoderLayer::TransformerEncoderLayer(
   add(norm2->parameters());
 }
 TensorPtr TransformerEncoderLayer::forward(const TensorPtr x) {
-  TensorPtr attn_out = self_attn->forward(norm1->forward(x));
-  TensorPtr x1 = x + attn_out;
-
+  TensorPtr x1 = x + self_attn->forward(norm1->forward(x));
   TensorPtr ff = ff1->forward(norm2->forward(x1));
   ff = activation->forward(ff);
   ff = ff2->forward(ff);

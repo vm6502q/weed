@@ -103,6 +103,7 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // scores = Q K^T
   TensorPtr Kt = Tensor::transpose(K, -2, -1);
   TensorPtr scores = Q >> Kt;
+  Q = nullptr;
 
   // scale
   scores = scores / real1(std::sqrt((real1)head_dim));
@@ -116,11 +117,17 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
     scores = scores + mask;
   }
 
+  K = nullptr;
+  Kt = nullptr;
+
   // softmax over last axis
   TensorPtr weights = Tensor::softmax(scores, -1);
 
   // out = weights V
   TensorPtr out = weights >> V;
+
+  V = nullptr;
+  weights = nullptr;
 
   // (B, T, H, head_dim)
   out = Tensor::transpose(out, 1, 2);
