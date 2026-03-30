@@ -14,6 +14,14 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if WEED_BLAS
+#ifdef __APPLE__
+#include <Accelerate/Accelerate.h>
+#else
+#include <cblas.h>
+#endif
+#endif
+
 #define CPU_HEADER(storage1, storage2, storage3)                               \
   MatrixDim d = get_dim(a, b, out);                                            \
                                                                                \
@@ -117,9 +125,76 @@ static void cpu(const Tensor &a, const Tensor &b, Tensor &out) {
   CPU_BY_TYPE(T4);
 }
 static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
+#if WEED_BLAS && (WEED_FPPOW > 4) && (WEED_FPPOW < 7)
+  MatrixDim d = get_dim(a, b, out);
+
+  // BLAS sgemm requires contiguous storage with unit or leading-dimension
+  // strides. Check if we can use BLAS directly.
+  // Column-major: A is M×K, B is K×N, C is M×N.
+  // BLAS leading dimensions: lda=stride of column = stride[1] for col-major.
+  // Weed col-major: stride[0]=1 (row stride), stride[1]=M (col stride).
+  // So lda = d.A_s1, ldb = d.B_s1, ldc = d.O_s1.
+  // This works as long as offsets are zero and strides are contiguous.
+
+  const bool a_contiguous = (d.A_o == 0U) && (d.A_s0 == 1U);
+  const bool b_contiguous = (d.B_o == 0U) && (d.B_s0 == 1U);
+  const bool o_contiguous = (d.O_o == 0U) && (d.O_s0 == 1U);
+
+  if (a_contiguous && b_contiguous && o_contiguous) {
+    // Get raw pointers to storage
+    auto *a_store = static_cast<CpuRealStorage *>(a.storage.get());
+    auto *b_store = static_cast<CpuRealStorage *>(b.storage.get());
+    auto *o_store = static_cast<CpuRealStorage *>(out.storage.get());
+
+#if WEED_FPPOW == 5
+    cblas_sgemm(
+#else
+    cblas_dgemm(
+#endif
+        CblasColMajor, CblasNoTrans, CblasNoTrans,
+        (blasint)d.M,                         // rows of A and C
+        (blasint)d.N,                         // cols of B and C
+        (blasint)d.K,                         // cols of A, rows of B
+        ONE_R1_F,                             // alpha
+        a_store->data.get(), (blasint)d.A_s1, // A, lda
+        b_store->data.get(), (blasint)d.B_s1, // B, ldb
+        ZERO_R1_F,                            // beta (overwrite C)
+        o_store->data.get(), (blasint)d.O_s1  // C, ldc
+    );
+    return;
+  }
+  // Fall through to hand-rolled for non-contiguous cases
+#endif
   cpu<RealStorage, RealStorage, RealStorage, real1>(a, b, out);
 }
 static inline void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
+#if WEED_BLAS && (WEED_FPPOW > 4) && (WEED_FPPOW < 7)
+  MatrixDim d = get_dim(a, b, out);
+
+  const bool a_contiguous = (d.A_o == 0U) && (d.A_s0 == 1U);
+  const bool b_contiguous = (d.B_o == 0U) && (d.B_s0 == 1U);
+  const bool o_contiguous = (d.O_o == 0U) && (d.O_s0 == 1U);
+
+  if (a_contiguous && b_contiguous && o_contiguous) {
+    auto *a_store = static_cast<CpuComplexStorage *>(a.storage.get());
+    auto *b_store = static_cast<CpuComplexStorage *>(b.storage.get());
+    auto *o_store = static_cast<CpuComplexStorage *>(out.storage.get());
+
+    const real1_f alpha[2] = {ONE_R1_F, ZERO_R1_F}; // complex 1+0i
+    const real1_f beta[2] = {ZERO_R1_F, ZERO_R1_F}; // complex 0+0i
+
+#if WEED_FPPOW == 5
+    cblas_cgemm(
+#else
+    cblas_zgemm(
+#endif
+        CblasColMajor, CblasNoTrans, CblasNoTrans, (blasint)d.M, (blasint)d.N,
+        (blasint)d.K, alpha, a_store->data.get(), (blasint)d.A_s1,
+        b_store->data.get(), (blasint)d.B_s1, beta, o_store->data.get(),
+        (blasint)d.O_s1);
+    return;
+  }
+#endif
   cpu<ComplexStorage, ComplexStorage, ComplexStorage, complex>(a, b, out);
 }
 static inline void cpu_mixed_c_left(const Tensor &a, const Tensor &b,
