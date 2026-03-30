@@ -118,6 +118,7 @@ message ("CPU parallelism is: ${WEED_ENABLE_PTHREAD}")
 message ("CPU work item stride power is: ${WEED_PSTRIDEPOW}")
 message ("OpenCL (v2.0) out-of-order queue is: ${WEED_ENABLE_OOO_OCL}")
 message ("Environment variable usage is: ${WEED_ENABLE_ENV_VARS}")
+message ("BLAS usage is: ${WEED_BLAS}")
 
 if (WEED_FPPOW GREATER 6)
     target_link_libraries(weed PUBLIC quadmath)
