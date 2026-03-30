@@ -99,12 +99,12 @@ struct Module {
   /**
    * Migrate all parameters to CPU
    */
-  virtual void migrate_cpu() {};
+  virtual void migrate_cpu(){};
 
   /**
    * Migrate all parameters to GPU
    */
-  virtual void migrate_gpu() {};
+  virtual void migrate_gpu(){};
 
   /**
    * Reset KV cache

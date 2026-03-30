@@ -10,9 +10,9 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/layernorm.hpp"
+#include "common/serializer.hpp"
 #include "modules/migrate_cpu.hpp"
 #include "modules/migrate_gpu.hpp"
-#include "common/serializer.hpp"
 
 namespace Weed {
 void LayerNorm::migrate_cpu() {

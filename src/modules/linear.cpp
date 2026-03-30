@@ -10,9 +10,9 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/linear.hpp"
+#include "common/serializer.hpp"
 #include "modules/migrate_cpu.hpp"
 #include "modules/migrate_gpu.hpp"
-#include "common/serializer.hpp"
 #include "storage/all_storage.hpp"
 
 #include <random>

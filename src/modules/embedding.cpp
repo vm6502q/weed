@@ -10,10 +10,10 @@
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
 
 #include "modules/embedding.hpp"
-#include "modules/migrate_cpu.hpp"
-#include "modules/migrate_gpu.hpp"
 #include "autograd/node.hpp"
 #include "common/serializer.hpp"
+#include "modules/migrate_cpu.hpp"
+#include "modules/migrate_gpu.hpp"
 #include "ops/embedding.hpp"
 
 namespace Weed {
@@ -40,8 +40,8 @@ TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
   if (weight->requires_grad) {
     ParameterPtr w = weight;
     out->make_gradient();
-    out->grad_node = std::make_shared<Node>(
-        std::vector<TensorPtr>{w}, [indices, w, out]() {
+    out->grad_node =
+        std::make_shared<Node>(std::vector<TensorPtr>{w}, [indices, w, out]() {
           const DeviceTag dtag =
               Tensor::get_dtag_by_presidence({w->grad, out->grad, indices});
           TensorPtr dW = w->grad->cast(dtag);
