@@ -16,6 +16,7 @@
 
 #if WEED_BLAS
 #if defined(__APPLE__)  && !defined(__x86_64__) && !defined(__i386__)
+#define ACCELERATE_NEW_LAPACK
 #include <Accelerate/Accelerate.h>
 #define blasint int
 #else
