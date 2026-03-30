@@ -434,4 +434,16 @@ MICROSOFT_QUANTUM_DECL void reset_kv_cache(_In_ uintw mid) {
     module_results[mid]->error = 1;
   }
 }
+
+/// Set max KV cache sequence length
+MICROSOFT_QUANTUM_DECL void set_max_kv_seq_len(_In_ uintw mid, _In_ uintw m) {
+  MODULE_LOCK_GUARD_VOID(mid);
+  module_results[mid]->error = 0;
+  try {
+    module_results[mid]->m->set_max_kv_seq_len(m);
+  } catch (const std::exception &ex) {
+    std::cout << ex.what() << std::endl;
+    module_results[mid]->error = 1;
+  }
+}
 }

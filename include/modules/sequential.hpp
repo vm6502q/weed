@@ -51,6 +51,12 @@ struct Sequential : public Module {
     }
   }
 
+  void set_max_kv_seq_len(tcapint m) override {
+    for (const ModulePtr &md : layers) {
+      md->set_max_kv_seq_len(m);
+    }
+  }
+
   void reset_cache() override {
     for (const ModulePtr &m : layers) {
       m->reset_cache();

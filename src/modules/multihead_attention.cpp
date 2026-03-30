@@ -40,41 +40,29 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   }
 
   if (use_kv_cache) {
+    const tcapint T_new = (tcapint)T;
+
     if (!k_cache) {
-      // First step — initialize cache from current K, V
-      k_cache = K;
-      v_cache = V;
-    } else {
-      // Subsequent steps — append new K, V to cache
-      // Allocate new cache of size seq_so_far + T
-      const tcapint T_cached = k_cache->shape[2];
-      const tcapint T_new = T;
-      const tcapint T_total = T_cached + T_new;
-
-      TensorPtr k_new =
-          Tensor::zeros({1, (tcapint)num_kv_heads, T_total, (tcapint)head_dim});
-      TensorPtr v_new =
-          Tensor::zeros({1, (tcapint)num_kv_heads, T_total, (tcapint)head_dim});
-
-      // Copy old cache into first T_cached positions
-      TensorPtr k_old_slice = Tensor::slice(k_new, 2, 0, T_cached);
-      TensorPtr v_old_slice = Tensor::slice(v_new, 2, 0, T_cached);
-      Weed::add_in_place(*k_old_slice, *k_cache);
-      Weed::add_in_place(*v_old_slice, *v_cache);
-
-      // Copy new K, V into remaining positions
-      TensorPtr k_new_slice = Tensor::slice(k_new, 2, T_cached, T_new);
-      TensorPtr v_new_slice = Tensor::slice(v_new, 2, T_cached, T_new);
-      Weed::add_in_place(*k_new_slice, *K);
-      Weed::add_in_place(*v_new_slice, *V);
-
-      k_cache = k_new;
-      v_cache = v_new;
+        // First use — infer max_seq_len from rope if available,
+        // otherwise use a reasonable default
+        max_seq_len = rope ? rope->max_seq_len : 2048U;
+        k_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
+                                  max_seq_len, (tcapint)head_dim});
+        v_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
+                                  max_seq_len, (tcapint)head_dim});
+        cache_len = 0U;
     }
 
-    // Use cache for attention
-    K = k_cache;
-    V = v_cache;
+    // Write new K, V into the next T_new positions
+    TensorPtr k_slot = Tensor::slice(k_cache, 2, cache_len, T_new);
+    TensorPtr v_slot = Tensor::slice(v_cache, 2, cache_len, T_new);
+    Weed::add_in_place(*k_slot, *K);
+    Weed::add_in_place(*v_slot, *V);
+    cache_len += T_new;
+
+    // Use only the filled portion for attention
+    K = Tensor::slice(k_cache, 2, 0, cache_len);
+    V = Tensor::slice(v_cache, 2, 0, cache_len);
   }
 
   // GQA: broadcast K and V from kv_heads to num_heads

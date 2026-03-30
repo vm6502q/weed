@@ -93,6 +93,10 @@ struct QwenDecoderLayer : public Module {
     post_attention_layernorm->migrate_gpu();
   }
 
+  void set_max_kv_seq_len(tcapint m) override {
+    self_attn->set_max_kv_seq_len(m);
+  }
+
   void reset_cache() override { self_attn->reset_cache(); }
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }

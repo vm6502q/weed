@@ -35,6 +35,8 @@ struct MultiHeadAttention : public Module {
   bool use_kv_cache;
   TensorPtr k_cache; // [1, num_heads, seq_so_far, head_dim]
   TensorPtr v_cache; // [1, num_heads, seq_so_far, head_dim]
+  tcapint cache_len = 0U;  // current fill position
+  tcapint max_seq_len = 0U; // set on first use
 
   std::vector<ParameterPtr> param_vector;
 
@@ -101,9 +103,15 @@ struct MultiHeadAttention : public Module {
     }
   }
 
+  void set_max_kv_seq_len(tcapint m) override {
+    max_seq_len = m;
+  }
+
   void reset_cache() override {
     k_cache = nullptr;
     v_cache = nullptr;
+    cache_len = 0U;
+    max_seq_len = 0U;
   }
 
   void migrate_cpu() override {

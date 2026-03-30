@@ -107,6 +107,11 @@ struct Module {
   virtual void migrate_gpu(){};
 
   /**
+   * Set max KV sequence length
+   */
+  virtual void set_max_kv_seq_len(tcapint m) {}
+
+  /**
    * Reset KV cache
    */
   virtual void reset_cache() {}

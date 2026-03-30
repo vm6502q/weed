@@ -82,6 +82,10 @@ struct TransformerEncoderLayer : public Module {
     activation->migrate_gpu();
   }
 
+  void set_max_kv_seq_len(tcapint m) override {
+    self_attn->set_max_kv_seq_len(m);
+  }
+
   void reset_cache() override { self_attn->reset_cache(); }
 
   TensorPtr forward(const TensorPtr x) override;
