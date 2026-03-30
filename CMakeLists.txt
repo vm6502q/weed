@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.10)
-project (Weed VERSION 0.5.4 DESCRIPTION "Minimalist AI/ML inference and backprogation in the style of Qrack" LANGUAGES CXX)
+project (Weed VERSION 0.6.0 DESCRIPTION "Minimalist AI/ML inference and backprogation in the style of Qrack" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
@@ -98,6 +98,7 @@ endif (ENABLE_TESTS AND NOT PACK_DEBIAN)
 # Included after the library and other modules have been declared
 option (WEED_ENABLE_OPENCL "Use OpenCL optimizations" ON)
 option (WEED_ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
+include ("cmake/Blas.cmake")
 include ("cmake/CppStd.cmake")
 include ("cmake/EnvVars.cmake")
 include ("cmake/FpMath.cmake")

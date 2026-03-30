@@ -1,0 +1,7 @@
+option(WEED_BLAS "Use OpenBLAS for matmul" ON)
+if(WEED_BLAS)
+    find_package(BLAS)
+    if(BLAS_FOUND)
+        target_link_libraries(weed PUBLIC ${BLAS_LIBRARIES})
+    endif()
+endif()

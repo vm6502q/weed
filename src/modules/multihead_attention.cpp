@@ -43,14 +43,14 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
     const tcapint T_new = (tcapint)T;
 
     if (!k_cache) {
-        // First use — infer max_seq_len from rope if available,
-        // otherwise use a reasonable default
-        max_seq_len = rope ? rope->max_seq_len : 2048U;
-        k_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
-                                  max_seq_len, (tcapint)head_dim});
-        v_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
-                                  max_seq_len, (tcapint)head_dim});
-        cache_len = 0U;
+      // First use — infer max_seq_len from rope if available,
+      // otherwise use a reasonable default
+      max_seq_len = rope ? rope->max_seq_len : 2048U;
+      k_cache = Tensor::zeros(
+          {(tcapint)B, (tcapint)num_kv_heads, max_seq_len, (tcapint)head_dim});
+      v_cache = Tensor::zeros(
+          {(tcapint)B, (tcapint)num_kv_heads, max_seq_len, (tcapint)head_dim});
+      cache_len = 0U;
     }
 
     // Write new K, V into the next T_new positions

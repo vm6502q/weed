@@ -77,7 +77,7 @@ namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
   CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
-    po->write(i, std::max((*pa)[i], ZERO_R1));
+    po->write(i, (real1)std::max((*pa)[i], (real1)ZERO_R1));
   };
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }

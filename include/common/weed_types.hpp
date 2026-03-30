@@ -160,6 +160,7 @@ WEED_CONST real1 E_R1 = (real1)M_E;
 
 #if (WEED_FPPOW < 5) || (WEED_FPPOW > 6)
 WEED_CONST real1 ZERO_R1 = (real1)0.0f;
+WEED_CONST real1 QUARTER_R1 = (real1)0.25f;
 WEED_CONST real1 HALF_R1 = (real1)0.5f;
 WEED_CONST real1 ONE_R1 = (real1)1.0f;
 #elif WEED_FPPOW == 5

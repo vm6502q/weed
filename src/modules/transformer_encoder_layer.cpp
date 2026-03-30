@@ -70,9 +70,8 @@ TensorPtr TransformerEncoderLayer::forward(const TensorPtr x_) {
   const DeviceTag dtag = Tensor::get_dtag_by_presidence(t_vec);
   TensorPtr x = x_->cast(dtag);
   const bool isGpu = (dtag == GPU);
-  const bool isRevert =
-      !_weed_telescope_transformers &&
-      ((24 * sz * sizeof(complex)) > _weed_max_ocl_b);
+  const bool isRevert = !_weed_telescope_transformers &&
+                        ((24 * sz * sizeof(complex)) > _weed_max_ocl_b);
 
   if (isGpu) {
     norm1->migrate_gpu();

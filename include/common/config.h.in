@@ -1,5 +1,6 @@
 #pragma once
 
+#cmakedefine WEED_BLAS 1
 #cmakedefine WEED_ENABLE_ENV_VARS 1
 #cmakedefine WEED_ENABLE_OPENCL 1
 #cmakedefine WEED_ENABLE_SNUCL 1
