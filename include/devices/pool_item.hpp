@@ -23,7 +23,7 @@
 #include <vector>
 
 #define CMPLX_ARG_LEN 1
-#define VCI_ARG_LEN 10
+#define VCI_ARG_LEN 12
 
 namespace Weed {
 /**

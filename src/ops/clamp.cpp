@@ -48,14 +48,15 @@
   }
 
 #define GPU_ARGS()                                                             \
-  const tcapint args[10U] {                                                    \
-    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U \
+  const tcapint args[12U] {                                                    \
+    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U,    \
+        0U, 0U, 0U                                                             \
   }
 
 #define GPU_GRAD_ARGS()                                                        \
-  const tcapint args[10U] {                                                    \
+  const tcapint args[12U] {                                                    \
     din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U                                        \
+        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
   }
 
 #define CPU_GRAD_KERNEL()                                                      \

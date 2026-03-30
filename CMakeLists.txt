@@ -13,6 +13,7 @@ include_directories ("include" "include/common" "${CMAKE_BINARY_DIR}/include/com
 
 set(CMAKE_WARN_DEPRECATED FALSE)
 
+set (WEED_TILE_SIZE 32 CACHE STRING "GPU matrix multiplication tile size")
 option (ENABLE_EXAMPLES "Include usage examples" ON)
 option (ENABLE_TESTS "Include tests and benchmarks" ON)
 if (PACK_DEBIAN)

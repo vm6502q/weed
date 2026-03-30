@@ -39,9 +39,9 @@
   }
 
 #define GPU_GRAD_ARGS()                                                        \
-  const tcapint args[10U] {                                                    \
+  const tcapint args[12U] {                                                    \
     din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U                                        \
+        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
   }
 
 #define CPU_RELU_GRAD()                                                        \
@@ -77,7 +77,7 @@ namespace Weed {
 static void cpu_relu(const Tensor &a, Tensor &out) {
   CPU_INIT_2(RealTensor, RealTensor);
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {
-    po->write(i, (real1)std::max((*pa)[i], (real1)ZERO_R1));
+    po->write(i, std::max((*pa)[i], ZERO_R1));
   };
   SPARSE_CPU_2_RUN(SparseCpuRealStorage);
 }
@@ -102,9 +102,9 @@ static inline void cpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_relu(const Tensor &a, Tensor &out) {
-  const tcapint args[10U]{
-      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
-      0U,       0U,           0U};
+  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
+                          0U,       0U,           0U,         0U,
+                          0U,       0U,           0U,         0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -158,9 +158,9 @@ static inline void cpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_sigmoid(const Tensor &a, Tensor &out) {
-  const tcapint args[10U]{
-      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
-      0U,       0U,           0U};
+  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
+                          0U,       0U,           0U,         0U,
+                          0U,       0U,           0U,         0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -213,9 +213,9 @@ static inline void cpu_tanh_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_tanh(const Tensor &a, Tensor &out) {
-  const tcapint args[10U]{
-      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
-      0U,       0U,           0U};
+  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
+                          0U,       0U,           0U,         0U,
+                          0U,       0U,           0U,         0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -267,9 +267,9 @@ static inline void cpu_sin_grad_mixed(Tensor &din, const Tensor &in,
 }
 #if ENABLE_GPU
 static void gpu_sin(const Tensor &a, Tensor &out) {
-  const tcapint args[10U]{
-      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
-      0U,       0U,           0U};
+  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
+                          0U,       0U,           0U,         0U,
+                          0U,       0U,           0U,         0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =
@@ -320,9 +320,9 @@ static inline void cpu_cos_grad_mixed(Tensor &din, const Tensor &in,
 }
 #if ENABLE_GPU
 static void gpu_cos(const Tensor &a, Tensor &out) {
-  const tcapint args[10U]{
-      a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U,
-      0U,       0U,           0U};
+  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
+                          0U,       0U,           0U,         0U,
+                          0U,       0U,           0U,         0U};
   GpuRealStoragePtr a_storage =
       std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
   GpuRealStoragePtr o_storage =

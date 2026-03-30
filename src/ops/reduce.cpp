@@ -121,8 +121,9 @@
   });
 
 #define DISPATCH_GPU_KERNEL(type, api_call)                                    \
-  const tcapint args[10U]{a.offset,   (tcapint)index,                          \
+  const tcapint args[12U]{a.offset,   (tcapint)index,                          \
                           out.offset, out.stride[0U],                          \
+                          0U,         0U,                                      \
                           0U,         0U,                                      \
                           0U,         0U,                                      \
                           0U,         0U};                                     \
@@ -182,15 +183,15 @@
   MATCH_GRAD_KERNEL(type)
 
 #define GPU_SUM_GRAD_ARGS()                                                    \
-  const tcapint args[10U] {                                                    \
+  const tcapint args[12U] {                                                    \
     din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U                                        \
+        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
   }
 
 #define GPU_MATCH_GRAD_ARGS()                                                  \
-  const tcapint args[10U] {                                                    \
+  const tcapint args[12U] {                                                    \
     din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], out.offset, out.stride[0U], 0U, 0U                    \
+        dout.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U            \
   }
 
 #define GPU_SUM_GRAD(type1, type2, api_call)                                   \

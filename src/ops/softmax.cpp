@@ -139,13 +139,15 @@
 
 #if ENABLE_GPU
 #define DISPATCH_GPU_SOFTMAX_FWD(type, api_call)                               \
-  const tcapint args[10U]{a.offset,                                            \
+  const tcapint args[12U]{a.offset,                                            \
                           (tcapint)index,                                      \
                           out.offset,                                          \
                           out.stride[0U],                                      \
                           a.shape[index],                                      \
                           a.stride[index],                                     \
                           out.stride[index],                                   \
+                          0U,                                                  \
+                          0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
                           0U};                                                 \
@@ -166,7 +168,7 @@
                                  shapeBuffer, strideBuffer, outStrideBuffer})
 
 #define DISPATCH_GPU_SOFTMAX_BWD(t1, t2, api_call)                             \
-  const tcapint args[10U]{din.offset,                                          \
+  const tcapint args[12U]{din.offset,                                          \
                           (tcapint)index,                                      \
                           out.offset,                                          \
                           dout.offset,                                         \
@@ -174,6 +176,8 @@
                           din.stride[index],                                   \
                           out.stride[index],                                   \
                           dout.stride[index],                                  \
+                          0U,                                                  \
+                          0U,                                                  \
                           0U,                                                  \
                           0U};                                                 \
   std::shared_ptr<t1> din_storage =                                            \

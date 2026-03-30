@@ -90,6 +90,8 @@ inline cmplx polar_unit(const real1 theta) {
 #define J_B vecCapIntArgs[7U]
 #define J_C vecCapIntArgs[8U]
 #define K   vecCapIntArgs[9U]
+#define M   vecCapIntArgs[10]
+#define N   vecCapIntArgs[11]
 #define l_X get_group_id(0)
 #define l_Y get_group_id(1)
 #define l_Z get_group_id(2)
@@ -593,49 +595,254 @@ void kernel mul_mixed(global const cmplx* a, global const real1* b, global cmplx
     out[i_X * I_C + O_C] = b[i_X * I_B + O_B] * a[i_X * I_A + O_A];
 }
 
-void kernel matmul_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_real(
+    global const real1* a,
+    global const real1* b,
+    global real1* out,
+    constant tcapint* vecCapIntArgs)
 {
+    const tcapint tile_row = get_local_id(0);
+    const tcapint tile_col = get_local_id(1);
+    const tcapint global_row = get_group_id(0) * TILE_SIZE + tile_row;
+    const tcapint global_col = get_group_id(1) * TILE_SIZE + tile_col;
+
+    local real1 tile_a[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b[TILE_SIZE][TILE_SIZE];
+
     real1 sum = ZERO_R1;
-    for (tcapint k = 0; k < K; ++k) {
-        const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
-        const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
-        sum += a[a_idx] * b[b_idx];
+
+    const tcapint num_tiles = (K + TILE_SIZE - 1U) / TILE_SIZE;
+
+    for (tcapint t = 0U; t < num_tiles; ++t) {
+        const tcapint a_col = t * TILE_SIZE + tile_col;
+        tile_a[tile_row][tile_col] =
+            (global_row < M && a_col < K)
+            ? a[O_A + global_row * I_A + a_col * J_A]
+            : ZERO_R1;
+
+        const tcapint b_row = t * TILE_SIZE + tile_row;
+        tile_b[tile_row][tile_col] =
+            (b_row < K && global_col < N)
+            ? b[O_B + b_row * I_B + global_col * J_B]
+            : ZERO_R1;
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        for (tcapint k = 0U; k < TILE_SIZE; ++k) {
+            sum = fma(tile_a[tile_row][k], tile_b[k][tile_col], sum);
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
     }
-    const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
-    out[o_idx] = sum;
+
+    if (global_row < M && global_col < N) {
+        out[O_C + global_row * I_C + global_col * J_C] = sum;
+    }
 }
-void kernel matmul_complex(global const cmplx* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+#define TILE_SIZE 16
+
+void kernel matmul_complex(
+    global const real1* a,
+    global const real1* b,
+    global real1* out,
+    constant tcapint* vecCapIntArgs)
 {
-    cmplx sum = (cmplx)(ZERO_R1);
-    for (tcapint k = 0; k < K; ++k) {
-        const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
-        const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
-        sum += zmul(a[a_idx], b[b_idx]);
+    const tcapint tile_row = get_local_id(0);
+    const tcapint tile_col = get_local_id(1);
+    const tcapint global_row = get_group_id(0) * TILE_SIZE + tile_row;
+    const tcapint global_col = get_group_id(1) * TILE_SIZE + tile_col;
+
+    // Local tiles store interleaved real/imag pairs
+    // tile_a[row][col] = {real, imag} at that position
+    local real1 tile_a_re[TILE_SIZE][TILE_SIZE];
+    local real1 tile_a_im[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b_re[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b_im[TILE_SIZE][TILE_SIZE];
+
+    real1 sum_re = ZERO_R1;
+    real1 sum_im = ZERO_R1;
+
+    const tcapint num_tiles = (K + TILE_SIZE - 1U) / TILE_SIZE;
+
+    for (tcapint t = 0U; t < num_tiles; ++t) {
+        // Load tile of A — complex elements are stride-2 in storage
+        const tcapint a_col = t * TILE_SIZE + tile_col;
+        if (global_row < M && a_col < K) {
+            const tcapint a_idx = (O_A + global_row * I_A + a_col * J_A) << 1U;
+            tile_a_re[tile_row][tile_col] = a[a_idx];
+            tile_a_im[tile_row][tile_col] = a[a_idx + 1U];
+        } else {
+            tile_a_re[tile_row][tile_col] = ZERO_R1;
+            tile_a_im[tile_row][tile_col] = ZERO_R1;
+        }
+
+        // Load tile of B
+        const tcapint b_row = t * TILE_SIZE + tile_row;
+        if (b_row < K && global_col < N) {
+            const tcapint b_idx = (O_B + b_row * I_B + global_col * J_B) << 1U;
+            tile_b_re[tile_row][tile_col] = b[b_idx];
+            tile_b_im[tile_row][tile_col] = b[b_idx + 1U];
+        } else {
+            tile_b_re[tile_row][tile_col] = ZERO_R1;
+            tile_b_im[tile_row][tile_col] = ZERO_R1;
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+        for (tcapint k = 0U; k < TILE_SIZE; ++k) {
+            const real1 ar = tile_a_re[tile_row][k];
+            const real1 ai = tile_a_im[tile_row][k];
+            const real1 br = tile_b_re[k][tile_col];
+            const real1 bi = tile_b_im[k][tile_col];
+            sum_re = fma(ar, br, fma(-ai, bi, sum_re));  // ac - bd
+            sum_im = fma(ar, bi, fma( ai, br, sum_im));  // ad + bc
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
     }
-    const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
-    out[o_idx] = sum;
+
+    if (global_row < M && global_col < N) {
+        const tcapint o_idx = (O_C + global_row * I_C + global_col * J_C) << 1U;
+        out[o_idx]      = sum_re;
+        out[o_idx + 1U] = sum_im;
+    }
 }
-void kernel matmul_mixed_c_left(global const cmplx* a, global const real1* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_mixed_c_left(
+    global const real1* a,
+    global const real1* b,
+    global real1* out,
+    constant tcapint* vecCapIntArgs)
 {
-    cmplx sum = (cmplx)(ZERO_R1);
-    for (tcapint k = 0; k < K; ++k) {
-        const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
-        const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
-        sum += b[b_idx] * a[a_idx];
+    const tcapint tile_row = get_local_id(0);
+    const tcapint tile_col = get_local_id(1);
+    const tcapint global_row = get_group_id(0) * TILE_SIZE + tile_row;
+    const tcapint global_col = get_group_id(1) * TILE_SIZE + tile_col;
+
+    // Local tiles store interleaved real/imag pairs
+    // tile_a[row][col] = {real, imag} at that position
+    local real1 tile_a_re[TILE_SIZE][TILE_SIZE];
+    local real1 tile_a_im[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b_re[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b_im[TILE_SIZE][TILE_SIZE];
+
+    real1 sum_re = ZERO_R1;
+    real1 sum_im = ZERO_R1;
+
+    const tcapint num_tiles = (K + TILE_SIZE - 1U) / TILE_SIZE;
+
+    for (tcapint t = 0U; t < num_tiles; ++t) {
+        // Load tile of A — complex elements are stride-2 in storage
+        const tcapint a_col = t * TILE_SIZE + tile_col;
+        if (global_row < M && a_col < K) {
+            const tcapint a_idx = (O_A + global_row * I_A + a_col * J_A) << 1U;
+            tile_a_re[tile_row][tile_col] = a[a_idx];
+            tile_a_im[tile_row][tile_col] = a[a_idx + 1U];
+        } else {
+            tile_a_re[tile_row][tile_col] = ZERO_R1;
+            tile_a_im[tile_row][tile_col] = ZERO_R1;
+        }
+
+        // Load tile of B
+        const tcapint b_row = t * TILE_SIZE + tile_row;
+        if (b_row < K && global_col < N) {
+            const tcapint b_idx = (O_B + b_row * I_B + global_col * J_B) << 1U;
+            tile_b_re[tile_row][tile_col] = b[b_idx];
+            tile_b_im[tile_row][tile_col] = b[b_idx + 1U];
+        } else {
+            tile_b_re[tile_row][tile_col] = ZERO_R1;
+            tile_b_im[tile_row][tile_col] = ZERO_R1;
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+        for (tcapint k = 0U; k < TILE_SIZE; ++k) {
+            const real1 ar = tile_a_re[tile_row][k];
+            const real1 ai = tile_a_im[tile_row][k];
+            const real1 br = tile_b_re[k][tile_col];
+            const real1 bi = tile_b_im[k][tile_col];
+            // bi = 0, so:
+            sum_re = fma(ar, br, sum_re);   // ac
+            sum_im = fma(ai, br, sum_im);   // bc
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
     }
-    const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
-    out[o_idx] = sum;
+
+    if (global_row < M && global_col < N) {
+        const tcapint o_idx = (O_C + global_row * I_C + global_col * J_C) << 1U;
+        out[o_idx]      = sum_re;
+        out[o_idx + 1U] = sum_im;
+    }
 }
-void kernel matmul_mixed_c_right(global const real1* a, global const cmplx* b, global cmplx* out, constant tcapint* vecCapIntArgs)
+void kernel matmul_mixed_c_right(
+    global const real1* a,
+    global const real1* b,
+    global real1* out,
+    constant tcapint* vecCapIntArgs)
 {
-    cmplx sum = (cmplx)(ZERO_R1);
-    for (tcapint k = 0; k < K; ++k) {
-        const tcapint a_idx = (O_A + i_X * I_A + k * J_A);
-        const tcapint b_idx = (O_B + k * I_B + i_Y * J_B);
-        sum += a[a_idx] * b[b_idx];
+    const tcapint tile_row = get_local_id(0);
+    const tcapint tile_col = get_local_id(1);
+    const tcapint global_row = get_group_id(0) * TILE_SIZE + tile_row;
+    const tcapint global_col = get_group_id(1) * TILE_SIZE + tile_col;
+
+    // Local tiles store interleaved real/imag pairs
+    // tile_a[row][col] = {real, imag} at that position
+    local real1 tile_a_re[TILE_SIZE][TILE_SIZE];
+    local real1 tile_a_im[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b_re[TILE_SIZE][TILE_SIZE];
+    local real1 tile_b_im[TILE_SIZE][TILE_SIZE];
+
+    real1 sum_re = ZERO_R1;
+    real1 sum_im = ZERO_R1;
+
+    const tcapint num_tiles = (K + TILE_SIZE - 1U) / TILE_SIZE;
+
+    for (tcapint t = 0U; t < num_tiles; ++t) {
+        // Load tile of A — complex elements are stride-2 in storage
+        const tcapint a_col = t * TILE_SIZE + tile_col;
+        if (global_row < M && a_col < K) {
+            const tcapint a_idx = (O_A + global_row * I_A + a_col * J_A) << 1U;
+            tile_a_re[tile_row][tile_col] = a[a_idx];
+            tile_a_im[tile_row][tile_col] = a[a_idx + 1U];
+        } else {
+            tile_a_re[tile_row][tile_col] = ZERO_R1;
+            tile_a_im[tile_row][tile_col] = ZERO_R1;
+        }
+
+        // Load tile of B
+        const tcapint b_row = t * TILE_SIZE + tile_row;
+        if (b_row < K && global_col < N) {
+            const tcapint b_idx = (O_B + b_row * I_B + global_col * J_B) << 1U;
+            tile_b_re[tile_row][tile_col] = b[b_idx];
+            tile_b_im[tile_row][tile_col] = b[b_idx + 1U];
+        } else {
+            tile_b_re[tile_row][tile_col] = ZERO_R1;
+            tile_b_im[tile_row][tile_col] = ZERO_R1;
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+        for (tcapint k = 0U; k < TILE_SIZE; ++k) {
+            const real1 ar = tile_a_re[tile_row][k];
+            const real1 ai = tile_a_im[tile_row][k];
+            const real1 br = tile_b_re[k][tile_col];
+            const real1 bi = tile_b_im[k][tile_col];
+            // ai = 0, so:
+            sum_re = fma(ar, br, sum_re);   // ac
+            sum_im = fma(ar, bi, sum_im);   // ad
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
     }
-    const tcapint o_idx = O_C + i_X * I_C + i_Y * J_C;
-    out[o_idx] = sum;
+
+    if (global_row < M && global_col < N) {
+        const tcapint o_idx = (O_C + global_row * I_C + global_col * J_C) << 1U;
+        out[o_idx]      = sum_re;
+        out[o_idx + 1U] = sum_im;
+    }
 }
 
 void kernel sub_real(global const real1* a, global const real1* b, global real1* out, constant tcapint* vecCapIntArgs)

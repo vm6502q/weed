@@ -43,8 +43,9 @@
   }
 
 #define GPU_ARGS()                                                             \
-  const tcapint args[10U] {                                                    \
-    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U \
+  const tcapint args[12U] {                                                    \
+    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U,    \
+        0U, 0U, 0U                                                             \
   }
 
 namespace Weed {

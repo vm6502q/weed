@@ -33,7 +33,9 @@
   }
 
 #define GPU_ARGS()                                                             \
-  const tcapint args[10U] { a.shape[0], 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U }
+  const tcapint args[12U] {                                                    \
+    a.shape[0], 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U                     \
+  }
 
 namespace Weed {
 template <typename T1, typename T2>

@@ -446,9 +446,12 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries,
     std::cout << "Device #" << i << ", ";
     cl::Program program = MakeProgram(buildFromSource, clBinName, devCntxt);
 
-    cl_int buildError = program.build(
-        {all_devices[i]},
-        "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math");
+    const std::string buildOptions =
+        "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math"
+        " -DTILE_SIZE=" +
+        std::to_string(WEED_TILE_SIZE);
+
+    cl_int buildError = program.build({all_devices[i]}, buildOptions.c_str());
     if (buildError != CL_SUCCESS) {
       std::cout << "Error building for device #" << i << ": " << buildError
                 << ", "
