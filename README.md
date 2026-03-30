@@ -23,6 +23,10 @@ Rethinking AI/ML library design this way, `Weed` has realized a rather unique an
 
 Much like `Qrack`, `Weed` is designed to make the correct thing the default—and the expensive thing explicit.
 
+## Useful environment variables
+
+If a transformer model you load or train runs into an OpenCL "out-of-resources" error (code `-5`), try setting environment variable `WEED_TELESCOPE_TRANSFORMERS` to any truthy value (like `1`) so that Weed will "telescope" transformer encoder layers, by migrating each parameter in each layer to CPU (off of GPU memory) once its immediate usefulness is done.
+
 ## Building the API reference
 
 ```sh
