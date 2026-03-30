@@ -1,6 +1,6 @@
 option(WEED_BLAS "Use OpenBLAS for matmul" ON)
 if(WEED_BLAS)
-    if(MSVC)
+    if(MSVC OR (APPLE AND (NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")))
         find_package(OpenBLAS CONFIG)
         if(OpenBLAS_FOUND)
             target_include_directories(weed PUBLIC ${OpenBLAS_INCLUDE_DIRS})
