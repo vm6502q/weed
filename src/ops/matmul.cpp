@@ -15,7 +15,7 @@
 #include "tensors/flat_tensors.hpp"
 
 #if WEED_BLAS
-#ifdef __APPLE__
+#if defined(__APPLE__)  && !defined(__x86_64__) && !defined(__i386__)
 #include <Accelerate/Accelerate.h>
 #else
 #include <cblas.h>
