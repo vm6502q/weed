@@ -16,7 +16,7 @@
 
 #if WEED_BLAS
 #if defined(__APPLE__)  && !defined(__x86_64__) && !defined(__i386__)
-#define ACCELERATE_NEW_LAPACK
+#define MAC_BLAS 1
 #include <Accelerate/Accelerate.h>
 #define blasint int
 #else
@@ -163,6 +163,7 @@ static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
         ZERO_R1_F,                            // beta (overwrite C)
         o_store->data.get(), (blasint)d.O_s1  // C, ldc
     );
+
     return;
   }
   // Fall through to hand-rolled for non-contiguous cases
@@ -182,18 +183,31 @@ static inline void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
     auto *b_store = static_cast<CpuComplexStorage *>(b.storage.get());
     auto *o_store = static_cast<CpuComplexStorage *>(out.storage.get());
 
+#if MAC_BLAS
+    const complex alpha(ONE_R1_F, ZERO_R1_F); // complex 1+0i
+    const complex beta(ZERO_R1_F, ZERO_R1_F); // complex 0+0i
+#else
     const real1_f alpha[2] = {ONE_R1_F, ZERO_R1_F}; // complex 1+0i
     const real1_f beta[2] = {ZERO_R1_F, ZERO_R1_F}; // complex 0+0i
+#endif
 
 #if WEED_FPPOW == 5
     cblas_cgemm(
 #else
     cblas_zgemm(
 #endif
+#if MAC_BLAS
+        CblasColMajor, CblasNoTrans, CblasNoTrans, (blasint)d.M, (blasint)d.N,
+        (blasint)d.K, &alpha, a_store->data.get(), (blasint)d.A_s1,
+        b_store->data.get(), (blasint)d.B_s1, &beta, o_store->data.get(),
+        (blasint)d.O_s1);
+#else
         CblasColMajor, CblasNoTrans, CblasNoTrans, (blasint)d.M, (blasint)d.N,
         (blasint)d.K, alpha, a_store->data.get(), (blasint)d.A_s1,
         b_store->data.get(), (blasint)d.B_s1, beta, o_store->data.get(),
         (blasint)d.O_s1);
+#endif
+
     return;
   }
 #endif
