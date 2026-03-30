@@ -214,14 +214,14 @@ WEED_CONST real1 FP_NORM_EPSILON =
 WEED_CONST real1_f FP_NORM_EPSILON_F = (real1_f)FP_NORM_EPSILON;
 const double FIDELITY_MIN = log((double)FP_NORM_EPSILON);
 
-#if ENABLE_ENV_VARS
-const size_t _weed_max_ocl_mb =
+#if WEED_ENABLE_ENV_VARS
+const size_t _weed_max_ocl_b =
     getenv("WEED_MAX_OCL_MB")
-        ? (size_t)std::stoi(std::string(getenv("WEED_MAX_OCL_MB")))
+        ? (((size_t)std::stoi(std::string(getenv("WEED_MAX_OCL_MB")))) << 20U)
         : (size_t)(-1);
 const bool _weed_telescope_transformers = getenv("WEED_TELESCOPE_TRANSFORMERS");
 #else
-const size_t _weed_max_ocl_mb = (size_t)(-1);
+const size_t _weed_max_ocl_b = (size_t)(-1);
 const bool _weed_telescope_transformers = true;
 #endif
 } // namespace Weed
