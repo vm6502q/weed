@@ -52,7 +52,7 @@ struct PoolItem {
   }
 
   BufferPtr MakeBuffer(const cl::Context &context, size_t size) {
-    cl_int error;
+    cl_int error = CL_SUCCESS;
     BufferPtr toRet = std::unique_ptr<cl::Buffer>(new cl::Buffer(
         context, CL_MEM_READ_ONLY, size, (void *)nullptr, &error));
     if (error != CL_SUCCESS) {
