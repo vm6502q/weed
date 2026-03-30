@@ -15,14 +15,10 @@
 #include "tensors/flat_tensors.hpp"
 
 #if WEED_BLAS
-#if defined(__APPLE__)
-#if defined(__x86_64__) || defined(__i386__)
-#include <openblas/cblas.h>
-#else
+#if defined(__APPLE__)  && !defined(__x86_64__) && !defined(__i386__)
 #define MAC_BLAS 1
 #include <Accelerate/Accelerate.h>
 #define blasint int
-#endif
 #else
 #include <cblas.h>
 #endif
