@@ -152,10 +152,9 @@ endif (MSVC)
 
 if (MSVC)
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
- 
-        set(WEED_COMPILE_FLAGS_PART /O2 ${CPP_STD_OPT} /Wall)
+        set(WEED_COMPILE_FLAGS_PART /O2 ${CPP_STD_OPT})
     else (CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(WEED_COMPILE_FLAGS_PART ${CPP_STD_OPT} /Wall)
+        set(WEED_COMPILE_FLAGS_PART ${CPP_STD_OPT})
     endif (CMAKE_BUILD_TYPE STREQUAL "Release")
 else (MSVC)
     set(WEED_COMPILE_FLAGS_PART -O3 ${CPP_STD_OPT})
