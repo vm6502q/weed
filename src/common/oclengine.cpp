@@ -154,7 +154,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_COPY_COMPLEX, "copy_complex"),
     OCLKernelHandle(OCL_API_TRIU_FILL_REAL, "triu_fill_real"),
     OCLKernelHandle(OCL_API_TRIU_FILL_COMPLEX, "triu_fill_complex"),
-    OCLKernelHandle(OCL_API_SOFTMAX, "softmax"),
+    OCLKernelHandle(OCL_API_SOFTMAX, "softmax_forward"),
     OCLKernelHandle(OCL_API_SOFTMAX_BACKWARD_REAL, "softmax_backward_real"),
     OCLKernelHandle(OCL_API_SOFTMAX_BACKWARD_COMPLEX, "softmax_backward_complex"),
     OCLKernelHandle(OCL_API_SOFTMAX_BACKWARD_MIXED, "softmax_backward_mixed"),

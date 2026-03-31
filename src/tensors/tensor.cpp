@@ -417,12 +417,14 @@ void Tensor::make_softmax_node(TensorPtr x, TensorPtr out, symint axis) {
   out->make_gradient();
   out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out,
                                                                       axis]() {
-    const DeviceTag dtag = get_dtag_by_presidence({x, x->grad, out->grad});
+    const DeviceTag dtag = get_dtag_by_presidence({x, out, x->grad, out->grad});
 
     TensorPtr x_grad = x->grad->cast(dtag);
+    TensorPtr out_cast = out->cast(dtag);
     TensorPtr out_grad = out->grad->cast(dtag);
 
-    Weed::softmax_grad(axis, *(x_grad.get()), *(out.get()), *(out_grad.get()));
+    Weed::softmax_grad(axis, *(x_grad.get()), *(out_cast.get()),
+                       *(out_grad.get()));
 
     x->grad = x_grad;
   });
@@ -443,18 +445,19 @@ TensorPtr Tensor::logsoftmax(const TensorPtr x, symint axis) {
 
 void Tensor::make_logsoftmax_node(TensorPtr x, TensorPtr out, symint axis) {
   out->make_gradient();
-  out->grad_node =
-      std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out, axis]() {
-        const DeviceTag dtag = get_dtag_by_presidence({x, x->grad, out->grad});
+  out->grad_node = std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out,
+                                                                      axis]() {
+    const DeviceTag dtag = get_dtag_by_presidence({x, out, x->grad, out->grad});
 
-        TensorPtr x_grad = x->grad->cast(dtag);
-        TensorPtr out_grad = out->grad->cast(dtag);
+    TensorPtr x_grad = x->grad->cast(dtag);
+    TensorPtr out_cast = out->cast(dtag);
+    TensorPtr out_grad = out->grad->cast(dtag);
 
-        Weed::logsoftmax_grad(axis, *(x_grad.get()), *(out.get()),
-                              *(out_grad.get()));
+    Weed::logsoftmax_grad(axis, *(x_grad.get()), *(out_cast.get()),
+                          *(out_grad.get()));
 
-        x->grad = x_grad;
-      });
+    x->grad = x_grad;
+  });
 }
 
 TensorPtr Tensor::slice(TensorPtr a, const int64_t &row) {

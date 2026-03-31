@@ -139,9 +139,8 @@
 
 #if ENABLE_GPU
 #define DISPATCH_GPU_SOFTMAX_FWD(type, api_call)                               \
-  const tcapint outer_str = (a.get_broadcast_size() / a.shape[index])          \
-                                ? a.stride[index] * a.shape[index]             \
-                                : 1U;                                          \
+  const tcapint outer_str =                                                    \
+      (a.shape.size() < 2U) ? 1U : a.stride[(tcapint)index == 0U ? 1U : 0U];   \
   const tcapint args[12U]{a.offset,                                            \
                           a.stride[(tcapint)index],                            \
                           a.shape[(tcapint)index],                             \
@@ -163,8 +162,9 @@
                                 {a_storage->buffer, o_storage->buffer})
 
 #define DISPATCH_GPU_SOFTMAX_BWD(t1, t2, api_call)                             \
-  const tcapint outer_str =                                                    \
-      din.stride[(tcapint)index] * din.shape[(tcapint)index];                  \
+  const tcapint outer_str = (din.shape.size() < 2U)                            \
+                                ? 1U                                           \
+                                : din.stride[(tcapint)index == 0U ? 1U : 0U];  \
   const tcapint args[12U]{din.offset,                                          \
                           din.stride[(tcapint)index],                          \
                           din.shape[(tcapint)index],                           \

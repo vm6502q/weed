@@ -1107,6 +1107,223 @@ TEST_CASE("test_mixed_matmul") {
   REQUIRE_CMPLX(GET_COMPLEX((*(*(z.get()))[1])[1]), R(15));
 }
 
+TEST_CASE("test_softmax_forward_sums_to_one") {
+  // softmax output must be a probability distribution (sum == 1)
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  real1_f sum = (real1_f)(*ys)[0] + (real1_f)(*ys)[1] + (real1_f)(*ys)[2];
+  REQUIRE_FLOAT(sum, 1.0f);
+}
+
+TEST_CASE("test_softmax_forward_order_preserving") {
+  // larger input => larger output probability
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(3), R(2)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  REQUIRE((real1_f)(*ys)[1] > (real1_f)(*ys)[2]);
+  REQUIRE((real1_f)(*ys)[2] > (real1_f)(*ys)[0]);
+}
+
+TEST_CASE("test_softmax_forward_numerical_stability") {
+  // large inputs must not produce inf/nan
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1000), R(1001), R(1002)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  real1_f sum = (real1_f)(*ys)[0] + (real1_f)(*ys)[1] + (real1_f)(*ys)[2];
+  REQUIRE(std::isfinite(sum));
+  REQUIRE_FLOAT(sum, 1.0f);
+}
+
+TEST_CASE("test_softmax_forward_uniform_input") {
+  // equal inputs => equal outputs
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(2), R(2), R(2)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  REQUIRE_FLOAT((real1_f)(*ys)[0], 1.0f / 3.0f);
+  REQUIRE_FLOAT((real1_f)(*ys)[1], 1.0f / 3.0f);
+  REQUIRE_FLOAT((real1_f)(*ys)[2], 1.0f / 3.0f);
+}
+
+TEST_CASE("test_softmax_forward_known_values") {
+  // softmax([0, 1]) = [e^0/(e^0+e^1), e^1/(e^0+e^1)]
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(0), R(1)},
+                               std::vector<tcapint>{2}, false, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  const real1_f denom = 1.0f + std::exp(1.0f);
+  REQUIRE_FLOAT((real1_f)(*ys)[0], 1.0f / denom);
+  REQUIRE_FLOAT((real1_f)(*ys)[1], std::exp(1.0f) / denom);
+}
+
+TEST_CASE("test_softmax_backward_gradient_sum_zero") {
+  // sum of softmax input gradients == 0 (Jacobian row sums to zero)
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+  TensorPtr loss = Tensor::sum(y);
+  Tensor::backward(loss);
+
+  RealStorage *xg = static_cast<RealStorage *>(x->grad->storage.get());
+  real1_f gsum = (real1_f)(*xg)[0] + (real1_f)(*xg)[1] + (real1_f)(*xg)[2];
+  REQUIRE_FLOAT(gsum, 0.0f);
+}
+
+TEST_CASE("test_softmax_backward_gradient_values") {
+  // for loss = sum(softmax(x)), gradient = softmax(x) * (1 - softmax(x))
+  // but summed: dx_i = s_i - s_i * sum(s) = s_i - s_i = 0 already covered
+  // use loss = softmax(x)[1] to get a non-trivial gradient
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(0), R(0)}, std::vector<tcapint>{2}, true, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 0);
+  // pick element [1] as scalar loss via slice
+  TensorPtr loss = Tensor::sum(Tensor::slice(y, 0, 1, 1));
+  Tensor::backward(loss);
+
+  // softmax([0,0]) = [0.5, 0.5]
+  // d/dx_0 of s_1 = -s_0 * s_1 = -0.25
+  // d/dx_1 of s_1 =  s_1*(1-s_1) = 0.25
+  RealStorage *xg = static_cast<RealStorage *>(x->grad->storage.get());
+  REQUIRE_FLOAT((real1_f)(*xg)[0], -0.25f);
+  REQUIRE_FLOAT((real1_f)(*xg)[1], 0.25f);
+}
+
+TEST_CASE("test_softmax_axis1") {
+  // 2x3 matrix, softmax along axis 1 (each row sums to 1)
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6)},
+      std::vector<tcapint>{2, 3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::softmax(x, 1);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  // col-major layout: element [r, c] is at index r + c*nrows
+  // row 0: elements at indices 0, 2, 4
+  real1_f row0_sum = (real1_f)(*ys)[0] + (real1_f)(*ys)[2] + (real1_f)(*ys)[4];
+  // row 1: elements at indices 1, 3, 5
+  real1_f row1_sum = (real1_f)(*ys)[1] + (real1_f)(*ys)[3] + (real1_f)(*ys)[5];
+  REQUIRE_FLOAT(row0_sum, 1.0f);
+  REQUIRE_FLOAT(row1_sum, 1.0f);
+}
+
+TEST_CASE("test_logsoftmax_forward_known_values") {
+  // logsoftmax([0,1]) = log(softmax([0,1]))
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(0), R(1)},
+                               std::vector<tcapint>{2}, false, TEST_DTAG);
+  TensorPtr y = Tensor::logsoftmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  const real1_f denom = 1.0f + std::exp(1.0f);
+  REQUIRE_FLOAT((real1_f)(*ys)[0], std::log(1.0f / denom));
+  REQUIRE_FLOAT((real1_f)(*ys)[1], std::log(std::exp(1.0f) / denom));
+}
+
+TEST_CASE("test_logsoftmax_forward_all_nonpositive") {
+  // log-probabilities must all be <= 0
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::logsoftmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  REQUIRE((real1_f)(*ys)[0] <= 0.0f);
+  REQUIRE((real1_f)(*ys)[1] <= 0.0f);
+  REQUIRE((real1_f)(*ys)[2] <= 0.0f);
+}
+
+TEST_CASE("test_logsoftmax_forward_matches_log_softmax") {
+  // logsoftmax(x) must equal log(softmax(x)) element-wise
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y_ls = Tensor::logsoftmax(x, 0);
+  TensorPtr y_s = Tensor::softmax(x, 0);
+  TensorPtr y_log_s = Tensor::log(y_s);
+
+  RealStorage *ls = static_cast<RealStorage *>(y_ls->storage.get());
+  RealStorage *log_s = static_cast<RealStorage *>(y_log_s->storage.get());
+  REQUIRE_FLOAT((real1_f)(*ls)[0], (real1_f)(*log_s)[0]);
+  REQUIRE_FLOAT((real1_f)(*ls)[1], (real1_f)(*log_s)[1]);
+  REQUIRE_FLOAT((real1_f)(*ls)[2], (real1_f)(*log_s)[2]);
+}
+
+TEST_CASE("test_logsoftmax_forward_numerical_stability") {
+  // large inputs must not produce inf/nan
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1000), R(1001), R(1002)},
+                               std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::logsoftmax(x, 0);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  REQUIRE(std::isfinite((real1_f)(*ys)[0]));
+  REQUIRE(std::isfinite((real1_f)(*ys)[1]));
+  REQUIRE(std::isfinite((real1_f)(*ys)[2]));
+}
+
+TEST_CASE("test_logsoftmax_backward_gradient_sum") {
+  // for loss = sum(logsoftmax(x)), dx_i = 1 - n*softmax(x)_i
+  // so sum(dx) = n - n = 0
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(3)},
+                               std::vector<tcapint>{3}, true, TEST_DTAG);
+  TensorPtr y = Tensor::logsoftmax(x, 0);
+  TensorPtr loss = Tensor::sum(y);
+  Tensor::backward(loss);
+
+  RealStorage *xg = static_cast<RealStorage *>(x->grad->storage.get());
+  real1_f gsum = (real1_f)(*xg)[0] + (real1_f)(*xg)[1] + (real1_f)(*xg)[2];
+  REQUIRE_FLOAT(gsum, 0.0f);
+}
+
+TEST_CASE("test_logsoftmax_backward_gradient_values") {
+  // loss = logsoftmax([0,0])[0]
+  // d/dx_0 of lsm_0 = 1 - s_0 =  0.5
+  // d/dx_1 of lsm_0 =   - s_1 = -0.5
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(0), R(0)}, std::vector<tcapint>{2}, true, TEST_DTAG);
+  TensorPtr y = Tensor::logsoftmax(x, 0);
+  TensorPtr loss = Tensor::sum(Tensor::slice(y, 0, 0, 1));
+  Tensor::backward(loss);
+
+  RealStorage *xg = static_cast<RealStorage *>(x->grad->storage.get());
+  REQUIRE_FLOAT((real1_f)(*xg)[0], 0.5f);
+  REQUIRE_FLOAT((real1_f)(*xg)[1], -0.5f);
+}
+
+TEST_CASE("test_logsoftmax_axis1") {
+  // 2x3 matrix, logsoftmax along axis 1; each row's exp-sum must == 1
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6)},
+      std::vector<tcapint>{2, 3}, false, TEST_DTAG);
+  TensorPtr y = Tensor::logsoftmax(x, 1);
+
+  RealStorage *ys = static_cast<RealStorage *>(y->storage.get());
+  // col-major: row 0 at indices 0, 2, 4; row 1 at indices 1, 3, 5
+  real1_f row0_expsum = std::exp((real1_f)(*ys)[0]) +
+                        std::exp((real1_f)(*ys)[2]) +
+                        std::exp((real1_f)(*ys)[4]);
+  real1_f row1_expsum = std::exp((real1_f)(*ys)[1]) +
+                        std::exp((real1_f)(*ys)[3]) +
+                        std::exp((real1_f)(*ys)[5]);
+  REQUIRE_FLOAT(row0_expsum, 1.0f);
+  REQUIRE_FLOAT(row1_expsum, 1.0f);
+}
+
 TEST_CASE("test_matmul_gradient_sum_loss") {
   using namespace Weed;
 
