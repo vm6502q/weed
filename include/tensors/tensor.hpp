@@ -82,6 +82,16 @@ struct Tensor : public BaseTensor {
     requires_grad = cp.requires_grad;
   }
 
+  static TensorPtr clone(const TensorPtr &a) {
+    TensorPtr z = zeros(
+        a->shape, false,
+        a->storage->is_sparse() &&
+            ((a->storage->get_sparse_size() << 1U) < a->storage->size),
+        a->storage->dtype, a->storage->device, a->storage->get_device_id());
+
+    return add(z, a);
+  }
+
   void make_gradient(const bool &force_sparse = false);
 
   /**

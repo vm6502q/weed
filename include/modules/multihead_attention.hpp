@@ -38,6 +38,12 @@ struct MultiHeadAttention : public Module {
   tcapint cache_len = 0U;   // current fill position
   tcapint max_seq_len = 0U; // set on first use
 
+  // TurboQuant KV cache quantization
+  int kv_quant_bits = 0; // 0 = disabled, 4 = ~4 bits/channel
+  std::vector<real1>
+      k_rotation; // random orthogonal matrix [head_dim × head_dim]
+  std::vector<real1> v_rotation; // separate rotation for V
+
   std::vector<ParameterPtr> param_vector;
 
   MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
@@ -45,7 +51,7 @@ struct MultiHeadAttention : public Module {
                      tcapint num_kv_heads_ = 0, tcapint head_dim_ = 0U,
                      DeviceTag dtag = DEFAULT_DEVICE, RoPEPtr r = nullptr,
                      real1_f mask_val_ = ZERO_R1, const int64_t did = -1,
-                     const bool _use_kv_cache = true)
+                     const bool _use_kv_cache = true, int kv_quant_bits_ = 4)
       : Module(MULTIHEAD_ATTENTION_T), d_model(d_model_), num_heads(num_heads_),
         num_kv_heads(num_kv_heads_ ? num_kv_heads_ : num_heads),
         head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
@@ -58,7 +64,7 @@ struct MultiHeadAttention : public Module {
                                      DType::REAL, dtag, did)),
         W_o(std::make_shared<Linear>(d_model_, d_model_, true, true,
                                      DType::REAL, dtag, did)),
-        rope(r), use_kv_cache(_use_kv_cache) {
+        rope(r), use_kv_cache(_use_kv_cache), kv_quant_bits(kv_quant_bits_) {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
     }
@@ -110,6 +116,8 @@ struct MultiHeadAttention : public Module {
     v_cache = nullptr;
     cache_len = 0U;
     max_seq_len = 0U;
+    k_rotation.clear();
+    v_rotation.clear();
   }
 
   void migrate_cpu() override {
