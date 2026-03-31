@@ -15,7 +15,7 @@
 #include "tensors/flat_tensors.hpp"
 
 #if WEED_BLAS
-#if defined(__APPLE__)  && !defined(__x86_64__) && !defined(__i386__)
+#if defined(__APPLE__) && !defined(__x86_64__) && !defined(__i386__)
 #define MAC_BLAS 1
 #include <Accelerate/Accelerate.h>
 #define blasint int
@@ -138,11 +138,7 @@ static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   // So lda = d.A_s1, ldb = d.B_s1, ldc = d.O_s1.
   // This works as long as offsets are zero and strides are contiguous.
 
-  const bool a_contiguous = (d.A_o == 0U) && (d.A_s0 == 1U);
-  const bool b_contiguous = (d.B_o == 0U) && (d.B_s0 == 1U);
-  const bool o_contiguous = (d.O_o == 0U) && (d.O_s0 == 1U);
-
-  if (a_contiguous && b_contiguous && o_contiguous) {
+  if ((d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U)) {
     // Get raw pointers to storage
     auto *a_store = static_cast<CpuRealStorage *>(a.storage.get());
     auto *b_store = static_cast<CpuRealStorage *>(b.storage.get());
@@ -154,14 +150,14 @@ static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
     cblas_dgemm(
 #endif
         CblasColMajor, CblasNoTrans, CblasNoTrans,
-        (blasint)d.M,                         // rows of A and C
-        (blasint)d.N,                         // cols of B and C
-        (blasint)d.K,                         // cols of A, rows of B
-        ONE_R1_F,                             // alpha
-        a_store->data.get(), (blasint)d.A_s1, // A, lda
-        b_store->data.get(), (blasint)d.B_s1, // B, ldb
-        ZERO_R1_F,                            // beta (overwrite C)
-        o_store->data.get(), (blasint)d.O_s1  // C, ldc
+        (blasint)d.M,                                 // rows of A and C
+        (blasint)d.N,                                 // cols of B and C
+        (blasint)d.K,                                 // cols of A, rows of B
+        ONE_R1_F,                                     // alpha
+        a_store->data.get() + d.A_o, (blasint)d.A_s1, // A, lda
+        b_store->data.get() + d.B_o, (blasint)d.B_s1, // B, ldb
+        ZERO_R1_F,                                    // beta (overwrite C)
+        o_store->data.get() + d.O_o, (blasint)d.O_s1  // C, ldc
     );
 
     return;
@@ -174,11 +170,7 @@ static inline void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
 #if WEED_BLAS && (WEED_FPPOW > 4) && (WEED_FPPOW < 7)
   MatrixDim d = get_dim(a, b, out);
 
-  const bool a_contiguous = (d.A_o == 0U) && (d.A_s0 == 1U);
-  const bool b_contiguous = (d.B_o == 0U) && (d.B_s0 == 1U);
-  const bool o_contiguous = (d.O_o == 0U) && (d.O_s0 == 1U);
-
-  if (a_contiguous && b_contiguous && o_contiguous) {
+  if ((d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U)) {
     auto *a_store = static_cast<CpuComplexStorage *>(a.storage.get());
     auto *b_store = static_cast<CpuComplexStorage *>(b.storage.get());
     auto *o_store = static_cast<CpuComplexStorage *>(out.storage.get());
@@ -203,9 +195,9 @@ static inline void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
         (blasint)d.O_s1);
 #else
         CblasColMajor, CblasNoTrans, CblasNoTrans, (blasint)d.M, (blasint)d.N,
-        (blasint)d.K, alpha, a_store->data.get(), (blasint)d.A_s1,
-        b_store->data.get(), (blasint)d.B_s1, beta, o_store->data.get(),
-        (blasint)d.O_s1);
+        (blasint)d.K, alpha, a_store->data.get() + d.A_o, (blasint)d.A_s1,
+        b_store->data.get() + d.B_o, (blasint)d.B_s1, beta,
+        o_store->data.get() + d.O_o, (blasint)d.O_s1);
 #endif
 
     return;
