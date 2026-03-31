@@ -139,13 +139,16 @@
 
 #if ENABLE_GPU
 #define DISPATCH_GPU_SOFTMAX_FWD(type, api_call)                               \
+  const tcapint outer_str = (a.get_broadcast_size() / a.shape[index])          \
+                                ? a.stride[index] * a.shape[index]             \
+                                : 1U;                                          \
   const tcapint args[12U]{a.offset,                                            \
-                          (tcapint)index,                                      \
+                          a.stride[(tcapint)index],                            \
+                          a.shape[(tcapint)index],                             \
                           out.offset,                                          \
-                          out.stride[0U],                                      \
-                          a.shape[index],                                      \
-                          a.stride[index],                                     \
-                          out.stride[index],                                   \
+                          out.stride[(tcapint)index],                          \
+                          outer_str,                                           \
+                          0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
@@ -155,27 +158,21 @@
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
-  const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
-  BufferPtr shapeBuffer = a_storage->dev->MakeBuffer(                          \
-      flags, sizeof(tcapint) * a.shape.size(), (void *)&(a.shape[0U]));        \
-  BufferPtr strideBuffer = a_storage->dev->MakeBuffer(                         \
-      flags, sizeof(tcapint) * a.stride.size(), (void *)&(a.stride[0U]));      \
-  BufferPtr outStrideBuffer = a_storage->dev->MakeBuffer(                      \
-      flags, sizeof(tcapint) * out.stride.size(), (void *)&(out.stride[0U]));  \
   a_storage->dev->RequestKernel(api_call, args,                                \
                                 out.get_broadcast_size() / out.shape[index],   \
-                                {a_storage->buffer, o_storage->buffer,         \
-                                 shapeBuffer, strideBuffer, outStrideBuffer})
+                                {a_storage->buffer, o_storage->buffer})
 
 #define DISPATCH_GPU_SOFTMAX_BWD(t1, t2, api_call)                             \
+  const tcapint outer_str =                                                    \
+      din.stride[(tcapint)index] * din.shape[(tcapint)index];                  \
   const tcapint args[12U]{din.offset,                                          \
-                          (tcapint)index,                                      \
+                          din.stride[(tcapint)index],                          \
+                          din.shape[(tcapint)index],                           \
                           out.offset,                                          \
+                          out.stride[(tcapint)index],                          \
                           dout.offset,                                         \
-                          din.shape[index],                                    \
-                          din.stride[index],                                   \
-                          out.stride[index],                                   \
-                          dout.stride[index],                                  \
+                          dout.stride[(tcapint)index],                         \
+                          outer_str,                                           \
                           0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
@@ -186,15 +183,9 @@
       std::dynamic_pointer_cast<GpuRealStorage>(out.storage);                  \
   std::shared_ptr<t2> dout_storage =                                           \
       std::dynamic_pointer_cast<t2>(dout.storage);                             \
-  const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
-  BufferPtr shapeBuffer = din_storage->dev->MakeBuffer(                        \
-      flags, sizeof(tcapint) * din.shape.size(), (void *)&(din.shape[0U]));    \
-  BufferPtr strideBuffer = din_storage->dev->MakeBuffer(                       \
-      flags, sizeof(tcapint) * din.stride.size(), (void *)&(din.stride[0U]));  \
   din_storage->dev->RequestKernel(                                             \
       api_call, args, din.get_broadcast_size() / din.shape[index],             \
-      {din_storage->buffer, out_storage->buffer, dout_storage->buffer,         \
-       shapeBuffer, strideBuffer})
+      {din_storage->buffer, out_storage->buffer, dout_storage->buffer})
 #endif
 
 #define DEVICE_SWITCH_SOFTMAX_FWD(cpu, gpu)                                    \
