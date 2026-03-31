@@ -5,6 +5,10 @@
 // Weed is for minimalist AI/ML inference and backprogation in the style of
 // Qrack.
 //
+// KV cache quantization based on TurboQuant (Zandieh et al., arXiv:2504.19874),
+// Apache 2.0 open-source implementation by TheTom
+// (github.com/TheTom/turboquant_plus), and (Anthropic) Claude.
+//
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or
 // https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
@@ -15,6 +19,24 @@
 #include "modules/rope.hpp"
 
 namespace Weed {
+struct QuantizedKVCache {
+    // Packed integer storage: each symint holds (64 / kv_quant_bits) bucket indices
+    std::vector<symint> packed;   // packed bucket indices
+    std::vector<real1> scales;    // per-coordinate scale (std dev)
+    tcapint outer = 0U;           // number of rows stored so far
+    tcapint d = 0U;               // head_dim
+    tcapint max_outer = 0U;       // pre-allocated capacity
+    int bits = 0;                 // bits per value
+
+    const int values_per_word() const {
+        return (int)(sizeof(symint) * 8) / bits;  // 16 for 4-bit
+    }
+
+    void allocate(const tcapint max_outer_, const tcapint d_, const int bits_);
+    void write_row(const tcapint row, const real1 *vals);
+    void read_row(const tcapint row, real1 *vals) const;
+};
+
 /**
  * Attention mechanism used by transformer models
  */
@@ -32,21 +54,27 @@ struct MultiHeadAttention : public Module {
 
   RoPEPtr rope;
 
+  // KV cache — either float (kv_quant_bits==0) or quantized
   bool use_kv_cache;
-  TensorPtr k_cache;        // [1, num_heads, seq_so_far, head_dim]
-  TensorPtr v_cache;        // [1, num_heads, seq_so_far, head_dim]
-  tcapint cache_len = 0U;   // current fill position
-  tcapint max_seq_len = 0U; // set on first use
+  TensorPtr k_cache;
+  TensorPtr v_cache;
+  tcapint cache_len = 0U;
+  tcapint max_seq_len = 0U;
 
-  // TurboQuant KV cache quantization
-  int kv_quant_bits = 0; // 0 = disabled, 4 = ~4 bits/channel
-  std::vector<real1>
-      k_rotation; // random orthogonal matrix [head_dim × head_dim]
-  std::vector<real1> v_rotation; // separate rotation for V
+  // TurboQuant
+  int kv_quant_bits = 0;
+  std::vector<real1> k_rotation;
+  std::vector<real1> v_rotation;
+  QuantizedKVCache k_qcache;
+  QuantizedKVCache v_qcache;
 
   std::vector<ParameterPtr> param_vector;
 
-  MultiHeadAttention() : Module(MULTIHEAD_ATTENTION_T) {}
+  MultiHeadAttention()
+    : Module(MULTIHEAD_ATTENTION_T),
+      d_model(0), num_heads(0), num_kv_heads(0), head_dim(0),
+      mask_val(ZERO_R1), use_kv_cache(false),
+      cache_len(0U), max_seq_len(0U), kv_quant_bits(0) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
                      tcapint num_kv_heads_ = 0, tcapint head_dim_ = 0U,
                      DeviceTag dtag = DEFAULT_DEVICE, RoPEPtr r = nullptr,
@@ -118,6 +146,8 @@ struct MultiHeadAttention : public Module {
     max_seq_len = 0U;
     k_rotation.clear();
     v_rotation.clear();
+    k_qcache = QuantizedKVCache{};
+    v_qcache = QuantizedKVCache{};
   }
 
   void migrate_cpu() override {

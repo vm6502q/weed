@@ -236,6 +236,9 @@ ModulePtr Module::load(std::istream &is) {
     Serializer::read_symint(is, m->num_kv_heads);
     Serializer::read_symint(is, m->head_dim);
     Serializer::read_bool(is, m->use_kv_cache);
+    symint kv_quant_bits_tmp = 0;
+    Serializer::read_symint(is, kv_quant_bits_tmp);
+    m->kv_quant_bits = (int)kv_quant_bits_tmp;
     m->W_q = std::dynamic_pointer_cast<Linear>(Linear::load(is));
     m->W_k = std::dynamic_pointer_cast<Linear>(Linear::load(is));
     m->W_v = std::dynamic_pointer_cast<Linear>(Linear::load(is));

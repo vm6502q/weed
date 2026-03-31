@@ -28,6 +28,59 @@ namespace Weed {
 // TurboQuant helpers
 // ---------------------------------------------------------------------------
 
+void QuantizedKVCache::allocate(const tcapint max_outer_, const tcapint d_, const int bits_) {
+    d = d_;
+    bits = bits_;
+    max_outer = max_outer_;
+    outer = 0U;
+    scales.resize(d_, 1.0f);
+    const int vpw = values_per_word();
+    // Each row of d values needs ceil(d / vpw) words
+    const tcapint words_per_row = (d + vpw - 1) / vpw;
+    packed.assign(max_outer_ * words_per_row, 0);
+}
+
+void QuantizedKVCache::write_row(const tcapint row, const real1 *vals) {
+    const int vpw = values_per_word();
+    const int levels = 1 << bits;
+    const tcapint words_per_row = ((tcapint)d + vpw - 1) / vpw;
+    const tcapint base = row * words_per_row;
+    for (tcapint j = 0U; j < (tcapint)d; ++j) {
+        // Quantize to bucket index
+        const real1 lo = -3.0f * scales[j];
+        const real1 hi =  3.0f * scales[j];
+        const real1 step = (hi - lo) / (real1)levels;
+        int bucket = 0;
+        if (step > 1e-8f) {
+            const real1 clamped = std::max(lo, std::min(hi - step, vals[j]));
+            bucket = (int)((clamped - lo) / step);
+            bucket = std::max(0, std::min(levels - 1, bucket));
+        }
+        // Pack into word
+        const tcapint word_idx = base + j / vpw;
+        const int bit_offset = (j % vpw) * bits;
+        packed[word_idx] |= ((symint)bucket << bit_offset);
+    }
+}
+
+void QuantizedKVCache::read_row(const tcapint row, real1 *vals) const {
+    const int vpw = values_per_word();
+    const int levels = 1 << bits;
+    const int mask = levels - 1;
+    const tcapint words_per_row = ((tcapint)d + vpw - 1) / vpw;
+    const tcapint base = row * words_per_row;
+    for (tcapint j = 0U; j < (tcapint)d; ++j) {
+        const tcapint word_idx = base + j / vpw;
+        const int bit_offset = (j % vpw) * bits;
+        const int bucket = (int)((packed[word_idx] >> bit_offset) & mask);
+        // Dequantize: midpoint of bucket
+        const real1 lo = -3.0f * scales[j];
+        const real1 hi =  3.0f * scales[j];
+        const real1 step = (hi - lo) / (real1)levels;
+        vals[j] = lo + ((real1)bucket + 0.5f) * step;
+    }
+}
+
 // Build a random orthogonal rotation matrix of size d×d using
 // Householder reflections (a simple QR via random Gaussian matrix).
 // This is the "random rotation" step of TurboQuant.
@@ -89,80 +142,6 @@ static TensorPtr apply_rotation(const TensorPtr &x, const std::vector<real1> &R,
   return Tensor::reshape(y_flat, out_shape);
 }
 
-// Optimal scalar quantizer for Gaussian inputs at a given bit-width.
-// Uses Lloyd-Max quantization levels precomputed for N(0,1).
-// For bits=4 (16 levels) this gives near-optimal MSE.
-// scale is the per-coordinate standard deviation.
-static real1 quantize_scalar(const real1 val, const real1 scale,
-                             const int bits) {
-  if (bits <= 0) {
-    return val; // no quantization
-  }
-  const int levels = 1 << bits;
-  // Clamp to [-3σ, 3σ] (captures 99.7% of Gaussian mass)
-  const real1 lo = -3.0f * scale;
-  const real1 hi = 3.0f * scale;
-  const real1 step = (hi - lo) / (real1)levels;
-  if (step < 1e-8f) {
-    return val;
-  }
-  const real1 clamped = std::max(lo, std::min(hi - step, val));
-  const int bucket = (int)((clamped - lo) / step);
-  // Return midpoint of bucket (Lloyd-Max midpoint for uniform approximation)
-  return lo + ((real1)bucket + 0.5f) * step;
-}
-
-// Quantize all elements of a tensor in-place using per-coordinate
-// Gaussian scalar quantization (TurboQuant step 2).
-// x has shape [..., d]; we quantize along the last dimension.
-static TensorPtr turboquant_quantize(const TensorPtr &x, const int bits,
-                                     const tcapint d) {
-  if (bits <= 0 || bits >= 16) {
-    return x; // passthrough
-  }
-
-  const tcapint outer = x->get_broadcast_size() / d;
-
-  // Compute per-coordinate std across the outer dimension
-  // (treat each of the d coordinates independently)
-  std::vector<real1> coord_std(d, 1.0f);
-  {
-    // Flatten to [outer, d]
-    RealTensorPtr flat = std::dynamic_pointer_cast<RealTensor>(
-        Tensor::reshape(x, std::vector<symint>{(symint)outer, (symint)d}));
-
-    // Compute std per column (coordinate)
-    for (tcapint j = 0U; j < d; ++j) {
-      real1 mean = ZERO_R1;
-      for (tcapint i = 0U; i < outer; ++i) {
-        mean += (*flat)[(tcapint)(i * d + j)];
-      }
-      mean /= (real1)outer;
-      real1 var = ZERO_R1;
-      for (tcapint i = 0U; i < outer; ++i) {
-        const real1 diff = (*flat)[(tcapint)(i * d + j)] - mean;
-        var += diff * diff;
-      }
-      coord_std[j] = std::sqrt(var / (real1)outer + 1e-8f);
-    }
-  }
-
-  // Quantize — clone x and quantize in-place
-  TensorPtr out = Tensor::clone(x);
-  RealTensorPtr flat_out = std::dynamic_pointer_cast<RealTensor>(
-      Tensor::reshape(out, std::vector<symint>{(symint)outer, (symint)d}));
-
-  for (tcapint i = 0U; i < outer; ++i) {
-    for (tcapint j = 0U; j < d; ++j) {
-      const tcapint idx = i * d + j;
-      const real1 v = (*flat_out)[idx];
-      flat_out->write(idx, quantize_scalar(v, coord_std[j], bits));
-    }
-  }
-
-  return out;
-}
-
 // ---------------------------------------------------------------------------
 // Forward
 // ---------------------------------------------------------------------------
@@ -193,49 +172,114 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   if (use_kv_cache) {
     const tcapint T_new = (tcapint)T;
 
-    if (!k_cache) {
-      // First use — infer max_seq_len from rope if available,
-      // otherwise use a reasonable default
-      max_seq_len = rope ? rope->max_seq_len : 2048U;
-      k_cache = Tensor::zeros(
-          {(tcapint)B, (tcapint)num_kv_heads, max_seq_len, (tcapint)head_dim});
-      v_cache = Tensor::zeros(
-          {(tcapint)B, (tcapint)num_kv_heads, max_seq_len, (tcapint)head_dim});
-      cache_len = 0U;
+    if (!k_cache && !k_qcache.d) {
+        max_seq_len = rope ? rope->max_seq_len : 2048U;
+        cache_len = 0U;
 
-      // Initialize TurboQuant rotation matrices (one per K and V)
-      // Rotation is over head_dim dimension
-      if (kv_quant_bits > 0) {
-        k_rotation = make_random_rotation((tcapint)head_dim);
-        v_rotation = make_random_rotation((tcapint)head_dim);
-      }
+        if (kv_quant_bits > 0) {
+            k_rotation = make_random_rotation((tcapint)head_dim);
+            v_rotation = make_random_rotation((tcapint)head_dim);
+
+            // Pre-allocate packed caches
+            // outer = B * num_kv_heads * max_seq_len rows of head_dim values
+            const tcapint max_rows =
+                (tcapint)B * (tcapint)num_kv_heads * max_seq_len;
+            k_qcache.allocate(max_rows, (tcapint)head_dim, kv_quant_bits);
+            v_qcache.allocate(max_rows, (tcapint)head_dim, kv_quant_bits);
+        } else {
+            k_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
+                                      max_seq_len, (tcapint)head_dim});
+            v_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
+                                      max_seq_len, (tcapint)head_dim});
+        }
     }
 
-    // TurboQuant: rotate then quantize K and V before caching
+    // Rotate K and V before storing
     TensorPtr K_store = K;
     TensorPtr V_store = V;
     if (kv_quant_bits > 0) {
-      K_store = apply_rotation(K, k_rotation, (tcapint)head_dim);
-      V_store = apply_rotation(V, v_rotation, (tcapint)head_dim);
-      K_store = turboquant_quantize(K_store, kv_quant_bits, (tcapint)head_dim);
-      V_store = turboquant_quantize(V_store, kv_quant_bits, (tcapint)head_dim);
+        K_store = apply_rotation(K, k_rotation, (tcapint)head_dim);
+        V_store = apply_rotation(V, v_rotation, (tcapint)head_dim);
     }
 
-    // Write new K, V into the next T_new positions
-    TensorPtr k_slot = Tensor::slice(k_cache, 2, cache_len, T_new);
-    TensorPtr v_slot = Tensor::slice(v_cache, 2, cache_len, T_new);
-    Weed::add_in_place(*k_slot, *K_store);
-    Weed::add_in_place(*v_slot, *V_store);
-    cache_len += T_new;
-
-    // Use only the filled portion for attention
-    K = Tensor::slice(k_cache, 2, 0, cache_len);
-    V = Tensor::slice(v_cache, 2, 0, cache_len);
-
-    // TurboQuant: rotate Q to match the rotated K space
-    // (Q·K^T must be computed in the same rotated basis)
     if (kv_quant_bits > 0) {
-      Q = apply_rotation(Q, k_rotation, (tcapint)head_dim);
+        // Write new tokens into packed cache
+        // K_store shape: [B, num_kv_heads, T_new, head_dim]
+        // Iterate over B * num_kv_heads * T_new rows
+        TensorPtr K_flat_ptr = Tensor::reshape(K_store,
+                std::vector<symint>{(symint)((tcapint)B *
+                    (tcapint)num_kv_heads * T_new), (symint)head_dim});
+        TensorPtr V_flat_ptr = Tensor::reshape(V_store,
+                std::vector<symint>{(symint)((tcapint)B *
+                    (tcapint)num_kv_heads * T_new), (symint)head_dim});
+        RealTensor *K_flat = static_cast<RealTensor *>(K_flat_ptr.get());
+        RealTensor *V_flat = static_cast<RealTensor *>(V_flat_ptr.get());
+
+        // Compute scales from this batch if first write
+        if (cache_len == 0U) {
+            const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
+            for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+                real1 var = ZERO_R1;
+                for (tcapint i = 0U; i < n_rows; ++i) {
+                    const real1 v = (*K_flat)[i * (tcapint)head_dim + j];
+                    var += v * v;
+                }
+                k_qcache.scales[j] = std::sqrt(var / (real1)n_rows + 1e-8f);
+                var = ZERO_R1;
+                for (tcapint i = 0U; i < n_rows; ++i) {
+                    const real1 v = (*V_flat)[i * (tcapint)head_dim + j];
+                    var += v * v;
+                }
+                v_qcache.scales[j] = std::sqrt(var / (real1)n_rows + 1e-8f);
+            }
+        }
+
+        // Write rows into packed cache
+        const tcapint base_row =
+            cache_len * (tcapint)B * (tcapint)num_kv_heads;
+        const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
+        std::vector<real1> row_buf((tcapint)head_dim);
+        for (tcapint i = 0U; i < n_rows; ++i) {
+            for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+                row_buf[j] = (*K_flat)[i * (tcapint)head_dim + j];
+            }
+            k_qcache.write_row(base_row + i, row_buf.data());
+            for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+                row_buf[j] = (*V_flat)[i * (tcapint)head_dim + j];
+            }
+            v_qcache.write_row(base_row + i, row_buf.data());
+        }
+        cache_len += T_new;
+
+        // Reconstruct K and V tensors from packed cache for attention
+        const tcapint total_rows =
+            cache_len * (tcapint)B * (tcapint)num_kv_heads;
+        std::vector<real1> k_data(total_rows * (tcapint)head_dim);
+        std::vector<real1> v_data(total_rows * (tcapint)head_dim);
+        for (tcapint i = 0U; i < total_rows; ++i) {
+            k_qcache.read_row(i, &k_data[i * (tcapint)head_dim]);
+            v_qcache.read_row(i, &v_data[i * (tcapint)head_dim]);
+        }
+
+        K = std::make_shared<Tensor>(k_data,
+            std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
+                                  cache_len, (tcapint)head_dim});
+        V = std::make_shared<Tensor>(v_data,
+            std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
+                                  cache_len, (tcapint)head_dim});
+
+        // Rotate Q to match rotated K basis
+        Q = apply_rotation(Q, k_rotation, (tcapint)head_dim);
+
+    } else {
+        // Unquantized path — unchanged
+        TensorPtr k_slot = Tensor::slice(k_cache, 2, cache_len, T_new);
+        TensorPtr v_slot = Tensor::slice(v_cache, 2, cache_len, T_new);
+        Weed::add_in_place(*k_slot, *K_store);
+        Weed::add_in_place(*v_slot, *V_store);
+        cache_len += T_new;
+        K = Tensor::slice(k_cache, 2, 0, cache_len);
+        V = Tensor::slice(v_cache, 2, 0, cache_len);
     }
   }
 
@@ -315,6 +359,7 @@ void MultiHeadAttention::save(std::ostream &os) const {
   Serializer::write_symint(os, num_kv_heads);
   Serializer::write_symint(os, head_dim);
   Serializer::write_bool(os, use_kv_cache);
+  Serializer::write_symint(os, (symint)kv_quant_bits);
   W_q->save(os);
   W_k->save(os);
   W_v->save(os);
