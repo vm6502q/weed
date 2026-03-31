@@ -153,7 +153,11 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_COPY_REAL, "copy_real"),
     OCLKernelHandle(OCL_API_COPY_COMPLEX, "copy_complex"),
     OCLKernelHandle(OCL_API_TRIU_FILL_REAL, "triu_fill_real"),
-    OCLKernelHandle(OCL_API_TRIU_FILL_COMPLEX, "triu_fill_complex")
+    OCLKernelHandle(OCL_API_TRIU_FILL_COMPLEX, "triu_fill_complex"),
+    OCLKernelHandle(OCL_API_LOGSOFTMAX, "logsoftmax"),
+    OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_REAL, "logsoftmax_backward_real"),
+    OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_COMPLEX, "logsoftmax_backward_complex"),
+    OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_MIXED, "logsoftmax_backward_mixed")
 };
 // clang-format on
 

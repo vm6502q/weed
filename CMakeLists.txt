@@ -48,6 +48,7 @@ add_library (weed STATIC
     src/ops/div.cpp
     src/ops/embedding.cpp
     src/ops/in_place.cpp
+    src/ops/logsoftmax.cpp
     src/ops/matmul.cpp
     src/ops/reduce.cpp
     src/ops/real_extremum.cpp
@@ -284,6 +285,7 @@ install (FILES
     include/ops/div.hpp
     include/ops/embedding.hpp
     include/ops/in_place.hpp
+    include/ops/logsoftmax.hpp
     include/ops/matmul.hpp
     include/ops/pow.hpp
     include/ops/reduce.hpp

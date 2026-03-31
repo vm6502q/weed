@@ -16,6 +16,7 @@
 #include "ops/copy_broadcast.hpp"
 #include "ops/div.hpp"
 #include "ops/in_place.hpp"
+#include "ops/logsoftmax.hpp"
 #include "ops/matmul.hpp"
 #include "ops/pow.hpp"
 #include "ops/real_extremum.hpp"
@@ -431,11 +432,29 @@ TensorPtr Tensor::logsoftmax(const TensorPtr x, symint axis) {
   while (axis < 0) {
     axis += x->shape.size();
   }
+  const bool rg = x->requires_grad;
+  TensorPtr out = allocate_like(*x, x->storage->dtype, rg, IS_SPARSE(x));
+  Weed::logsoftmax((tcapint)axis, *x, *out);
+  if (rg) {
+    make_logsoftmax_node(x, out, axis);
+  }
+  return out;
+}
 
-  TensorPtr x_shifted = x - Tensor::max(x, axis);
-  TensorPtr logsum = Tensor::log(Tensor::sum(Tensor::exp(x_shifted), axis));
+void Tensor::make_logsoftmax_node(TensorPtr x, TensorPtr out, symint axis) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out, axis]() {
+        const DeviceTag dtag = get_dtag_by_presidence({x, x->grad, out->grad});
 
-  return x_shifted - logsum;
+        TensorPtr x_grad = x->grad->cast(dtag);
+        TensorPtr out_grad = out->grad->cast(dtag);
+
+        Weed::logsoftmax_grad(axis, *(x_grad.get()), *(out.get()),
+                              *(out_grad.get()));
+
+        x->grad = x_grad;
+      });
 }
 
 TensorPtr Tensor::slice(TensorPtr a, const int64_t &row) {

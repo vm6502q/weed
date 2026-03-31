@@ -1121,3 +1121,131 @@ kernel void softmax_backward_mixed(global cmplx *dx, global const real1 *out, gl
             (dy[dy_base + i * dy_stride] - dt);
     }
 }
+
+kernel void logsoftmax(global const real1 *x, global real1 *out, global const tcapint *vciArgs)
+{
+    const tcapint x_off      = vciArgs[0];
+    const tcapint x_stride   = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint outer_str  = vciArgs[5];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint x_base   = x_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+
+    // Pass 1: find max
+    real1 mx = x[x_base];
+    for (tcapint i = 1; i < axis_size; ++i) {
+        const real1 v = x[x_base + i * x_stride];
+        if (v > mx) mx = v;
+    }
+
+    // Pass 2: sum of exp(x - max), then log
+    real1 s = ZERO_R1;
+    for (tcapint i = 0; i < axis_size; ++i) {
+        s += exp(x[x_base + i * x_stride] - mx);
+    }
+    const real1 log_s = log(s);
+
+    // Pass 3: write (x - max) - log(sum)
+    for (tcapint i = 0; i < axis_size; ++i) {
+        out[out_base + i * out_stride] =
+            (x[x_base + i * x_stride] - mx) - log_s;
+    }
+}
+
+kernel void logsoftmax_backward_real(global real1 *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+{
+    const tcapint dx_off     = vciArgs[0];
+    const tcapint dx_stride  = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint dy_off     = vciArgs[5];
+    const tcapint dy_stride  = vciArgs[6];
+    const tcapint outer_str  = vciArgs[7];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint dx_base  = dx_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint dy_base  = dy_off  + outer * outer_str;
+
+    // Pass 1: sum(dy) along axis
+    real1 sum_dy = ZERO_R1;
+    for (tcapint i = 0; i < axis_size; ++i) {
+        sum_dy += dy[dy_base + i * dy_stride];
+    }
+
+    // Pass 2: dx += dy - exp(lsm) * sum_dy
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dx[dx_base + i * dx_stride] +=
+            dy[dy_base + i * dy_stride] -
+            exp(out[out_base + i * out_stride]) * sum_dy;
+    }
+}
+
+kernel void logsoftmax_backward_complex(global cmplx *dx, global const real1 *out, global const cmplx *dy, global const tcapint *vciArgs)
+{
+    const tcapint dx_off     = vciArgs[0];
+    const tcapint dx_stride  = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint dy_off     = vciArgs[5];
+    const tcapint dy_stride  = vciArgs[6];
+    const tcapint outer_str  = vciArgs[7];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint dx_base  = dx_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint dy_base  = dy_off  + outer * outer_str;
+
+    // Pass 1: sum(dy) along axis
+    cmplx sum_dy = (cmplx)(ZERO_R1);
+    for (tcapint i = 0; i < axis_size; ++i) {
+        sum_dy += dy[dy_base + i * dy_stride];
+    }
+
+    // Pass 2: dx += dy - exp(lsm) * sum_dy
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dx[dx_base + i * dx_stride] +=
+            dy[dy_base + i * dy_stride] -
+            exp(out[out_base + i * out_stride]) * sum_dy;
+    }
+}
+
+kernel void logsoftmax_backward_mixed(global cmplx *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+{
+    const tcapint dx_off     = vciArgs[0];
+    const tcapint dx_stride  = vciArgs[1];
+    const tcapint axis_size  = vciArgs[2];
+    const tcapint out_off    = vciArgs[3];
+    const tcapint out_stride = vciArgs[4];
+    const tcapint dy_off     = vciArgs[5];
+    const tcapint dy_stride  = vciArgs[6];
+    const tcapint outer_str  = vciArgs[7];
+
+    const tcapint outer = get_global_id(0);
+
+    const tcapint dx_base  = dx_off  + outer * outer_str;
+    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint dy_base  = dy_off  + outer * outer_str;
+
+    // Pass 1: sum(dy) along axis — real only for mixed
+    real1 sum_dy = ZERO_R1;
+    for (tcapint i = 0; i < axis_size; ++i) {
+        sum_dy += dy[dy_base + i * dy_stride];
+    }
+
+    // Pass 2: dx += dy - exp(lsm) * sum_dy
+    for (tcapint i = 0; i < axis_size; ++i) {
+        dx[dx_base + i * dx_stride].x +=
+            dy[dy_base + i * dy_stride] -
+            exp(out[out_base + i * out_stride]) * sum_dy;
+    }
+}
