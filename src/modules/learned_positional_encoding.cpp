@@ -49,7 +49,12 @@ void LearnedPositionalEncoding::migrate_gpu() {
 TensorPtr LearnedPositionalEncoding::forward(const TensorPtr x) {
   // x: (B, T, d_model)
   const auto &sh = x->shape;
-  const symint T = sh[1];
+  const tcapint T = sh[1];
+
+  if (T > max_len) {
+    throw std::invalid_argument(
+        "Input sequence length exceeds maximum positional encoding length!");
+  }
 
   // Slice to actual sequence length if needed
   return x + Tensor::slice(pos_encoding, 1, 0, T);
