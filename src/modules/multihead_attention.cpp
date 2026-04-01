@@ -180,6 +180,14 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
             k_rotation = make_random_rotation((tcapint)head_dim);
             v_rotation = make_random_rotation((tcapint)head_dim);
 
+            // Precompute transpose (column-major transpose: swap i,j indices)
+            v_rotation_trans.resize(head_dim * head_dim);
+            for (tcapint i = 0U; i < (tcapint)head_dim; ++i) {
+                for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+                    v_rotation_trans[i * head_dim + j] = v_rotation[j * head_dim + i];
+                }
+            }
+
             // Pre-allocate packed caches
             // outer = B * num_kv_heads * max_seq_len rows of head_dim values
             const tcapint max_rows =
@@ -340,7 +348,7 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
 
   // TurboQuant: rotate output back from V's rotated basis
   if (use_kv_cache && kv_quant_bits > 0) {
-    out = apply_rotation(out, v_rotation, (tcapint)head_dim);
+    out = apply_rotation(out, v_rotation_trans, (tcapint)head_dim);
   }
 
   // (B, T, num_heads * head_dim)

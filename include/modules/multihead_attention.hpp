@@ -67,6 +67,7 @@ struct MultiHeadAttention : public Module {
   std::vector<real1> v_rotation;
   QuantizedKVCache k_qcache;
   QuantizedKVCache v_qcache;
+  std::vector<real1> v_rotation_trans;  // transpose of v_rotation for inverse
 
   std::vector<ParameterPtr> param_vector;
 
