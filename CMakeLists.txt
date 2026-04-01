@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.10)
-project (Weed VERSION 0.6.3 DESCRIPTION "Minimalist AI/ML inference and backprogation in the style of Qrack" LANGUAGES CXX)
+project (Weed VERSION 0.7.0 DESCRIPTION "Minimalist AI/ML inference and backprogation in the style of Qrack" LANGUAGES CXX)
 
 # Installation commands
 include (GNUInstallDirs)
