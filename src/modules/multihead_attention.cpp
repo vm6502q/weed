@@ -28,57 +28,54 @@ namespace Weed {
 // TurboQuant helpers
 // ---------------------------------------------------------------------------
 
-void QuantizedKVCache::allocate(const tcapint max_outer_, const tcapint d_, const int bits_) {
-    d = d_;
-    bits = bits_;
-    max_outer = max_outer_;
-    outer = 0U;
-    scales.resize(d_, 1.0f);
-    const int vpw = values_per_word();
-    // Each row of d values needs ceil(d / vpw) words
-    const tcapint words_per_row = (d + vpw - 1) / vpw;
-    packed.assign(max_outer_ * words_per_row, 0);
+void QuantizedKVCache::allocate(const tcapint max_outer_, const tcapint d_,
+                                const int bits_) {
+  d = d_;
+  bits = bits_;
+  max_outer = max_outer_;
+  outer = 0U;
+  block_scale = ONE_R1;
+  const int vpw = values_per_word();
+  const tcapint words_per_row = (d + vpw - 1) / vpw;
+  packed.assign(max_outer_ * words_per_row, 0);
 }
 
 void QuantizedKVCache::write_row(const tcapint row, const real1 *vals) {
-    const int vpw = values_per_word();
-    const int levels = 1 << bits;
-    const tcapint words_per_row = ((tcapint)d + vpw - 1) / vpw;
-    const tcapint base = row * words_per_row;
-    for (tcapint j = 0U; j < (tcapint)d; ++j) {
-        // Quantize to bucket index
-        const real1 lo = -3.0f * scales[j];
-        const real1 hi =  3.0f * scales[j];
-        const real1 step = (hi - lo) / (real1)levels;
-        int bucket = 0;
-        if (step > 1e-8f) {
-            const real1 clamped = std::max(lo, std::min(hi - step, vals[j]));
-            bucket = (int)((clamped - lo) / step);
-            bucket = std::max(0, std::min(levels - 1, bucket));
-        }
-        // Pack into word
-        const tcapint word_idx = base + j / vpw;
-        const int bit_offset = (j % vpw) * bits;
-        packed[word_idx] |= ((symint)bucket << bit_offset);
+  const int vpw = values_per_word();
+  const int levels = 1 << bits;
+  const tcapint words_per_row = ((tcapint)d + vpw - 1) / vpw;
+  const tcapint base = row * words_per_row;
+  const real1 lo = -3.0f * block_scale;
+  const real1 hi = 3.0f * block_scale;
+  const real1 step = (hi - lo) / (real1)levels;
+  for (tcapint j = 0U; j < (tcapint)d; ++j) {
+    int bucket = 0;
+    if (step > 1e-8f) {
+      const real1 clamped = std::max(lo, std::min(hi - step, vals[j]));
+      bucket = (int)((clamped - lo) / step);
+      bucket = std::max(0, std::min(levels - 1, bucket));
     }
+    const tcapint word_idx = base + j / vpw;
+    const int bit_offset = (j % vpw) * bits;
+    packed[word_idx] |= ((symint)bucket << bit_offset);
+  }
 }
 
 void QuantizedKVCache::read_row(const tcapint row, real1 *vals) const {
-    const int vpw = values_per_word();
-    const int levels = 1 << bits;
-    const int mask = levels - 1;
-    const tcapint words_per_row = ((tcapint)d + vpw - 1) / vpw;
-    const tcapint base = row * words_per_row;
-    for (tcapint j = 0U; j < (tcapint)d; ++j) {
-        const tcapint word_idx = base + j / vpw;
-        const int bit_offset = (j % vpw) * bits;
-        const int bucket = (int)((packed[word_idx] >> bit_offset) & mask);
-        // Dequantize: midpoint of bucket
-        const real1 lo = -3.0f * scales[j];
-        const real1 hi =  3.0f * scales[j];
-        const real1 step = (hi - lo) / (real1)levels;
-        vals[j] = lo + ((real1)bucket + 0.5f) * step;
-    }
+  const int vpw = values_per_word();
+  const int levels = 1 << bits;
+  const int mask = levels - 1;
+  const tcapint words_per_row = ((tcapint)d + vpw - 1) / vpw;
+  const tcapint base = row * words_per_row;
+  const real1 lo = -3.0f * block_scale;
+  const real1 hi = 3.0f * block_scale;
+  const real1 step = (hi - lo) / (real1)levels;
+  for (tcapint j = 0U; j < (tcapint)d; ++j) {
+    const tcapint word_idx = base + j / vpw;
+    const int bit_offset = (j % vpw) * bits;
+    const int bucket = (int)((packed[word_idx] >> bit_offset) & mask);
+    vals[j] = lo + ((real1)bucket + 0.5f) * step;
+  }
 }
 
 // Build a random orthogonal rotation matrix of size d×d using
@@ -173,121 +170,120 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
     const tcapint T_new = (tcapint)T;
 
     if (!k_cache && !k_qcache.d) {
-        max_seq_len = rope ? rope->max_seq_len : 2048U;
-        cache_len = 0U;
+      max_seq_len = rope ? rope->max_seq_len : 2048U;
+      cache_len = 0U;
 
-        if (kv_quant_bits > 0) {
-            k_rotation = make_random_rotation((tcapint)head_dim);
-            v_rotation = make_random_rotation((tcapint)head_dim);
+      if (kv_quant_bits > 0) {
+        k_rotation = make_random_rotation((tcapint)head_dim);
+        v_rotation = make_random_rotation((tcapint)head_dim);
 
-            // Precompute transpose (column-major transpose: swap i,j indices)
-            v_rotation_trans.resize(head_dim * head_dim);
-            for (tcapint i = 0U; i < (tcapint)head_dim; ++i) {
-                for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-                    v_rotation_trans[i * head_dim + j] = v_rotation[j * head_dim + i];
-                }
-            }
-
-            // Pre-allocate packed caches
-            // outer = B * num_kv_heads * max_seq_len rows of head_dim values
-            const tcapint max_rows =
-                (tcapint)B * (tcapint)num_kv_heads * max_seq_len;
-            k_qcache.allocate(max_rows, (tcapint)head_dim, kv_quant_bits);
-            v_qcache.allocate(max_rows, (tcapint)head_dim, kv_quant_bits);
-        } else {
-            k_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
-                                      max_seq_len, (tcapint)head_dim});
-            v_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads,
-                                      max_seq_len, (tcapint)head_dim});
+        // Precompute transpose (column-major transpose: swap i,j indices)
+        v_rotation_trans.resize(head_dim * head_dim);
+        for (tcapint i = 0U; i < (tcapint)head_dim; ++i) {
+          for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+            v_rotation_trans[i * head_dim + j] = v_rotation[j * head_dim + i];
+          }
         }
+
+        // Pre-allocate packed caches
+        // outer = B * num_kv_heads * max_seq_len rows of head_dim values
+        const tcapint max_rows =
+            (tcapint)B * (tcapint)num_kv_heads * max_seq_len;
+        k_qcache.allocate(max_rows, (tcapint)head_dim, kv_quant_bits);
+        v_qcache.allocate(max_rows, (tcapint)head_dim, kv_quant_bits);
+      } else {
+        k_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads, max_seq_len,
+                                 (tcapint)head_dim});
+        v_cache = Tensor::zeros({(tcapint)B, (tcapint)num_kv_heads, max_seq_len,
+                                 (tcapint)head_dim});
+      }
     }
 
     // Rotate K and V before storing
     TensorPtr K_store = K;
     TensorPtr V_store = V;
     if (kv_quant_bits > 0) {
-        K_store = apply_rotation(K, k_rotation, (tcapint)head_dim);
-        V_store = apply_rotation(V, v_rotation, (tcapint)head_dim);
+      K_store = apply_rotation(K, k_rotation, (tcapint)head_dim);
+      V_store = apply_rotation(V, v_rotation, (tcapint)head_dim);
     }
 
     if (kv_quant_bits > 0) {
-        // Write new tokens into packed cache
-        // K_store shape: [B, num_kv_heads, T_new, head_dim]
-        // Iterate over B * num_kv_heads * T_new rows
-        TensorPtr K_flat_ptr = Tensor::reshape(K_store,
-                std::vector<symint>{(symint)((tcapint)B *
-                    (tcapint)num_kv_heads * T_new), (symint)head_dim});
-        TensorPtr V_flat_ptr = Tensor::reshape(V_store,
-                std::vector<symint>{(symint)((tcapint)B *
-                    (tcapint)num_kv_heads * T_new), (symint)head_dim});
-        RealTensor *K_flat = static_cast<RealTensor *>(K_flat_ptr.get());
-        RealTensor *V_flat = static_cast<RealTensor *>(V_flat_ptr.get());
+      // Write new tokens into packed cache
+      // K_store shape: [B, num_kv_heads, T_new, head_dim]
+      // Iterate over B * num_kv_heads * T_new rows
+      TensorPtr K_flat_ptr = Tensor::reshape(
+          K_store, std::vector<symint>{
+                       (symint)((tcapint)B * (tcapint)num_kv_heads * T_new),
+                       (symint)head_dim});
+      TensorPtr V_flat_ptr = Tensor::reshape(
+          V_store, std::vector<symint>{
+                       (symint)((tcapint)B * (tcapint)num_kv_heads * T_new),
+                       (symint)head_dim});
+      RealTensor *K_flat = static_cast<RealTensor *>(K_flat_ptr.get());
+      RealTensor *V_flat = static_cast<RealTensor *>(V_flat_ptr.get());
 
-        // Compute scales from this batch if first write
-        if (cache_len == 0U) {
-            const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
-            for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-                real1 var = ZERO_R1;
-                for (tcapint i = 0U; i < n_rows; ++i) {
-                    const real1 v = (*K_flat)[i * (tcapint)head_dim + j];
-                    var += v * v;
-                }
-                k_qcache.scales[j] = std::sqrt(var / (real1)n_rows + 1e-8f);
-                var = ZERO_R1;
-                for (tcapint i = 0U; i < n_rows; ++i) {
-                    const real1 v = (*V_flat)[i * (tcapint)head_dim + j];
-                    var += v * v;
-                }
-                v_qcache.scales[j] = std::sqrt(var / (real1)n_rows + 1e-8f);
-            }
-        }
-
-        // Write rows into packed cache
-        const tcapint base_row =
-            cache_len * (tcapint)B * (tcapint)num_kv_heads;
+      // Compute scales from this batch if first write
+      if (cache_len == 0U) {
         const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
-        std::vector<real1> row_buf((tcapint)head_dim);
+        const tcapint n_elems = n_rows * (tcapint)head_dim;
+        real1 k_sum = ZERO_R1, v_sum = ZERO_R1;
         for (tcapint i = 0U; i < n_rows; ++i) {
-            for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-                row_buf[j] = (*K_flat)[i * (tcapint)head_dim + j];
-            }
-            k_qcache.write_row(base_row + i, row_buf.data());
-            for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-                row_buf[j] = (*V_flat)[i * (tcapint)head_dim + j];
-            }
-            v_qcache.write_row(base_row + i, row_buf.data());
+          for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+            const tcapint idx = i * (tcapint)head_dim + j;
+            const real1 kv = (*K_flat)[idx];
+            const real1 vv = (*V_flat)[idx];
+            k_sum += kv * kv;
+            v_sum += vv * vv;
+          }
         }
-        cache_len += T_new;
+        k_qcache.block_scale = std::sqrt(k_sum / (real1)n_elems + 1e-8f);
+        v_qcache.block_scale = std::sqrt(v_sum / (real1)n_elems + 1e-8f);
+      }
 
-        // Reconstruct K and V tensors from packed cache for attention
-        const tcapint total_rows =
-            cache_len * (tcapint)B * (tcapint)num_kv_heads;
-        std::vector<real1> k_data(total_rows * (tcapint)head_dim);
-        std::vector<real1> v_data(total_rows * (tcapint)head_dim);
-        for (tcapint i = 0U; i < total_rows; ++i) {
-            k_qcache.read_row(i, &k_data[i * (tcapint)head_dim]);
-            v_qcache.read_row(i, &v_data[i * (tcapint)head_dim]);
+      // Write rows into packed cache
+      const tcapint base_row = cache_len * (tcapint)B * (tcapint)num_kv_heads;
+      const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
+      std::vector<real1> row_buf((tcapint)head_dim);
+      for (tcapint i = 0U; i < n_rows; ++i) {
+        for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+          row_buf[j] = (*K_flat)[i * (tcapint)head_dim + j];
         }
+        k_qcache.write_row(base_row + i, row_buf.data());
+        for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
+          row_buf[j] = (*V_flat)[i * (tcapint)head_dim + j];
+        }
+        v_qcache.write_row(base_row + i, row_buf.data());
+      }
+      cache_len += T_new;
 
-        K = std::make_shared<Tensor>(k_data,
-            std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
-                                  cache_len, (tcapint)head_dim});
-        V = std::make_shared<Tensor>(v_data,
-            std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
-                                  cache_len, (tcapint)head_dim});
+      // Reconstruct K and V tensors from packed cache for attention
+      const tcapint total_rows = cache_len * (tcapint)B * (tcapint)num_kv_heads;
+      std::vector<real1> k_data(total_rows * (tcapint)head_dim);
+      std::vector<real1> v_data(total_rows * (tcapint)head_dim);
+      for (tcapint i = 0U; i < total_rows; ++i) {
+        k_qcache.read_row(i, &k_data[i * (tcapint)head_dim]);
+        v_qcache.read_row(i, &v_data[i * (tcapint)head_dim]);
+      }
 
-        // Rotate Q to match rotated K basis
-        Q = apply_rotation(Q, k_rotation, (tcapint)head_dim);
+      K = std::make_shared<Tensor>(
+          k_data, std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
+                                       cache_len, (tcapint)head_dim});
+      V = std::make_shared<Tensor>(
+          v_data, std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
+                                       cache_len, (tcapint)head_dim});
+
+      // Rotate Q to match rotated K basis
+      Q = apply_rotation(Q, k_rotation, (tcapint)head_dim);
 
     } else {
-        // Unquantized path — unchanged
-        TensorPtr k_slot = Tensor::slice(k_cache, 2, cache_len, T_new);
-        TensorPtr v_slot = Tensor::slice(v_cache, 2, cache_len, T_new);
-        Weed::add_in_place(*k_slot, *K_store);
-        Weed::add_in_place(*v_slot, *V_store);
-        cache_len += T_new;
-        K = Tensor::slice(k_cache, 2, 0, cache_len);
-        V = Tensor::slice(v_cache, 2, 0, cache_len);
+      // Unquantized path — unchanged
+      TensorPtr k_slot = Tensor::slice(k_cache, 2, cache_len, T_new);
+      TensorPtr v_slot = Tensor::slice(v_cache, 2, cache_len, T_new);
+      Weed::add_in_place(*k_slot, *K_store);
+      Weed::add_in_place(*v_slot, *V_store);
+      cache_len += T_new;
+      K = Tensor::slice(k_cache, 2, 0, cache_len);
+      V = Tensor::slice(v_cache, 2, 0, cache_len);
     }
   }
 

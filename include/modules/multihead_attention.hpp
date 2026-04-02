@@ -20,21 +20,19 @@
 
 namespace Weed {
 struct QuantizedKVCache {
-    // Packed integer storage: each symint holds (64 / kv_quant_bits) bucket indices
-    std::vector<symint> packed;   // packed bucket indices
-    std::vector<real1> scales;    // per-coordinate scale (std dev)
-    tcapint outer = 0U;           // number of rows stored so far
-    tcapint d = 0U;               // head_dim
-    tcapint max_outer = 0U;       // pre-allocated capacity
-    int bits = 0;                 // bits per value
+  std::vector<symint> packed;
+  real1 block_scale =
+      ONE_R1; // single RMS scale — replaces per-coord scales vector
+  tcapint outer = 0U;
+  tcapint d = 0U;
+  tcapint max_outer = 0U;
+  int bits = 0;
 
-    const int values_per_word() const {
-        return (int)(sizeof(symint) * 8) / bits;  // 16 for 4-bit
-    }
+  const int values_per_word() const { return (int)(sizeof(symint) * 8) / bits; }
 
-    void allocate(const tcapint max_outer_, const tcapint d_, const int bits_);
-    void write_row(const tcapint row, const real1 *vals);
-    void read_row(const tcapint row, real1 *vals) const;
+  void allocate(const tcapint max_outer_, const tcapint d_, const int bits_);
+  void write_row(const tcapint row, const real1 *vals);
+  void read_row(const tcapint row, real1 *vals) const;
 };
 
 /**
@@ -67,15 +65,14 @@ struct MultiHeadAttention : public Module {
   std::vector<real1> v_rotation;
   QuantizedKVCache k_qcache;
   QuantizedKVCache v_qcache;
-  std::vector<real1> v_rotation_trans;  // transpose of v_rotation for inverse
+  std::vector<real1> v_rotation_trans; // transpose of v_rotation for inverse
 
   std::vector<ParameterPtr> param_vector;
 
   MultiHeadAttention()
-    : Module(MULTIHEAD_ATTENTION_T),
-      d_model(0), num_heads(0), num_kv_heads(0), head_dim(0),
-      mask_val(ZERO_R1), use_kv_cache(false),
-      cache_len(0U), max_seq_len(0U), kv_quant_bits(0) {}
+      : Module(MULTIHEAD_ATTENTION_T), d_model(0), num_heads(0),
+        num_kv_heads(0), head_dim(0), mask_val(ZERO_R1), use_kv_cache(false),
+        cache_len(0U), max_seq_len(0U), kv_quant_bits(0) {}
   MultiHeadAttention(tcapint d_model_, tcapint num_heads_,
                      tcapint num_kv_heads_ = 0, tcapint head_dim_ = 0U,
                      DeviceTag dtag = DEFAULT_DEVICE, RoPEPtr r = nullptr,
