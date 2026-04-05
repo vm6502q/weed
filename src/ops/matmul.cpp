@@ -138,7 +138,9 @@ static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   // So lda = d.A_s1, ldb = d.B_s1, ldc = d.O_s1.
   // This works as long as offsets are zero and strides are contiguous.
 
-  if ((d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U)) {
+  if ((d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U) && (d.A_s1 >= d.M) &&
+      (d.B_s1 >= d.K) && (d.O_s1 >= d.M) && (d.M > 0U) && (d.N > 0U) &&
+      (d.K > 0U)) {
     // Get raw pointers to storage
     auto *a_store = static_cast<CpuRealStorage *>(a.storage.get());
     auto *b_store = static_cast<CpuRealStorage *>(b.storage.get());
