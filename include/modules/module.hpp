@@ -117,6 +117,20 @@ struct Module {
   virtual void reset_cache() {}
 
   /**
+   * How many sequence positions are already held in the KV cache? (This is 0
+   * if the module has no KV cache, or if the cache is bypassed, as it is in
+   * training mode.)
+   */
+  virtual tcapint get_kv_cache_len() const { return 0U; }
+
+  /**
+   * Set the absolute sequence position of the first token of the next input.
+   * (When a KV cache is in use, forward() only receives the new tokens, so
+   * positional encodings need to know how many tokens came before.)
+   */
+  virtual void set_seq_offset(tcapint o) {}
+
+  /**
    * Serialize storage to ostream
    */
   virtual void save(std::ostream &) const;

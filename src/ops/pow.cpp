@@ -14,6 +14,10 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define CPU_INIT(type, strg)                                                   \
   const tcapint I_a = a.stride[0U];                                            \
   const tcapint I_o = out.stride[0U];                                          \
@@ -22,15 +26,8 @@
   size_t n = out.storage->size
 
 #define GPU(type, p, api_call)                                                 \
-  GPU_ARGS();                                                                  \
-  std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
-  std::shared_ptr<type> o_storage =                                            \
-      std::dynamic_pointer_cast<type>(out.storage);                            \
   const complex v = complex(p);                                                \
-  a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
-                                {a_storage->buffer, o_storage->buffer}, 0U,    \
-                                &v)
+  GPU_FLAT_UNARY_C(type, type, OCLAPI::api_call, &v)
 
 #define DEVICE_SWITCH(cpu, gpu, a, b, out)                                     \
   switch (out.storage->device) {                                               \
@@ -42,11 +39,6 @@
     cpu(a, b, out);                                                            \
   }
 
-#define GPU_ARGS()                                                             \
-  const tcapint args[12U] {                                                    \
-    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U,    \
-        0U, 0U, 0U                                                             \
-  }
 
 namespace Weed {
 static void cpu_real_pow(const Tensor &a, const real1 &p, Tensor &out) {

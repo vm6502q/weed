@@ -133,236 +133,133 @@ void kernel real_to_complex_buffer(global const real1* a, global cmplx* b)
     b[i_X] = (cmplx)(a[i_X], ZERO_R1);
 }
 
-void kernel reduce_real(global const real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+// Gather and scatter: the only kernels that follow arbitrary strides.
+// The element-wise kernels below only address "buffer[offset + i * step]", so
+// the host uses these to make a contiguous copy of (or to write back to) any
+// tensor that is a partial broadcast, or a transposed or strided view.
+// O_A: tensor offset; I_A: tensor rank; O_B, I_B: offset and step of the flat
+// (contiguous) side
+void kernel gather_real(global const real1* a, global real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint base = O_A;
-  const tcapint id = I_A;
-
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    tcapint tmp = i_X;
+    tcapint idx = O_A;
+    for (tcapint d = 0U; d < I_A; ++d) {
+        idx += (tmp % shape[d]) * stride[d];
+        tmp /= shape[d];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    base += i_d * stride[d];
-  }
-
-  real1 sum = ZERO_R1;
-  for (tcapint j = 0U; j < shape[id]; ++j) {
-    sum += a[base + j * stride[id]];
-  }
-  b[i_X * I_B + O_B] = sum;
+    out[i_X] = a[idx];
 }
-void kernel reduce_complex(global const cmplx* a, global cmplx* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel gather_complex(global const cmplx* a, global cmplx* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint base = O_A;
-  const tcapint id = I_A;
-
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    tcapint tmp = i_X;
+    tcapint idx = O_A;
+    for (tcapint d = 0U; d < I_A; ++d) {
+        idx += (tmp % shape[d]) * stride[d];
+        tmp /= shape[d];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    base += i_d * stride[d];
-  }
-
-  cmplx sum = (cmplx)(ZERO_R1);
-  for (tcapint j = 0U; j < shape[id]; ++j) {
-    sum += a[base + j * stride[id]];
-  }
-  b[i_X * I_B + O_B] = sum;
+    out[i_X] = a[idx];
 }
-void kernel reduce_grad_real(global real1* din, global const real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel scatter_real(global real1* a, global const real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint o = 0U;
-  const tcapint id = I_A;
-
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    tcapint tmp = i_X;
+    tcapint idx = O_A;
+    for (tcapint d = 0U; d < I_A; ++d) {
+        idx += (tmp % shape[d]) * stride[d];
+        tmp /= shape[d];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    o += i_d * stride[d];
-  }
-
-  din[i_X * I_B + O_B] += dout[o];
+    a[idx] = b[i_X * I_B + O_B];
 }
-void kernel reduce_grad_complex(global cmplx* din, global const cmplx* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel scatter_complex(global cmplx* a, global const cmplx* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint o = 0U;
-  const tcapint id = I_A;
-
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    tcapint tmp = i_X;
+    tcapint idx = O_A;
+    for (tcapint d = 0U; d < I_A; ++d) {
+        idx += (tmp % shape[d]) * stride[d];
+        tmp /= shape[d];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    o += i_d * stride[d];
-  }
-
-  din[i_X * I_B + O_B] += dout[o];
+    a[idx] = b[i_X * I_B + O_B];
 }
-void kernel reduce_grad_mixed(global real1* din, global const real1* dout, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+
+// Reductions over one index of a contiguous (column-major) tensor.
+// With "inner" the product of the extents before the reduced index, and "n"
+// the extent of the reduced index, element (i_in, j, i_out) of the input is at
+// i_in + inner * (j + n * i_out), and element (i_in, i_out) of the output is
+// at i_in + inner * i_out.
+// O_A: input offset; I_A: inner; O_B: output offset; I_B: n
+void kernel reduce_real(global const real1* a, global real1* b, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint o = 0U;
-  const tcapint id = I_A;
+    const tcapint inner = I_A;
+    const tcapint n = I_B;
+    const tcapint base = O_A + (i_X % inner) + (i_X / inner) * inner * n;
 
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    real1 sum = ZERO_R1;
+    for (tcapint j = 0U; j < n; ++j) {
+        sum += a[base + j * inner];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    o += i_d * stride[d];
-  }
-
-  din[(i_X * I_B + O_B) << 1U] += dout[o];
+    b[i_X + O_B] = sum;
 }
-void kernel axis_max(global const real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel reduce_complex(global const cmplx* a, global cmplx* b, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint base = O_A;
-  const tcapint id = I_A;
+    const tcapint inner = I_A;
+    const tcapint n = I_B;
+    const tcapint base = O_A + (i_X % inner) + (i_X / inner) * inner * n;
 
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    cmplx sum = (cmplx)(ZERO_R1, ZERO_R1);
+    for (tcapint j = 0U; j < n; ++j) {
+        sum += a[base + j * inner];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    base += i_d * stride[d];
-  }
-
-  real1 m = a[base];
-  for (tcapint j = 1U; j < shape[id]; ++j) {
-    const real1 v = a[base + j * stride[id]];
-    if (v > m) {
-      m = v;
-    }
-  }
-  b[i_X * I_B + O_B] = m;
+    b[i_X + O_B] = sum;
 }
-void kernel axis_min(global const real1* a, global real1* b, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_max(global const real1* a, global real1* b, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint base = O_A;
-  const tcapint id = I_A;
+    const tcapint inner = I_A;
+    const tcapint n = I_B;
+    const tcapint base = O_A + (i_X % inner) + (i_X / inner) * inner * n;
 
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    real1 m = a[base];
+    for (tcapint j = 1U; j < n; ++j) {
+        const real1 v = a[base + j * inner];
+        if (v > m) {
+            m = v;
+        }
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    base += i_d * stride[d];
-  }
-
-  real1 m = a[base];
-  for (tcapint j = 1U; j < shape[id]; ++j) {
-    const real1 v = a[base + j * stride[id]];
-    if (v < m) {
-      m = v;
-    }
-  }
-  b[i_X * I_B + O_B] = m;
+    b[i_X + O_B] = m;
 }
-void kernel axis_match_grad_real(global real1* din, global const real1* dout, global const real1* in, global const real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_min(global const real1* a, global real1* b, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint o = 0U;
-  const tcapint id = I_A;
+    const tcapint inner = I_A;
+    const tcapint n = I_B;
+    const tcapint base = O_A + (i_X % inner) + (i_X / inner) * inner * n;
 
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    real1 m = a[base];
+    for (tcapint j = 1U; j < n; ++j) {
+        const real1 v = a[base + j * inner];
+        if (v < m) {
+            m = v;
+        }
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    o += i_d * stride[d];
-  }
-
-  const size_t i = i_X * I_B + O_B;
-  if (in[i] == out[o]) {
-    din[i] += dout[o];
-  }
+    b[i_X + O_B] = m;
 }
-void kernel axis_match_grad_complex(global cmplx* din, global const cmplx* dout, global const real1* in, global const real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+// Gradient of an axis max or min: the host passes "out" and "dout" broadcast
+// (back) over the reduced index, so this is element-wise.
+// O_A, I_A: din; O_B, I_B: dout; O_C, I_C: in; J_A, J_B: out
+void kernel axis_match_grad_real(global real1* din, global const real1* dout, global const real1* in, global const real1* out, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint o = 0U;
-  const tcapint id = I_A;
-
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    if (in[i_X * I_C + O_C] == out[i_X * J_B + J_A]) {
+        din[i_X * I_A + O_A] += dout[i_X * I_B + O_B];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    o += i_d * stride[d];
-  }
-
-  const size_t i = i_X * I_B + O_B;
-  if (in[i] == out[o]) {
-    din[i] += dout[o];
-  }
 }
-void kernel axis_match_grad_mixed(global real1* din, global const real1* dout, global const real1* in, global const real1* out, constant tcapint* shape, constant tcapint* stride, constant tcapint* vecCapIntArgs)
+void kernel axis_match_grad_complex(global cmplx* din, global const cmplx* dout, global const real1* in, global const real1* out, constant tcapint* vecCapIntArgs)
 {
-  tcapint tmp = i_X;
-  tcapint o = 0U;
-  const tcapint id = I_A;
-
-  for (int d = O_C - 1; d >= 0; --d) {
-    if (d == id) {
-      continue;
+    if (in[i_X * I_C + O_C] == out[i_X * J_B + J_A]) {
+        din[i_X * I_A + O_A] += dout[i_X * I_B + O_B];
     }
-
-    tcapint dim = shape[d];
-    tcapint i_d = tmp % dim;
-    tmp /= dim;
-
-    o += i_d * stride[d];
-  }
-
-  const size_t i = i_X * I_B + O_B;
-  if (in[i] == out[o]) {
-    din[i << 1U] += dout[o];
-  }
+}
+void kernel axis_match_grad_mixed(global cmplx* din, global const real1* dout, global const real1* in, global const real1* out, constant tcapint* vecCapIntArgs)
+{
+    if (in[i_X * I_C + O_C] == out[i_X * J_B + J_A]) {
+        din[i_X * I_A + O_A].x += dout[i_X * I_B + O_B];
+    }
 }
 
 void kernel relu(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
@@ -443,7 +340,7 @@ void kernel wsin_grad_complex(global cmplx* din, global const real1* in, global 
 }
 void kernel wsin_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
-    din[i_X * I_A + O_A] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+    din[(i_X * I_A + O_A) << 1U] += cos(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
 
 void kernel wcos(global const real1* a, global real1* out, constant tcapint* vecCapIntArgs)
@@ -460,7 +357,7 @@ void kernel wcos_grad_complex(global cmplx* din, global const real1* in, global 
 }
 void kernel wcos_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs)
 {
-    din[i_X * I_A + O_A] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
+    din[(i_X * I_A + O_A) << 1U] += -sin(in[i_X * I_B + O_B]) * dout[i_X * I_C + O_C];
 }
 
 void kernel match_grad_real(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs, constant real1* m)
@@ -493,7 +390,7 @@ void kernel clamp_grad_real(global real1* din, global const real1* in, global co
     const real1 xi = in[i_X * I_B + O_B];
     const cmplx b = *p;
     if (xi > b.x && xi < b.y) {
-      din[i_X * I_C + O_C] += dout[i_X * I_A + O_A];
+      din[i_X * I_A + O_A] += dout[i_X * I_C + O_C];
     }
 }
 void kernel clamp_grad_complex(global cmplx* din, global const real1* in, global const cmplx* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
@@ -501,7 +398,7 @@ void kernel clamp_grad_complex(global cmplx* din, global const real1* in, global
     const real1 xi = in[i_X * I_B + O_B];
     const cmplx b = *p;
     if (xi > b.x && xi < b.y) {
-      din[i_X * I_C + O_C] += dout[i_X * I_A + O_A];
+      din[i_X * I_A + O_A] += dout[i_X * I_C + O_C];
     }
 }
 void kernel clamp_grad_mixed(global real1* din, global const real1* in, global const real1* dout, constant tcapint* vecCapIntArgs, constant cmplx* p)
@@ -509,7 +406,7 @@ void kernel clamp_grad_mixed(global real1* din, global const real1* in, global c
     const real1 xi = in[i_X * I_B + O_B];
     const cmplx b = *p;
     if (xi > b.x && xi < b.y) {
-      din[(i_X * I_C + O_C) << 1U] += dout[i_X * I_A + O_A];
+      din[(i_X * I_A + O_A) << 1U] += dout[i_X * I_C + O_C];
     }
 }
 
@@ -639,7 +536,6 @@ void kernel matmul_real(
         out[O_C + global_row * I_C + global_col * J_C] = sum;
     }
 }
-#define TILE_SIZE 16
 
 void kernel matmul_complex(
     global const real1* a,
@@ -743,12 +639,12 @@ void kernel matmul_mixed_c_left(
             tile_a_im[tile_row][tile_col] = ZERO_R1;
         }
 
-        // Load tile of B
+        // Load tile of B (real)
         const tcapint b_row = t * TILE_SIZE + tile_row;
         if (b_row < K && global_col < N) {
-            const tcapint b_idx = (O_B + b_row * I_B + global_col * J_B) << 1U;
-            tile_b_re[tile_row][tile_col] = b[b_idx];
-            tile_b_im[tile_row][tile_col] = b[b_idx + 1U];
+            // B is real: one value per element, and no imaginary part
+            tile_b_re[tile_row][tile_col] = b[O_B + b_row * I_B + global_col * J_B];
+            tile_b_im[tile_row][tile_col] = ZERO_R1;
         } else {
             tile_b_re[tile_row][tile_col] = ZERO_R1;
             tile_b_im[tile_row][tile_col] = ZERO_R1;
@@ -803,9 +699,9 @@ void kernel matmul_mixed_c_right(
         // Load tile of A — complex elements are stride-2 in storage
         const tcapint a_col = t * TILE_SIZE + tile_col;
         if (global_row < M && a_col < K) {
-            const tcapint a_idx = (O_A + global_row * I_A + a_col * J_A) << 1U;
-            tile_a_re[tile_row][tile_col] = a[a_idx];
-            tile_a_im[tile_row][tile_col] = a[a_idx + 1U];
+            // A is real: one value per element, and no imaginary part
+            tile_a_re[tile_row][tile_col] = a[O_A + global_row * I_A + a_col * J_A];
+            tile_a_im[tile_row][tile_col] = ZERO_R1;
         } else {
             tile_a_re[tile_row][tile_col] = ZERO_R1;
             tile_a_im[tile_row][tile_col] = ZERO_R1;
@@ -930,49 +826,56 @@ void kernel log_complex(global const cmplx* a, global cmplx* out, constant tcapi
     out[i_X * I_B + O_B] = zlog(a[i_X * I_A + O_A]) * (*inv_log_b);
 }
 
+// Embedding lookup, for (flat) indices, a (vocabulary, D) table, and a
+// contiguous output of shape (indices..., D), with N indices in all:
+// O_A, I_A: offset and step of the indices
+// O_B, J_C, O_C: offset, row stride and column stride of the table
+// J_A: offset of the output; I_C: column stride of the output (N)
+// J_B: D
 void kernel embedding_real(global const symint* idx, global const real1* W, global real1* O, constant tcapint* vecCapIntArgs)
 {
-    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint token = (tcapint)idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
-    const tcapint o_base = J_A + i_X * I_B;
+    const tcapint o_base = J_A + i_X;
     for (tcapint d = 0U; d < J_B; ++d) {
-      O[o_base + d * I_C] = W[w_base + d * O_C];
+        O[o_base + d * I_C] = W[w_base + d * O_C];
     }
 }
 void kernel embedding_complex(global const symint* idx, global const cmplx* W, global cmplx* O, constant tcapint* vecCapIntArgs)
 {
-    const tcapint token = idx[O_A + i_X * I_A];
+    const tcapint token = (tcapint)idx[O_A + i_X * I_A];
     const tcapint w_base = O_B + token * J_C;
-    const tcapint o_base = J_A + i_X * I_B;
+    const tcapint o_base = J_A + i_X;
     for (tcapint d = 0U; d < J_B; ++d) {
-      O[o_base + d * I_C] = W[w_base + d * O_C];
+        O[o_base + d * I_C] = W[w_base + d * O_C];
     }
 }
+// Embedding gradient (scatter-add), with the same arguments, and K = N.
+// There is one work item per table COLUMN, and it loops over the indices: with
+// one work item per index, two occurrences of the same token would race to
+// update the same row of the table.
 void kernel embedding_grad_real(global const symint* idx, global real1* dW, global const real1* dO, constant tcapint* vecCapIntArgs)
 {
-    const tcapint token = idx[O_A + i_X * I_A];
-    const tcapint w_base = O_B + token * J_C;
-    const tcapint o_base = J_A + i_X * I_B;
-    for (tcapint d = 0U; d < J_B; ++d) {
-      dW[w_base + d * O_C] += dO[o_base + d * I_C];
+    const tcapint d = i_X;
+    for (tcapint n = 0U; n < K; ++n) {
+        const tcapint token = (tcapint)idx[O_A + n * I_A];
+        dW[O_B + token * J_C + d * O_C] += dO[J_A + n + d * I_C];
     }
 }
 void kernel embedding_grad_complex(global const symint* idx, global cmplx* dW, global const cmplx* dO, constant tcapint* vecCapIntArgs)
 {
-    const tcapint token = idx[O_A + i_X * I_A];
-    const tcapint w_base = O_B + token * J_C;
-    const tcapint o_base = J_A + i_X * I_B;
-    for (tcapint d = 0U; d < J_B; ++d) {
-      dW[w_base + d * O_C] += dO[o_base + d * I_C];
+    const tcapint d = i_X;
+    for (tcapint n = 0U; n < K; ++n) {
+        const tcapint token = (tcapint)idx[O_A + n * I_A];
+        dW[O_B + token * J_C + d * O_C] += dO[J_A + n + d * I_C];
     }
 }
-void kernel embedding_grad_mixed(global const symint* idx, global real1* dW, global const real1* dO, constant tcapint* vecCapIntArgs)
+void kernel embedding_grad_mixed(global const symint* idx, global cmplx* dW, global const real1* dO, constant tcapint* vecCapIntArgs)
 {
-    const tcapint token = idx[O_A + i_X * I_A];
-    const tcapint w_base = O_B + token * J_C;
-    const tcapint o_base = J_A + i_X * I_B;
-    for (tcapint d = 0U; d < J_B; ++d) {
-      dW[(w_base + d * O_C) << 1U] += dO[o_base + d * I_C];
+    const tcapint d = i_X;
+    for (tcapint n = 0U; n < K; ++n) {
+        const tcapint token = (tcapint)idx[O_A + n * I_A];
+        dW[O_B + token * J_C + d * O_C].x += dO[J_A + n + d * I_C];
     }
 }
 
@@ -985,32 +888,40 @@ void kernel copy_complex(global cmplx* a, global const cmplx* b, constant tcapin
     a[i_X * I_A + O_A] = b[i_X * I_B + O_B];
 }
 
-void kernel triu_fill_real(global real1* a, global const cmplx* val, constant tcapint* vecCapIntArgs)
+// Fill the upper triangle of a (rows, columns) matrix, from the given diagonal.
+// Element (row, column) is at row + rows * column (column-major).
+// O_A: diagonal; I_A: offset; O_B: rows; I_B: columns
+void kernel triu_fill_real(global real1* a, constant tcapint* vecCapIntArgs, constant cmplx* val)
 {
-    if ((i_X + O_A) <= i_Y) {
-      a[i_X * S_X + i_Y] = val->x;
+    if ((i_X < O_B) && (i_Y < I_B) && ((i_X + O_A) <= i_Y)) {
+        a[I_A + i_X + i_Y * O_B] = val->x;
     }
 }
-void kernel triu_fill_complex(global cmplx* a, global const cmplx* val, constant tcapint* vecCapIntArgs)
+void kernel triu_fill_complex(global cmplx* a, constant tcapint* vecCapIntArgs, constant cmplx* val)
 {
-    if ((i_X + O_A) <= i_Y) {
-      a[i_X * S_X + i_Y] = *val;
+    if ((i_X < O_B) && (i_Y < I_B) && ((i_X + O_A) <= i_Y)) {
+        a[I_A + i_X + i_Y * O_B] = *val;
     }
 }
 
-kernel void softmax_forward(global const real1 *x, global real1 *out, global const tcapint *vciArgs)
+kernel void softmax_forward(global const real1 *x, global real1 *out, constant tcapint *vciArgs)
 {
+    // "x" and "out" are contiguous (column-major), and there is one work item
+    // per line along the softmax index. With "inner" the product of the extents
+    // before that index, line (i_in, i_out) starts at
+    // i_in + inner * axis_size * i_out, and its elements are "inner" apart.
     const tcapint x_off      = vciArgs[0];
-    const tcapint x_stride   = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint outer_str  = vciArgs[5];
+    const tcapint x_stride   = inner;
+    const tcapint out_stride = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint x_base   = x_off   + outer * outer_str;
-    const tcapint out_base = out_off  + outer * outer_str;
+    const tcapint x_base   = x_off + line_base;
+    const tcapint out_base = out_off + line_base;
 
     // Pass 1: find max
     real1 mx = x[x_base];
@@ -1031,22 +942,24 @@ kernel void softmax_forward(global const real1 *x, global real1 *out, global con
             exp(x[x_base + i * x_stride] - mx) / s;
     }
 }
-kernel void softmax_backward_real(global real1 *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+kernel void softmax_backward_real(global real1 *dx, global const real1 *out, global const real1 *dy, constant tcapint *vciArgs)
 {
+    // (See softmax_forward for the layout.)
     const tcapint dx_off     = vciArgs[0];
-    const tcapint dx_stride  = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint dy_off     = vciArgs[5];
-    const tcapint dy_stride  = vciArgs[6];
-    const tcapint outer_str  = vciArgs[7];
+    const tcapint dy_off     = vciArgs[4];
+    const tcapint dx_stride  = inner;
+    const tcapint out_stride = inner;
+    const tcapint dy_stride  = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint dx_base  = dx_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
-    const tcapint dy_base  = dy_off  + outer * outer_str;
+    const tcapint dx_base  = dx_off + line_base;
+    const tcapint out_base = out_off + line_base;
+    const tcapint dy_base  = dy_off + line_base;
 
     // dot = sum(dy * out)
     real1 dt = ZERO_R1;
@@ -1061,22 +974,24 @@ kernel void softmax_backward_real(global real1 *dx, global const real1 *out, glo
             (dy[dy_base + i * dy_stride] - dt);
     }
 }
-kernel void softmax_backward_complex(global cmplx *dx, global const real1 *out, global const cmplx *dy, global const tcapint *vciArgs)
+kernel void softmax_backward_complex(global cmplx *dx, global const real1 *out, global const cmplx *dy, constant tcapint *vciArgs)
 {
+    // (See softmax_forward for the layout.)
     const tcapint dx_off     = vciArgs[0];
-    const tcapint dx_stride  = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint dy_off     = vciArgs[5];
-    const tcapint dy_stride  = vciArgs[6];
-    const tcapint outer_str  = vciArgs[7];
+    const tcapint dy_off     = vciArgs[4];
+    const tcapint dx_stride  = inner;
+    const tcapint out_stride = inner;
+    const tcapint dy_stride  = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint dx_base  = dx_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
-    const tcapint dy_base  = dy_off  + outer * outer_str;
+    const tcapint dx_base  = dx_off + line_base;
+    const tcapint out_base = out_off + line_base;
+    const tcapint dy_base  = dy_off + line_base;
 
     // dot = sum(dy * out)
     cmplx dt = (cmplx)(ZERO_R1);
@@ -1091,22 +1006,24 @@ kernel void softmax_backward_complex(global cmplx *dx, global const real1 *out, 
             (dy[dy_base + i * dy_stride] - dt);
     }
 }
-kernel void softmax_backward_mixed(global cmplx *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+kernel void softmax_backward_mixed(global cmplx *dx, global const real1 *out, global const real1 *dy, constant tcapint *vciArgs)
 {
+    // (See softmax_forward for the layout.)
     const tcapint dx_off     = vciArgs[0];
-    const tcapint dx_stride  = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint dy_off     = vciArgs[5];
-    const tcapint dy_stride  = vciArgs[6];
-    const tcapint outer_str  = vciArgs[7];
+    const tcapint dy_off     = vciArgs[4];
+    const tcapint dx_stride  = inner;
+    const tcapint out_stride = inner;
+    const tcapint dy_stride  = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint dx_base  = dx_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
-    const tcapint dy_base  = dy_off  + outer * outer_str;
+    const tcapint dx_base  = dx_off + line_base;
+    const tcapint out_base = out_off + line_base;
+    const tcapint dy_base  = dy_off + line_base;
 
     // dot = sum(dy * out)
     real1 dt = ZERO_R1;
@@ -1122,19 +1039,24 @@ kernel void softmax_backward_mixed(global cmplx *dx, global const real1 *out, gl
     }
 }
 
-kernel void logsoftmax(global const real1 *x, global real1 *out, global const tcapint *vciArgs)
+kernel void logsoftmax(global const real1 *x, global real1 *out, constant tcapint *vciArgs)
 {
+    // "x" and "out" are contiguous (column-major), and there is one work item
+    // per line along the softmax index. With "inner" the product of the extents
+    // before that index, line (i_in, i_out) starts at
+    // i_in + inner * axis_size * i_out, and its elements are "inner" apart.
     const tcapint x_off      = vciArgs[0];
-    const tcapint x_stride   = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint outer_str  = vciArgs[5];
+    const tcapint x_stride   = inner;
+    const tcapint out_stride = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint x_base   = x_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
+    const tcapint x_base   = x_off + line_base;
+    const tcapint out_base = out_off + line_base;
 
     // Pass 1: find max
     real1 mx = x[x_base];
@@ -1157,22 +1079,24 @@ kernel void logsoftmax(global const real1 *x, global real1 *out, global const tc
     }
 }
 
-kernel void logsoftmax_backward_real(global real1 *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+kernel void logsoftmax_backward_real(global real1 *dx, global const real1 *out, global const real1 *dy, constant tcapint *vciArgs)
 {
+    // (See softmax_forward for the layout.)
     const tcapint dx_off     = vciArgs[0];
-    const tcapint dx_stride  = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint dy_off     = vciArgs[5];
-    const tcapint dy_stride  = vciArgs[6];
-    const tcapint outer_str  = vciArgs[7];
+    const tcapint dy_off     = vciArgs[4];
+    const tcapint dx_stride  = inner;
+    const tcapint out_stride = inner;
+    const tcapint dy_stride  = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint dx_base  = dx_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
-    const tcapint dy_base  = dy_off  + outer * outer_str;
+    const tcapint dx_base  = dx_off + line_base;
+    const tcapint out_base = out_off + line_base;
+    const tcapint dy_base  = dy_off + line_base;
 
     // Pass 1: sum(dy) along axis
     real1 sum_dy = ZERO_R1;
@@ -1188,22 +1112,24 @@ kernel void logsoftmax_backward_real(global real1 *dx, global const real1 *out, 
     }
 }
 
-kernel void logsoftmax_backward_complex(global cmplx *dx, global const real1 *out, global const cmplx *dy, global const tcapint *vciArgs)
+kernel void logsoftmax_backward_complex(global cmplx *dx, global const real1 *out, global const cmplx *dy, constant tcapint *vciArgs)
 {
+    // (See softmax_forward for the layout.)
     const tcapint dx_off     = vciArgs[0];
-    const tcapint dx_stride  = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint dy_off     = vciArgs[5];
-    const tcapint dy_stride  = vciArgs[6];
-    const tcapint outer_str  = vciArgs[7];
+    const tcapint dy_off     = vciArgs[4];
+    const tcapint dx_stride  = inner;
+    const tcapint out_stride = inner;
+    const tcapint dy_stride  = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint dx_base  = dx_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
-    const tcapint dy_base  = dy_off  + outer * outer_str;
+    const tcapint dx_base  = dx_off + line_base;
+    const tcapint out_base = out_off + line_base;
+    const tcapint dy_base  = dy_off + line_base;
 
     // Pass 1: sum(dy) along axis
     cmplx sum_dy = (cmplx)(ZERO_R1);
@@ -1219,22 +1145,24 @@ kernel void logsoftmax_backward_complex(global cmplx *dx, global const real1 *ou
     }
 }
 
-kernel void logsoftmax_backward_mixed(global cmplx *dx, global const real1 *out, global const real1 *dy, global const tcapint *vciArgs)
+kernel void logsoftmax_backward_mixed(global cmplx *dx, global const real1 *out, global const real1 *dy, constant tcapint *vciArgs)
 {
+    // (See softmax_forward for the layout.)
     const tcapint dx_off     = vciArgs[0];
-    const tcapint dx_stride  = vciArgs[1];
+    const tcapint inner      = vciArgs[1];
     const tcapint axis_size  = vciArgs[2];
     const tcapint out_off    = vciArgs[3];
-    const tcapint out_stride = vciArgs[4];
-    const tcapint dy_off     = vciArgs[5];
-    const tcapint dy_stride  = vciArgs[6];
-    const tcapint outer_str  = vciArgs[7];
+    const tcapint dy_off     = vciArgs[4];
+    const tcapint dx_stride  = inner;
+    const tcapint out_stride = inner;
+    const tcapint dy_stride  = inner;
 
-    const tcapint outer = get_global_id(0);
+    const tcapint line = get_global_id(0);
+    const tcapint line_base = (line % inner) + (line / inner) * inner * axis_size;
 
-    const tcapint dx_base  = dx_off  + outer * outer_str;
-    const tcapint out_base = out_off + outer * outer_str;
-    const tcapint dy_base  = dy_off  + outer * outer_str;
+    const tcapint dx_base  = dx_off + line_base;
+    const tcapint out_base = out_off + line_base;
+    const tcapint dy_base  = dy_off + line_base;
 
     // Pass 1: sum(dy) along axis — real only for mixed
     real1 sum_dy = ZERO_R1;

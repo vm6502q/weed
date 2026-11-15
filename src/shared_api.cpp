@@ -100,7 +100,11 @@ MICROSOFT_QUANTUM_DECL uintw load_module(_In_ const char *f) {
   bool is_success = true;
   ModulePtr m;
   try {
-    std::ifstream i(f);
+    // Model files are binary. (Text mode corrupts them on Windows.)
+    std::ifstream i(f, std::ios::in | std::ios::binary);
+    if (!i.is_open()) {
+      throw std::invalid_argument(std::string("Can't open model file: ") + f);
+    }
     m = Module::load(i);
     i.close();
     m->eval();
@@ -131,10 +135,15 @@ MICROSOFT_QUANTUM_DECL void save_module(_In_ uintw mid, _In_ const char *f) {
 
   ModulePtr m;
   try {
-    std::ofstream o(f);
+    std::ofstream o(f, std::ios::out | std::ios::binary);
+    if (!o.is_open()) {
+      throw std::invalid_argument(std::string("Can't open model file: ") + f);
+    }
     module_results[mid]->m->train();
     module_results[mid]->m->save(o);
     o.close();
+    // Loaded modules are otherwise always in evaluation mode, between calls.
+    module_results[mid]->m->eval();
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     meta_error = 1;
@@ -193,6 +202,7 @@ MICROSOFT_QUANTUM_DECL void forward(_In_ uintw mid, _In_ uintw dtype,
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     meta_error = 2;
+    return;
   }
 
   try {
@@ -237,6 +247,7 @@ MICROSOFT_QUANTUM_DECL void forward_int(_In_ uintw mid, _In_ uintw dtype,
   } catch (const std::exception &ex) {
     std::cout << ex.what() << std::endl;
     meta_error = 2;
+    return;
   }
 
   try {

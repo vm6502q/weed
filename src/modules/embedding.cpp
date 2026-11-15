@@ -25,7 +25,15 @@ void Embedding::migrate_gpu() {
   MigrateGpuPtr mg = std::make_shared<MigrateGpu>();
   weight = mg->pforward(weight);
 }
-TensorPtr Embedding::forward(const SymbolTensorPtr indices) {
+TensorPtr Embedding::forward(const SymbolTensorPtr indices_) {
+  // The (large) table decides the device, and the (small) indices follow it.
+  // (Otherwise, token IDs that were created on one device can't be looked up
+  // in a table that lives on the other.)
+  const SymbolTensorPtr indices =
+      (indices_->storage->device == weight->storage->device)
+          ? indices_
+          : indices_->cast(weight->storage->device);
+
   // Output shape = indices.shape + [embedding_dim]
   std::vector<tcapint> out_shape = indices->shape;
   out_shape.push_back(embedding_dim);

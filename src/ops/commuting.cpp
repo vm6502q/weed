@@ -14,6 +14,10 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define DEVICE_SWITCH(cpu, gpu, a, b, out)                                     \
   switch (out.storage->device) {                                               \
   case DeviceTag::GPU:                                                         \
@@ -35,19 +39,7 @@
   };
 
 #define DISPATCH_GPU_KERNEL(type, type2, api_call)                             \
-  const tcapint args[12U]{a.offset,     a.stride[0U], b.offset,                \
-                          b.stride[0U], out.offset,   out.stride[0U],          \
-                          0U,           0U,           0U,                      \
-                          0U,           0U,           0U};                     \
-  std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(b.storage);                             \
-  std::shared_ptr<type> o_storage =                                            \
-      std::dynamic_pointer_cast<type>(out.storage);                            \
-  a_storage->dev->RequestKernel(                                               \
-      api_call, args, out.get_size(),                                          \
-      {a_storage->buffer, b_storage->buffer, o_storage->buffer})
+  GPU_FLAT_BINARY(type, type2, type, api_call)
 
 namespace Weed {
 template <typename T1, typename T2, typename T3, typename T4>

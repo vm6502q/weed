@@ -73,9 +73,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_REAL_TO_COMPLEX_BUFFER, "real_to_complex_buffer"),
     OCLKernelHandle(OCL_API_REDUCE_REAL, "reduce_real"),
     OCLKernelHandle(OCL_API_REDUCE_COMPLEX, "reduce_complex"),
-    OCLKernelHandle(OCL_API_REDUCE_GRAD_REAL, "reduce_grad_real"),
-    OCLKernelHandle(OCL_API_REDUCE_GRAD_COMPLEX, "reduce_grad_complex"),
-    OCLKernelHandle(OCL_API_REDUCE_GRAD_MIXED, "reduce_grad_mixed"),
     OCLKernelHandle(OCL_API_AXIS_MAX, "axis_max"),
     OCLKernelHandle(OCL_API_AXIS_MIN, "axis_min"),
     OCLKernelHandle(OCL_API_AXIS_MATCH_GRAD_REAL, "axis_match_grad_real"),
@@ -161,7 +158,11 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles{
     OCLKernelHandle(OCL_API_LOGSOFTMAX, "logsoftmax"),
     OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_REAL, "logsoftmax_backward_real"),
     OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_COMPLEX, "logsoftmax_backward_complex"),
-    OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_MIXED, "logsoftmax_backward_mixed")
+    OCLKernelHandle(OCL_API_LOGSOFTMAX_BACKWARD_MIXED, "logsoftmax_backward_mixed"),
+    OCLKernelHandle(OCL_API_GATHER_REAL, "gather_real"),
+    OCLKernelHandle(OCL_API_GATHER_COMPLEX, "gather_complex"),
+    OCLKernelHandle(OCL_API_SCATTER_REAL, "scatter_real"),
+    OCLKernelHandle(OCL_API_SCATTER_COMPLEX, "scatter_complex")
 };
 // clang-format on
 

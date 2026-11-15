@@ -37,38 +37,9 @@
     t += total[i];                                                             \
   }
 
-#define CPU_SUM(type)                                                          \
-  const unsigned cpuCount =                                                    \
-      (unsigned)std::min(n, (size_t)pfControl.GetNumCores());                  \
-  std::vector<type> total(cpuCount, ZERO_R1);                                  \
-  pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    total[cpu] += (*pa)[i];                                                    \
-  });                                                                          \
-  type &t = total[0U];                                                         \
-  for (size_t i = 1U; i < cpuCount; ++i) {                                     \
-    t += total[i];                                                             \
-  }
 
-#define GPU_SUM(type)                                                          \
-  if (!(a_storage->data)) {                                                    \
-    a_storage->data = a_storage->Alloc(n);                                     \
-  }                                                                            \
-  type *gpa = a_storage->data.get();                                           \
-  const bool isMapped =                                                        \
-      a_storage->dev->LockSync(a_storage->buffer, sizeof(type) * n, gpa);      \
-  CPU_SUM(type)
 
-#define GPU_WRITE(SetType)                                                     \
-  o_storage->dev->SetType(t, o_storage->buffer, 0U);                           \
-  if (isMapped) {                                                              \
-    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->data.get());      \
-  } else {                                                                     \
-    a_storage->data = nullptr;                                                 \
-  }
 
-#define GPU_CAST(storage1, storage2)                                           \
-  storage1 *a_storage = static_cast<storage1 *>(a.storage.get());              \
-  storage2 *o_storage = static_cast<storage2 *>(out.storage.get())
 
 namespace Weed {
 template <typename T1, typename T2, typename T3>
@@ -97,31 +68,45 @@ static inline void cpu_mean_complex(const Tensor &a, Tensor &out) {
   cpu_mean<ComplexTensor, SparseCpuComplexStorage, complex>(a, out);
 }
 #if ENABLE_GPU
+// Copy the tensor to host memory in one read, reduce it with the CPU kernel,
+// and write the single result back to the device.
 static void gpu_sum_real(const Tensor &a, Tensor &out) {
-  GPU_INIT_2_SCALAR(RealStorage, RealStorage);
-  GPU_CAST(GpuRealStorage, GpuRealStorage);
-  GPU_SUM(real1);
-  GPU_WRITE(SetReal);
+  const TensorPtr ca = a.cast(DeviceTag::CPU);
+  Tensor co(std::vector<real1>{ZERO_R1}, std::vector<tcapint>{1U}, false,
+            DeviceTag::CPU);
+  cpu_sum_real(*ca, co);
+  const real1 t = (*static_cast<RealStorage *>(co.storage.get()))[0U];
+  GpuRealStorage *o_storage = static_cast<GpuRealStorage *>(out.storage.get());
+  o_storage->dev->SetReal(t, o_storage->buffer, out.offset);
 }
 static void gpu_mean_real(const Tensor &a, Tensor &out) {
-  GPU_INIT_2_SCALAR(RealStorage, RealStorage);
-  GPU_CAST(GpuRealStorage, GpuRealStorage);
-  GPU_SUM(real1);
-  t /= (real1)n;
-  GPU_WRITE(SetReal);
+  const TensorPtr ca = a.cast(DeviceTag::CPU);
+  Tensor co(std::vector<real1>{ZERO_R1}, std::vector<tcapint>{1U}, false,
+            DeviceTag::CPU);
+  cpu_mean_real(*ca, co);
+  const real1 t = (*static_cast<RealStorage *>(co.storage.get()))[0U];
+  GpuRealStorage *o_storage = static_cast<GpuRealStorage *>(out.storage.get());
+  o_storage->dev->SetReal(t, o_storage->buffer, out.offset);
 }
 static void gpu_sum_complex(const Tensor &a, Tensor &out) {
-  GPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
-  GPU_CAST(GpuComplexStorage, GpuComplexStorage);
-  GPU_SUM(complex);
-  GPU_WRITE(SetComplex);
+  const TensorPtr ca = a.cast(DeviceTag::CPU);
+  Tensor co(std::vector<complex>{ZERO_CMPLX}, std::vector<tcapint>{1U}, false,
+            DeviceTag::CPU);
+  cpu_sum_complex(*ca, co);
+  const complex t = (*static_cast<ComplexStorage *>(co.storage.get()))[0U];
+  GpuComplexStorage *o_storage =
+      static_cast<GpuComplexStorage *>(out.storage.get());
+  o_storage->dev->SetComplex(t, o_storage->buffer, out.offset);
 }
 static void gpu_mean_complex(const Tensor &a, Tensor &out) {
-  GPU_INIT_2_SCALAR(ComplexStorage, ComplexStorage);
-  GPU_CAST(GpuComplexStorage, GpuComplexStorage);
-  GPU_SUM(complex);
-  t /= (real1)n;
-  GPU_WRITE(SetComplex);
+  const TensorPtr ca = a.cast(DeviceTag::CPU);
+  Tensor co(std::vector<complex>{ZERO_CMPLX}, std::vector<tcapint>{1U}, false,
+            DeviceTag::CPU);
+  cpu_mean_complex(*ca, co);
+  const complex t = (*static_cast<ComplexStorage *>(co.storage.get()))[0U];
+  GpuComplexStorage *o_storage =
+      static_cast<GpuComplexStorage *>(out.storage.get());
+  o_storage->dev->SetComplex(t, o_storage->buffer, out.offset);
 }
 #endif
 void SumKernel::sum(const Tensor &a, Tensor &out) {

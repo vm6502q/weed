@@ -102,6 +102,7 @@ if (WEED_ENABLE_OPENCL)
             WORKING_DIRECTORY ${INPUT_DIR}
             OUTPUT ${OUTPUT_FILE}
             COMMAND ${XXD_BIN} -i ${INPUT_NAME} > ${OUTPUT_FILE}
+            DEPENDS ${INPUT_FILE}
             COMMENT "Building OpenCL Commands in ${INPUT_FILE}"
             )
         list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
@@ -112,10 +113,19 @@ if (WEED_ENABLE_OPENCL)
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
         src/devices/gpu_device.cpp
+        src/ops/gpu_flat.cpp
         src/storage/gpu_complex_storage.cpp
         src/storage/gpu_int_storage.cpp
         src/storage/gpu_real_storage.cpp
         )
+
+    # CPU vs. GPU differential check of the kernels (see test/device_check.cpp)
+    if (ENABLE_TESTS AND NOT PACK_DEBIAN)
+        add_executable (device_check
+            test/device_check.cpp
+            )
+        target_link_libraries (device_check weed)
+    endif (ENABLE_TESTS AND NOT PACK_DEBIAN)
 
     if (APPLE OR CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc")
         include(FetchContent)

@@ -27,6 +27,24 @@ Much like `Qrack`, `Weed` is designed to make the correct thing the default—an
 
 If a transformer model you load or train runs into an OpenCL "out-of-resources" error (code `-5`), try setting environment variable `WEED_TELESCOPE_TRANSFORMERS` to any truthy value (like `1`) so that Weed will "telescope" transformer encoder layers, by migrating each parameter in each layer to CPU (off of GPU memory) once its immediate usefulness is done.
 
+To check the OpenCL kernels, note that tensors are placed on a device by their size, so the (small) tensors of the unit tests mostly run on the CPU, even with `--device-gpu`. Setting `WEED_GSTRIDE=1` sends every tensor with more than one element to the GPU:
+
+```sh
+    $ WEED_GSTRIDE=1 ./unittest --device-gpu
+```
+
+The `device_check` tool (built with the tests, when OpenCL is enabled) goes further: it runs each operation and its gradient over shapes that stress kernel indexing, and compares the GPU results with the CPU results:
+
+```sh
+    $ ./device_check cpu ref.txt
+    $ WEED_GSTRIDE=1 ./device_check gpu dev.txt
+    $ ./device_check compare ref.txt dev.txt
+```
+
+(Add a last argument, `complex`, to the first two commands, for complex tensors.)
+
+(After changing `src/common/qengine.cl`, also remove any kernel binaries that were saved by `weed_cl_precompile`, or they will be loaded instead of the new source.)
+
 ## Building the API reference
 
 ```sh

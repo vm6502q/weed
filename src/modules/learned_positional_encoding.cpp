@@ -51,13 +51,14 @@ TensorPtr LearnedPositionalEncoding::forward(const TensorPtr x) {
   const auto &sh = x->shape;
   const tcapint T = sh[1];
 
-  if (T > max_len) {
+  if ((seq_offset + T) > max_len) {
     throw std::invalid_argument(
         "Input sequence length exceeds maximum positional encoding length!");
   }
 
-  // Slice to actual sequence length if needed
-  return x + Tensor::slice(pos_encoding, 1, 0, T);
+  // Slice to the actual sequence positions (which start after any tokens that
+  // are already in the KV cache)
+  return x + Tensor::slice(pos_encoding, 1, seq_offset, T);
 }
 
 void LearnedPositionalEncoding::save(std::ostream &os) const {

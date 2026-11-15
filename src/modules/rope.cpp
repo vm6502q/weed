@@ -20,8 +20,10 @@ void RoPE::_build_tables() {
   // Precompute theta_i = base^(-2i/head_dim) for i in [0, head_dim/2)
   // then for each position pos and each i:
   // angle = pos * theta_i
-  // stored interleaved: [pos, 2i] = cos(angle), [pos, 2i+1] = cos(angle)
-  // (same value for both elements of the pair — standard RoPE)
+  // The rotated pairs are (i, i + head_dim/2), to match _rotate_half(), which
+  // maps [x0, x1] -> [-x1, x0] on the two halves of the last dimension. (This
+  // is also the convention of the reference Qwen and Llama implementations.)
+  // So: [pos, i] = [pos, i + head_dim/2] = cos(angle) or sin(angle)
 
   const tcapint half = head_dim >> 1U;
   std::vector<real1> cos_data(max_seq_len * head_dim);
@@ -34,12 +36,12 @@ void RoPE::_build_tables() {
       const real1_f angle = (real1_f)pos * theta;
       const real1 c = (real1)std::cos(angle);
       const real1 s = (real1)std::sin(angle);
-      // Interleave: both elements of pair get same cos/sin
-      // col-major: index = pos + (2i) * max_seq_len
-      cos_data[pos + (2U * i) * max_seq_len] = c;
-      cos_data[pos + (2U * i + 1U) * max_seq_len] = c;
-      sin_data[pos + (2U * i) * max_seq_len] = s;
-      sin_data[pos + (2U * i + 1U) * max_seq_len] = s;
+      // Both elements of the pair get the same cos/sin
+      // col-major: index = pos + column * max_seq_len
+      cos_data[pos + i * max_seq_len] = c;
+      cos_data[pos + (i + half) * max_seq_len] = c;
+      sin_data[pos + i * max_seq_len] = s;
+      sin_data[pos + (i + half) * max_seq_len] = s;
     }
   }
 
@@ -56,6 +58,24 @@ TensorPtr RoPE::_rotate_half(const TensorPtr x) {
   const symint T = (symint)x->shape[2U];
   const symint D = (symint)head_dim;
   const symint half = (symint)(head_dim >> 1U);
+
+  if (x->requires_grad) {
+    // The in-place fill below is invisible to autograd, so, in training mode,
+    // apply the same map, [x0, x1] -> [-x1, x0], as a (constant) matrix
+    // product: (x R)[j] = sum_i x[i] R[i, j]
+    if (!rot_matrix) {
+      std::vector<real1> r((size_t)(D * D), ZERO_R1);
+      for (symint j = 0; j < half; ++j) {
+        // col-major: R[i, j] is at index i + j * D
+        r[(size_t)((j + half) + j * D)] = -ONE_R1; // out[j] = -x[j + half]
+        r[(size_t)(j + (j + half) * D)] = ONE_R1;  // out[j + half] = x[j]
+      }
+      rot_matrix = std::make_shared<Tensor>(
+          r, std::vector<tcapint>{(tcapint)D, (tcapint)D}, false);
+    }
+
+    return x >> rot_matrix;
+  }
 
   // Allocate output container — same shape as x
   TensorPtr out = Tensor::zeros(
@@ -77,11 +97,16 @@ TensorPtr RoPE::_rotate_half(const TensorPtr x) {
   return out;
 }
 
-TensorPtr RoPE::forward(const TensorPtr x) {
+TensorPtr RoPE::forward_at(const TensorPtr x, const tcapint &offset) {
   const symint T = (symint)x->shape[2U];
 
-  TensorPtr c = Tensor::slice(cos_table, 0, 0U, (tcapint)T);
-  TensorPtr s = Tensor::slice(sin_table, 0, 0U, (tcapint)T);
+  if ((offset + (tcapint)T) > max_seq_len) {
+    throw std::invalid_argument(
+        "Input sequence length exceeds maximum RoPE sequence length!");
+  }
+
+  TensorPtr c = Tensor::slice(cos_table, 0, offset, (tcapint)T);
+  TensorPtr s = Tensor::slice(sin_table, 0, offset, (tcapint)T);
 
   // Broadcast cos/sin to [1, 1, T, head_dim]
   TensorPtr cos_b = Tensor::reshape(c, {1, 1, T, (symint)head_dim});

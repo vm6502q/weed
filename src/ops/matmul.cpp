@@ -137,10 +137,27 @@ static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
   // Weed col-major: stride[0]=1 (row stride), stride[1]=M (col stride).
   // So lda = d.A_s1, ldb = d.B_s1, ldc = d.O_s1.
   // This works as long as offsets are zero and strides are contiguous.
-
-  if ((d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U) && (d.A_s1 >= d.M) &&
-      (d.B_s1 >= d.K) && (d.O_s1 >= d.M) && (d.M > 0U) && (d.N > 0U) &&
+  // An index of extent 1 has stride 0, which is still BLAS-compatible: a
+  // single row needs no row stride, and a single column needs no column
+  // stride (so any valid leading dimension will do). Without this, every
+  // (1 x K) row vector, like a single token in KV-cached text generation,
+  // would fall through to the (much slower) hand-rolled kernel.
+  const bool a_ok =
+      ((d.M == 1U) || (d.A_s0 == 1U)) && ((d.K == 1U) || (d.A_s1 >= d.M));
+  const bool b_ok =
+      ((d.K == 1U) || (d.B_s0 == 1U)) && ((d.N == 1U) || (d.B_s1 >= d.K));
+  const bool o_ok =
+      ((d.M == 1U) || (d.O_s0 == 1U)) && ((d.N == 1U) || (d.O_s1 >= d.M));
+  // BLAS needs raw dense buffers. (Sparse storage has no such buffer, so it
+  // must not be cast to dense storage.)
+  const bool is_dense = (a.storage->stype == StorageType::REAL_CPU_DENSE) &&
+                        (b.storage->stype == StorageType::REAL_CPU_DENSE) &&
+                        (out.storage->stype == StorageType::REAL_CPU_DENSE);
+  if (is_dense && a_ok && b_ok && o_ok && (d.M > 0U) && (d.N > 0U) &&
       (d.K > 0U)) {
+    const tcapint lda = (d.K == 1U) ? d.M : d.A_s1;
+    const tcapint ldb = (d.N == 1U) ? d.K : d.B_s1;
+    const tcapint ldc = (d.N == 1U) ? d.M : d.O_s1;
     // Get raw pointers to storage
     auto *a_store = static_cast<CpuRealStorage *>(a.storage.get());
     auto *b_store = static_cast<CpuRealStorage *>(b.storage.get());
@@ -152,14 +169,14 @@ static inline void cpu_real(const Tensor &a, const Tensor &b, Tensor &out) {
     cblas_dgemm(
 #endif
         CblasColMajor, CblasNoTrans, CblasNoTrans,
-        (blasint)d.M,                                 // rows of A and C
-        (blasint)d.N,                                 // cols of B and C
-        (blasint)d.K,                                 // cols of A, rows of B
-        ONE_R1_F,                                     // alpha
-        a_store->data.get() + d.A_o, (blasint)d.A_s1, // A, lda
-        b_store->data.get() + d.B_o, (blasint)d.B_s1, // B, ldb
-        ZERO_R1_F,                                    // beta (overwrite C)
-        o_store->data.get() + d.O_o, (blasint)d.O_s1  // C, ldc
+        (blasint)d.M,                              // rows of A and C
+        (blasint)d.N,                              // cols of B and C
+        (blasint)d.K,                              // cols of A, rows of B
+        ONE_R1_F,                                  // alpha
+        a_store->data.get() + d.A_o, (blasint)lda, // A, lda
+        b_store->data.get() + d.B_o, (blasint)ldb, // B, ldb
+        ZERO_R1_F,                                 // beta (overwrite C)
+        o_store->data.get() + d.O_o, (blasint)ldc  // C, ldc
     );
 
     return;
@@ -172,7 +189,12 @@ static inline void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
 #if WEED_BLAS && (WEED_FPPOW > 4) && (WEED_FPPOW < 7)
   MatrixDim d = get_dim(a, b, out);
 
-  if ((d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U)) {
+  // BLAS needs raw dense buffers, in contiguous column-major layout.
+  const bool is_dense = (a.storage->stype == StorageType::COMPLEX_CPU_DENSE) &&
+                        (b.storage->stype == StorageType::COMPLEX_CPU_DENSE) &&
+                        (out.storage->stype == StorageType::COMPLEX_CPU_DENSE);
+  if (is_dense && (d.A_s0 == 1U) && (d.B_s0 == 1U) && (d.O_s0 == 1U) &&
+      (d.A_s1 >= d.M) && (d.B_s1 >= d.K) && (d.O_s1 >= d.M)) {
     auto *a_store = static_cast<CpuComplexStorage *>(a.storage.get());
     auto *b_store = static_cast<CpuComplexStorage *>(b.storage.get());
     auto *o_store = static_cast<CpuComplexStorage *>(out.storage.get());
@@ -192,9 +214,9 @@ static inline void cpu_complex(const Tensor &a, const Tensor &b, Tensor &out) {
 #endif
 #if MAC_BLAS
         CblasColMajor, CblasNoTrans, CblasNoTrans, (blasint)d.M, (blasint)d.N,
-        (blasint)d.K, &alpha, a_store->data.get(), (blasint)d.A_s1,
-        b_store->data.get(), (blasint)d.B_s1, &beta, o_store->data.get(),
-        (blasint)d.O_s1);
+        (blasint)d.K, &alpha, a_store->data.get() + d.A_o, (blasint)d.A_s1,
+        b_store->data.get() + d.B_o, (blasint)d.B_s1, &beta,
+        o_store->data.get() + d.O_o, (blasint)d.O_s1);
 #else
         CblasColMajor, CblasNoTrans, CblasNoTrans, (blasint)d.M, (blasint)d.N,
         (blasint)d.K, alpha, a_store->data.get() + d.A_o, (blasint)d.A_s1,

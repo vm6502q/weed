@@ -14,11 +14,19 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#include "ops/in_place.hpp"
+#endif
+
+// Tensors are column-major: the first index varies fastest in the flat index
+// "o" of the (reduced) output, so the indices have to be peeled off of "o"
+// from first to last.
 #define REDUCE_HEAD(type)                                                      \
   tcapint base = 0U;                                                           \
   tcapint tmp = o;                                                             \
                                                                                \
-  for (int64_t d = a.shape.size() - 1; d >= 0; --d) {                          \
+  for (int64_t d = 0; d < (int64_t)a.shape.size(); ++d) {                      \
     if (d == id) {                                                             \
       continue;                                                                \
     }                                                                          \
@@ -81,34 +89,38 @@
     MIN_LOOP(type);                                                            \
   });
 
+// "i" is the flat (column-major) index of an element of "in". Dropping the
+// reduced index from it gives the flat index "o" of the element of the
+// (reduced) "out" that it contributed to.
 #define REDUCE_GRAD_HEAD(type)                                                 \
   tcapint tmp = i;                                                             \
   tcapint o = 0U;                                                              \
+  tcapint o_stride = 1U;                                                       \
                                                                                \
-  for (int64_t d = in.shape.size() - 1; d >= 0; --d) {                         \
+  for (int64_t d = 0; d < (int64_t)in.shape.size(); ++d) {                     \
+    const tcapint dim = in.shape[d];                                           \
+    const tcapint i_d = tmp % dim;                                             \
+    tmp /= dim;                                                                \
+                                                                               \
     if (d == id) {                                                             \
       continue;                                                                \
     }                                                                          \
                                                                                \
-    tcapint dim = in.shape[d];                                                 \
-    tcapint i_d = tmp % dim;                                                   \
-    tmp /= dim;                                                                \
-                                                                               \
-    o += i_d * dout.stride[d];                                                 \
+    o += i_d * o_stride;                                                       \
+    o_stride *= dim;                                                           \
   }
 
-#define SUM_GRAD_OUT(type) pdi->add(i, (type)(*po)[o])
+// "dout" has been broadcast to the shape of "din", so they share flat indices.
+#define SUM_GRAD_OUT(type) pdi->add(i, (type)(*po)[i])
 
 #define MATCH_GRAD_OUT(type)                                                   \
   if ((*ti)[i] == (*to)[o]) {                                                  \
-    pdi->add(i, (type)(*po)[o]);                                               \
+    pdi->add(i, (type)(*po)[i]);                                               \
   }
 
 #define SUM_GRAD_KERNEL(type)                                                  \
   const tcapint n = din.get_broadcast_size();                                  \
-  const int64_t id = index;                                                    \
   pfControl.par_for(0, n, [&](const tcapint &i, const unsigned &cpu) {         \
-    REDUCE_GRAD_HEAD(type);                                                    \
     SUM_GRAD_OUT(type);                                                        \
   });
 
@@ -120,25 +132,21 @@
     MATCH_GRAD_OUT(type);                                                      \
   });
 
+// The reduction kernels need a contiguous input (which gpu_contiguous() gives),
+// and "inner", the product of the extents before the reduced index.
 #define DISPATCH_GPU_KERNEL(type, api_call)                                    \
-  const tcapint args[12U]{a.offset,   (tcapint)index,                          \
-                          out.offset, out.stride[0U],                          \
-                          0U,         0U,                                      \
-                          0U,         0U,                                      \
-                          0U,         0U,                                      \
-                          0U,         0U};                                     \
+  const Tensor fa = gpu_contiguous(a);                                         \
+  gpu_require_flat(out, "Weed::reduce");                                       \
+  const tcapint inner = gpu_inner_size(a, index);                              \
+  const tcapint args[12U]{fa.offset, inner, out.offset, a.shape[index],        \
+                          0U,        0U,    0U,         0U,                    \
+                          0U,        0U,    0U,         0U};                   \
   std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
+      std::dynamic_pointer_cast<type>(fa.storage);                             \
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
-  const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
-  BufferPtr shapeBuffer = a_storage->dev->MakeBuffer(                          \
-      flags, sizeof(tcapint) * a.shape.size(), (void *)&(a.shape[0U]));        \
-  BufferPtr strideBuffer = a_storage->dev->MakeBuffer(                         \
-      flags, sizeof(tcapint) * a.stride.size(), (void *)&(a.stride[0U]));      \
-  a_storage->dev->RequestKernel(                                               \
-      api_call, args, out.get_size(),                                          \
-      {a_storage->buffer, o_storage->buffer, shapeBuffer, strideBuffer})
+  a_storage->dev->RequestKernel(api_call, args, out.get_broadcast_size(),      \
+                                {a_storage->buffer, o_storage->buffer})
 
 #define DEVICE_SWITCH(cpu, gpu)                                                \
   switch (out.storage->device) {                                               \
@@ -182,52 +190,39 @@
   GET_CONST_FLAT_TENSOR(RealTensor, out, to);                                  \
   MATCH_GRAD_KERNEL(type)
 
-#define GPU_SUM_GRAD_ARGS()                                                    \
-  const tcapint args[12U] {                                                    \
-    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
-  }
-
-#define GPU_MATCH_GRAD_ARGS()                                                  \
-  const tcapint args[12U] {                                                    \
-    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U            \
-  }
-
-#define GPU_SUM_GRAD(type1, type2, api_call)                                   \
-  GPU_SUM_GRAD_ARGS();                                                         \
-  std::shared_ptr<type1> a_storage =                                           \
-      std::dynamic_pointer_cast<type1>(din.storage);                           \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(dout.storage);                          \
-  const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
-  BufferPtr shapeBuffer = a_storage->dev->MakeBuffer(                          \
-      flags, sizeof(tcapint) * in.shape.size(), (void *)&(in.shape[0U]));      \
-  BufferPtr strideBuffer = a_storage->dev->MakeBuffer(                         \
-      flags, sizeof(tcapint) * in.stride.size(), (void *)&(in.stride[0U]));    \
-  a_storage->dev->RequestKernel(                                               \
-      OCLAPI::api_call, args, din.get_size(),                                  \
-      {a_storage->buffer, b_storage->buffer, shapeBuffer, strideBuffer})
-
+// "dout" has already been broadcast to the shape of "din" by the caller, and
+// "out" is broadcast (back) over the reduced index here, so the kernel is
+// element-wise.
 #define GPU_MATCH_GRAD(type1, type2, api_call)                                 \
-  GPU_SUM_GRAD_ARGS();                                                         \
+  GpuFlatDest fdin(din);                                                       \
+  const Tensor fin = gpu_flat(in);                                             \
+  const Tensor fdout = gpu_flat(dout);                                         \
+  const Tensor fout = gpu_flat(gpu_broadcast_view(out, in.shape));             \
+  const tcapint args[12U]{fdin.flat.offset,                                    \
+                          gpu_step(fdin.flat),                                 \
+                          fdout.offset,                                        \
+                          gpu_step(fdout),                                     \
+                          fin.offset,                                          \
+                          gpu_step(fin),                                       \
+                          fout.offset,                                         \
+                          gpu_step(fout),                                      \
+                          0U,                                                  \
+                          0U,                                                  \
+                          0U,                                                  \
+                          0U};                                                 \
   std::shared_ptr<type1> a_storage =                                           \
-      std::dynamic_pointer_cast<type1>(din.storage);                           \
+      std::dynamic_pointer_cast<type1>(fdin.flat.storage);                     \
   std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(dout.storage);                          \
+      std::dynamic_pointer_cast<type2>(fdout.storage);                         \
   GpuRealStoragePtr i_storage =                                                \
-      std::dynamic_pointer_cast<GpuRealStorage>(in.storage);                   \
+      std::dynamic_pointer_cast<GpuRealStorage>(fin.storage);                  \
   GpuRealStoragePtr o_storage =                                                \
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);                  \
-  const cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;          \
-  BufferPtr shapeBuffer = a_storage->dev->MakeBuffer(                          \
-      flags, sizeof(tcapint) * in.shape.size(), (void *)&(in.shape[0U]));      \
-  BufferPtr strideBuffer = a_storage->dev->MakeBuffer(                         \
-      flags, sizeof(tcapint) * in.stride.size(), (void *)&(in.stride[0U]));    \
-  a_storage->dev->RequestKernel(OCLAPI::api_call, args, din.get_size(),        \
+      std::dynamic_pointer_cast<GpuRealStorage>(fout.storage);                 \
+  a_storage->dev->RequestKernel(OCLAPI::api_call, args,                        \
+                                din.get_broadcast_size(),                      \
                                 {a_storage->buffer, b_storage->buffer,         \
-                                 i_storage->buffer, o_storage->buffer,         \
-                                 shapeBuffer, strideBuffer})
+                                 i_storage->buffer, o_storage->buffer});       \
+  fdin.commit()
 
 namespace Weed {
 template <typename T1, typename T2, typename T3>
@@ -307,18 +302,19 @@ static void gpu_max(const tcapint &index, const Tensor &a, Tensor &out) {
 static void gpu_min(const tcapint &index, const Tensor &a, Tensor &out) {
   DISPATCH_GPU_KERNEL(GpuRealStorage, OCL_API_AXIS_MIN);
 }
+// The gradient of an axis sum is just "dout", broadcast over the reduced index,
+// which the caller has already done.
 static void gpu_sum_grad_real(const tcapint &index, Tensor &din,
                               const Tensor &in, const Tensor &dout) {
-  GPU_SUM_GRAD(GpuRealStorage, GpuRealStorage, OCL_API_REDUCE_GRAD_REAL);
+  Weed::add_in_place(din, dout);
 }
 static void gpu_sum_grad_complex(const tcapint &index, Tensor &din,
                                  const Tensor &in, const Tensor &dout) {
-  GPU_SUM_GRAD(GpuComplexStorage, GpuComplexStorage,
-               OCL_API_REDUCE_GRAD_COMPLEX);
+  Weed::add_in_place(din, dout);
 }
 static void gpu_sum_grad_mixed(const tcapint &index, Tensor &din,
                                const Tensor &in, const Tensor &dout) {
-  GPU_SUM_GRAD(GpuRealStorage, GpuComplexStorage, OCL_API_REDUCE_GRAD_MIXED);
+  Weed::add_in_place(din, dout);
 }
 static void gpu_match_grad_real(const tcapint &index, Tensor &din,
                                 const Tensor &in, const Tensor &dout,
@@ -334,7 +330,7 @@ static void gpu_match_grad_complex(const tcapint &index, Tensor &din,
 static void gpu_match_grad_mixed(const tcapint &index, Tensor &din,
                                  const Tensor &in, const Tensor &dout,
                                  const Tensor &out) {
-  GPU_MATCH_GRAD(GpuRealStorage, GpuComplexStorage,
+  GPU_MATCH_GRAD(GpuComplexStorage, GpuRealStorage,
                  OCL_API_AXIS_MATCH_GRAD_MIXED);
 }
 #endif
@@ -432,7 +428,8 @@ void reduce_grad(const tcapint &index, Tensor &din, const Tensor &in,
 
 void match_grad(const tcapint &index, Tensor &din, const Tensor &in,
                 const Tensor &dout, const Tensor &out) {
-  validate_all_same_device({&din, &dout}, "ReduceKernel::match_grad");
+  validate_all_same_device({&din, &in, &dout, &out},
+                           "ReduceKernel::match_grad");
   if ((in.storage->dtype != DType::REAL) ||
       (out.storage->dtype != DType::REAL)) {
     throw std::invalid_argument("Tensor dtype mismatch in match_grad!");

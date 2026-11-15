@@ -160,18 +160,29 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   K = Tensor::transpose(K, 1, 2); // [B, kv_heads,   T, head_dim]
   V = Tensor::transpose(V, 1, 2); // [B, kv_heads,   T, head_dim]
 
+  // The KV cache is only for inference: in training mode, the whole sequence
+  // is passed on every call, and gradients must flow through K and V.
+  const bool caching = is_caching();
+
+  // Absolute position of the first new token
+  const tcapint pos0 = caching ? cache_len : 0U;
+
   // optional RoPE (like for Qwen)
   if (rope) {
-    Q = rope->forward(Q);
-    K = rope->forward(K);
+    Q = rope->forward_at(Q, pos0);
+    K = rope->forward_at(K, pos0);
   }
 
-  if (use_kv_cache) {
+  if (caching) {
     const tcapint T_new = (tcapint)T;
 
-    if (!k_cache && !k_qcache.d) {
-      max_seq_len = rope ? rope->max_seq_len : 2048U;
+    if (!is_cache_allocated()) {
+      if (!max_seq_len) {
+        // Not set by set_max_kv_seq_len()
+        max_seq_len = rope ? rope->max_seq_len : 2048U;
+      }
       cache_len = 0U;
+      cache_batch = (tcapint)B;
 
       if (kv_quant_bits > 0) {
         k_rotation = make_random_rotation((tcapint)head_dim);
@@ -199,6 +210,17 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
       }
     }
 
+    if (cache_batch != (tcapint)B) {
+      throw std::invalid_argument(
+          "MultiHeadAttention batch size changed while the KV cache is in "
+          "use! (Call reset_cache() first.)");
+    }
+    if ((cache_len + T_new) > max_seq_len) {
+      throw std::length_error(
+          "MultiHeadAttention KV cache is full! (Call reset_cache(), or raise "
+          "the limit with set_max_kv_seq_len() before the first forward().)");
+    }
+
     // Rotate K and V before storing
     TensorPtr K_store = K;
     TensorPtr V_store = V;
@@ -210,67 +232,70 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
     if (kv_quant_bits > 0) {
       // Write new tokens into packed cache
       // K_store shape: [B, num_kv_heads, T_new, head_dim]
-      // Iterate over B * num_kv_heads * T_new rows
+      // Tensors are column-major, so in the flattened [n_rows, head_dim] view,
+      // row r = b + B * (h + num_kv_heads * t): rows are appended in order of
+      // sequence position, and element (r, j) is at flat index r + n_rows * j.
+      const tcapint hd = (tcapint)head_dim;
+      const tcapint rows_per_pos = (tcapint)B * (tcapint)num_kv_heads;
+      const tcapint n_rows = rows_per_pos * T_new;
       TensorPtr K_flat_ptr = Tensor::reshape(
-          K_store, std::vector<symint>{
-                       (symint)((tcapint)B * (tcapint)num_kv_heads * T_new),
-                       (symint)head_dim});
+          K_store, std::vector<symint>{(symint)n_rows, (symint)hd});
       TensorPtr V_flat_ptr = Tensor::reshape(
-          V_store, std::vector<symint>{
-                       (symint)((tcapint)B * (tcapint)num_kv_heads * T_new),
-                       (symint)head_dim});
+          V_store, std::vector<symint>{(symint)n_rows, (symint)hd});
       RealTensor *K_flat = static_cast<RealTensor *>(K_flat_ptr.get());
       RealTensor *V_flat = static_cast<RealTensor *>(V_flat_ptr.get());
 
       // Compute scales from this batch if first write
       if (cache_len == 0U) {
-        const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
-        const tcapint n_elems = n_rows * (tcapint)head_dim;
+        const tcapint n_elems = n_rows * hd;
         real1 k_sum = ZERO_R1, v_sum = ZERO_R1;
-        for (tcapint i = 0U; i < n_rows; ++i) {
-          for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-            const tcapint idx = i * (tcapint)head_dim + j;
-            const real1 kv = (*K_flat)[idx];
-            const real1 vv = (*V_flat)[idx];
-            k_sum += kv * kv;
-            v_sum += vv * vv;
-          }
+        for (tcapint idx = 0U; idx < n_elems; ++idx) {
+          const real1 kv = (*K_flat)[idx];
+          const real1 vv = (*V_flat)[idx];
+          k_sum += kv * kv;
+          v_sum += vv * vv;
         }
         k_qcache.block_scale = std::sqrt(k_sum / (real1)n_elems + 1e-8f);
         v_qcache.block_scale = std::sqrt(v_sum / (real1)n_elems + 1e-8f);
       }
 
       // Write rows into packed cache
-      const tcapint base_row = cache_len * (tcapint)B * (tcapint)num_kv_heads;
-      const tcapint n_rows = (tcapint)B * (tcapint)num_kv_heads * T_new;
-      std::vector<real1> row_buf((tcapint)head_dim);
+      const tcapint base_row = cache_len * rows_per_pos;
+      std::vector<real1> row_buf(hd);
       for (tcapint i = 0U; i < n_rows; ++i) {
-        for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-          row_buf[j] = (*K_flat)[i * (tcapint)head_dim + j];
+        for (tcapint j = 0U; j < hd; ++j) {
+          row_buf[j] = (*K_flat)[i + n_rows * j];
         }
         k_qcache.write_row(base_row + i, row_buf.data());
-        for (tcapint j = 0U; j < (tcapint)head_dim; ++j) {
-          row_buf[j] = (*V_flat)[i * (tcapint)head_dim + j];
+        for (tcapint j = 0U; j < hd; ++j) {
+          row_buf[j] = (*V_flat)[i + n_rows * j];
         }
         v_qcache.write_row(base_row + i, row_buf.data());
       }
       cache_len += T_new;
 
       // Reconstruct K and V tensors from packed cache for attention
-      const tcapint total_rows = cache_len * (tcapint)B * (tcapint)num_kv_heads;
-      std::vector<real1> k_data(total_rows * (tcapint)head_dim);
-      std::vector<real1> v_data(total_rows * (tcapint)head_dim);
+      // (column-major: element (r, j) goes to flat index r + total_rows * j)
+      const tcapint total_rows = cache_len * rows_per_pos;
+      std::vector<real1> k_data(total_rows * hd);
+      std::vector<real1> v_data(total_rows * hd);
       for (tcapint i = 0U; i < total_rows; ++i) {
-        k_qcache.read_row(i, &k_data[i * (tcapint)head_dim]);
-        v_qcache.read_row(i, &v_data[i * (tcapint)head_dim]);
+        k_qcache.read_row(i, row_buf.data());
+        for (tcapint j = 0U; j < hd; ++j) {
+          k_data[i + total_rows * j] = row_buf[j];
+        }
+        v_qcache.read_row(i, row_buf.data());
+        for (tcapint j = 0U; j < hd; ++j) {
+          v_data[i + total_rows * j] = row_buf[j];
+        }
       }
 
       K = std::make_shared<Tensor>(
           k_data, std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
-                                       cache_len, (tcapint)head_dim});
+                                       cache_len, hd});
       V = std::make_shared<Tensor>(
           v_data, std::vector<tcapint>{(tcapint)B, (tcapint)num_kv_heads,
-                                       cache_len, (tcapint)head_dim});
+                                       cache_len, hd});
 
       // Rotate Q to match rotated K basis
       Q = apply_rotation(Q, k_rotation, (tcapint)head_dim);
@@ -279,8 +304,11 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
       // Unquantized path — unchanged
       TensorPtr k_slot = Tensor::slice(k_cache, 2, cache_len, T_new);
       TensorPtr v_slot = Tensor::slice(v_cache, 2, cache_len, T_new);
-      Weed::add_in_place(*k_slot, *K_store);
-      Weed::add_in_place(*v_slot, *V_store);
+      // (The cache is placed on a device by its own, full size, so the new
+      // keys and values might have to be moved to it.)
+      const DeviceTag cache_dtag = k_cache->storage->device;
+      Weed::add_in_place(*k_slot, *(K_store->cast(cache_dtag)));
+      Weed::add_in_place(*v_slot, *(V_store->cast(cache_dtag)));
       cache_len += T_new;
       K = Tensor::slice(k_cache, 2, 0, cache_len);
       V = Tensor::slice(v_cache, 2, 0, cache_len);
@@ -288,26 +316,26 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   }
 
   // GQA: broadcast K and V from kv_heads to num_heads
+  // (Query head h attends to key/value head h % num_kv_heads.)
   if (num_kv_heads < num_heads) {
     const symint groups = num_heads / num_kv_heads;
-    const tcapint T_k = (tcapint)K->shape[2];
+    const symint T_k = (symint)K->shape[2];
 
-    TensorPtr K_rep =
-        Tensor::zeros({(tcapint)B, (tcapint)num_heads, T_k, (tcapint)head_dim});
-    TensorPtr V_rep =
-        Tensor::zeros({(tcapint)B, (tcapint)num_heads, T_k, (tcapint)head_dim});
+    // Insert a "groups" index of extent 1 after the kv_heads index, broadcast
+    // over it by adding to zeros, and merge the two indices. (Tensors are
+    // column-major, so the merged head index is kv_head + num_kv_heads * g.)
+    // Unlike an in-place fill, this is visible to autograd, which sums the
+    // gradient over the group, for training.
+    const std::vector<symint> in_shape{B, num_kv_heads, 1, T_k, head_dim};
+    const std::vector<tcapint> rep_shape{(tcapint)B, (tcapint)num_kv_heads,
+                                         (tcapint)groups, (tcapint)T_k,
+                                         (tcapint)head_dim};
+    const std::vector<symint> out_shape{B, num_heads, T_k, head_dim};
 
-    for (symint g = 0; g < groups; ++g) {
-      TensorPtr K_slice = Tensor::slice(K_rep, 1, (tcapint)(g * num_kv_heads),
-                                        (tcapint)num_kv_heads);
-      TensorPtr V_slice = Tensor::slice(V_rep, 1, (tcapint)(g * num_kv_heads),
-                                        (tcapint)num_kv_heads);
-      Weed::add_in_place(*K_slice, *K);
-      Weed::add_in_place(*V_slice, *V);
-    }
-
-    K = K_rep;
-    V = V_rep;
+    K = Tensor::reshape(Tensor::zeros(rep_shape) + Tensor::reshape(K, in_shape),
+                        out_shape);
+    V = Tensor::reshape(Tensor::zeros(rep_shape) + Tensor::reshape(V, in_shape),
+                        out_shape);
   }
 
   // scores = Q K^T
@@ -321,9 +349,11 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   // Causal mask — only when seq_len > 1
   if (T > 1) {
     const tcapint T_q = (tcapint)T;
-    const tcapint T_k = use_kv_cache ? (tcapint)K->shape[2] : T_q;
+    const tcapint T_k = (tcapint)scores->shape.back();
     TensorPtr mask = Tensor::zeros({T_q, T_k});
-    Weed::triu_fill(*mask, mask_val);
+    // Query i is at absolute position (T_k - T_q) + i, when keys from earlier
+    // calls are in the KV cache, and it may attend to every key up to itself.
+    Weed::triu_fill(*mask, mask_val, (T_k - T_q) + 1U);
     scores = scores + mask;
   }
 
@@ -343,7 +373,7 @@ TensorPtr MultiHeadAttention::forward(const TensorPtr x) {
   out = Tensor::transpose(out, 1, 2);
 
   // TurboQuant: rotate output back from V's rotated basis
-  if (use_kv_cache && kv_quant_bits > 0) {
+  if (caching && kv_quant_bits > 0) {
     out = apply_rotation(out, v_rotation_trans, (tcapint)head_dim);
   }
 

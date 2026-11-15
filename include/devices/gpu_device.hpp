@@ -34,6 +34,8 @@ struct GpuDevice {
   int64_t deviceID;
 
   cl_int callbackError;
+  // OCLAPI value of the kernel call that failed (for the error message)
+  int callbackErrorCall = -1;
   size_t totalOclAllocSize;
   DeviceContextPtr device_context;
   cl::Context context;
@@ -106,8 +108,9 @@ struct GpuDevice {
     wait_queue_items.clear();
     wait_refs.clear();
 
-    throw std::runtime_error("Failed to enqueue kernel, error code: " +
-                             std::to_string(callbackError));
+    throw std::runtime_error("Failed to enqueue kernel (OCLAPI " +
+                             std::to_string(callbackErrorCall) +
+                             "), error code: " + std::to_string(callbackError));
   }
 
   /**

@@ -57,7 +57,23 @@ template <typename T> struct GpuStorage : TypedStorage<T> {
     }
   }
 
-  virtual ~GpuStorage() { SubtractAlloc(sizeof(T) * TypedStorage<T>::size); }
+  virtual ~GpuStorage() {
+    if (data) {
+      // The buffer uses "data" as its host memory (CL_MEM_USE_HOST_PTR), but
+      // kernel calls are queued and run asynchronously. A queued call keeps
+      // the OpenCL buffer object alive, but not this host memory, so every
+      // call that might still read or write it has to finish before it is
+      // freed. (Otherwise, the kernel uses freed memory, which gives garbage
+      // results and corrupts the heap. Temporaries are freed this way all the
+      // time, as with the device copy of a gradient in a backward pass.)
+      try {
+        dev->clFinish();
+      } catch (...) {
+        // Never throw from a destructor
+      }
+    }
+    SubtractAlloc(sizeof(T) * TypedStorage<T>::size);
+  }
 
   int64_t get_device_id() const override { return dev->deviceID; }
 

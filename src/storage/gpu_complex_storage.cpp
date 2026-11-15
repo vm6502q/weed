@@ -23,7 +23,9 @@ StoragePtr GpuComplexStorage::cpu() {
 void GpuComplexStorage::save(std::ostream &os) const {
   Storage::save(os);
   if (data) {
-    dev->LockSync(buffer, sizeof(complex) * size, data.get(), false);
+    // "data" is the host memory of the buffer, so this maps it (which is
+    // what UnlockSync(), below, then unmaps).
+    dev->LockSync(buffer, sizeof(complex) * size, data.get());
     for (tcapint i = 0U; i < size; ++i) {
       Serializer::write_complex(os, data.get()[i]);
     }

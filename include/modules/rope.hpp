@@ -23,6 +23,9 @@ struct RoPE : public Module {
   real1_f base;
   TensorPtr cos_table; // [max_seq_len, head_dim]
   TensorPtr sin_table; // [max_seq_len, head_dim]
+  // [head_dim, head_dim] matrix form of _rotate_half(), for autograd (built
+  // on first use in training mode; not serialized)
+  TensorPtr rot_matrix;
 
   RoPE() : Module(ROPE_T) {}
   RoPE(const tcapint &head_dim_, const tcapint &max_seq_len_ = 2048U,
@@ -34,7 +37,13 @@ struct RoPE : public Module {
 
   void _build_tables();
   TensorPtr _rotate_half(const TensorPtr x);
-  TensorPtr forward(const TensorPtr x) override;
+  TensorPtr forward(const TensorPtr x) override { return forward_at(x, 0U); }
+  /**
+   * Rotate x, of shape [B, H, T, head_dim], where the first of the T tokens is
+   * at absolute sequence position "offset" (nonzero when continuing from a KV
+   * cache)
+   */
+  TensorPtr forward_at(const TensorPtr x, const tcapint &offset);
   void save(std::ostream &os) const override;
 };
 typedef std::shared_ptr<RoPE> RoPEPtr;

@@ -67,7 +67,7 @@ struct Adam {
   }
 };
 
-void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
+inline void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
   opt.t += 1;
 
   const real1 bias_correction1 =
@@ -99,8 +99,15 @@ void adam_step(Adam &opt, const std::vector<ParameterPtr> &params) {
                     (bias_correction1 *
                      (((s.v / bias_correction2) ^ ((real1)0.5)) + opt.eps));
 
+    // (See sgd_step(): a broadcast parameter must be updated only once.)
+    p->reset_broadcast();
     p->match_shape(tmp);
     tmp->match_shape(p);
+    // (As in sgd_step(): the step and the parameter might be on different
+    // devices.)
+    const DeviceTag dtag = Tensor::get_dtag_by_presidence({p, tmp});
+    tmp = tmp->cast(dtag);
+    p->cast_in_place(dtag);
     Weed::sub_in_place(*(p.get()), *(tmp.get()));
   }
 }

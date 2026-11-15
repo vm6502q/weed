@@ -26,6 +26,10 @@ inline void sgd_step(const std::vector<ParameterPtr> &params, real1 lr) {
   }
 
   for (auto &p : params) {
+    // A parameter that was broadcast in the forward pass (like a bias) only
+    // stores one element per broadcast index. Without this, the update below
+    // would be applied to that element once for every broadcast position.
+    p->reset_broadcast();
     TensorPtr pg = p->grad;
     TensorPtr tmp = lr * pg;
     tmp->match_shape(p);

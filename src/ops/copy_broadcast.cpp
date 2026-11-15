@@ -14,6 +14,10 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define DEVICE_SWITCH(cpu, gpu, a, b)                                          \
   switch (a.storage->device) {                                                 \
   case DeviceTag::GPU:                                                         \
@@ -29,15 +33,18 @@
     pa->write(i, (*pb)[i]);                                                    \
   }
 
+// "a" is a new, contiguous tensor, and "b" is gathered to match it.
 #define DISPATCH_GPU_KERNEL(type, type2, api_call)                             \
-  const tcapint args[12U]{a.offset, a.stride[0U], b.offset, b.stride[0U],      \
-                          0U,       0U,           0U,       0U,                \
-                          0U,       0U,           0U,       0U};               \
+  gpu_require_flat(a, #api_call);                                              \
+  const Tensor fb = gpu_flat(b);                                               \
+  const tcapint args[12U]{a.offset, gpu_step(a), fb.offset, gpu_step(fb),      \
+                          0U,       0U,          0U,        0U,                \
+                          0U,       0U,          0U,        0U};               \
   std::shared_ptr<type> a_storage =                                            \
       std::dynamic_pointer_cast<type>(a.storage);                              \
   std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(b.storage);                             \
-  a_storage->dev->RequestKernel(api_call, args, a.get_size(),                  \
+      std::dynamic_pointer_cast<type2>(fb.storage);                            \
+  a_storage->dev->RequestKernel(api_call, args, a.get_broadcast_size(),        \
                                 {a_storage->buffer, b_storage->buffer})
 
 namespace Weed {

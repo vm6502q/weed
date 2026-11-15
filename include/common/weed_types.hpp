@@ -15,6 +15,7 @@
 
 #include "config.h"
 
+#include <algorithm>
 #include <complex>
 #include <cstddef>
 #include <limits>

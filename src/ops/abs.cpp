@@ -14,26 +14,15 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define GPU(type1, type2, api_call)                                            \
-  GPU_ARGS();                                                                  \
-  std::shared_ptr<type1> a_storage =                                           \
-      std::dynamic_pointer_cast<type1>(a.storage);                             \
-  std::shared_ptr<type2> o_storage =                                           \
-      std::dynamic_pointer_cast<type2>(out.storage);                           \
-  a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.get_size(),          \
-                                {a_storage->buffer, o_storage->buffer})
+  GPU_FLAT_UNARY(type1, type2, OCLAPI::api_call)
 
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
-  GPU_GRAD_ARGS();                                                             \
-  std::shared_ptr<type1> a_storage =                                           \
-      std::dynamic_pointer_cast<type1>(din.storage);                           \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(in.storage);                            \
-  std::shared_ptr<type3> c_storage =                                           \
-      std::dynamic_pointer_cast<type3>(dout.storage);                          \
-  a_storage->dev->RequestKernel(                                               \
-      OCLAPI::api_call, args, din.get_size(),                                  \
-      {a_storage->buffer, b_storage->buffer, c_storage->buffer})
+  GPU_FLAT_GRAD(type1, type2, type3, OCLAPI::api_call)
 
 #define DEVICE_SWITCH(cpu, gpu, a, out)                                        \
   switch (out.storage->device) {                                               \
@@ -55,17 +44,7 @@
     cpu(a, b, out);                                                            \
   }
 
-#define GPU_ARGS()                                                             \
-  const tcapint args[12U] {                                                    \
-    a.offset, a.stride[0U], out.offset, out.stride[0U], 0U, 0U, 0U, 0U, 0U,    \
-        0U, 0U, 0U                                                             \
-  }
 
-#define GPU_GRAD_ARGS()                                                        \
-  const tcapint args[12U] {                                                    \
-    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
-  }
 
 #define REAL_ABS_GRAD_KERNEL()                                                 \
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \

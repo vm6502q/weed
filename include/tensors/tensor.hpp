@@ -100,6 +100,22 @@ struct Tensor : public BaseTensor {
   bool match_shape(const TensorPtr a);
 
   /**
+   * Undo any broadcast that an earlier match_shape() call left behind.
+   *
+   * match_shape() broadcasts in-place, by growing shape[i] on an index with
+   * stride[i] == 0. Such an index still only holds one element of storage, so
+   * its "true" extent is 1. (Binary operators apply this to Parameter operands
+   * before broadcasting, since a Parameter outlives any single operation.)
+   */
+  void reset_broadcast() {
+    for (size_t i = 0U; i < stride.size(); ++i) {
+      if (!stride[i]) {
+        shape[i] = 1U;
+      }
+    }
+  }
+
+  /**
    * Materialize all broadcast indices
    */
   void materialize_broadcast();
@@ -330,52 +346,48 @@ struct Tensor : public BaseTensor {
     return add(z, a);
   }
 
-  using BaseTensor::reshape;
   /**
-   * Reshape the tensor
+   * Shallow copy (a view on the same storage) that is cut out of the autograd
+   * graph
    */
-  static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s) {
-    TensorPtr out = (is_contiguous(a->shape, a->stride))
-                        ? std::make_shared<Tensor>(*(a.get()))
-                        : contiguous(a);
-    out->reshape(s);
+  static TensorPtr detach(const TensorPtr a) {
+    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+    out->grad_node = nullptr;
+    out->grad = nullptr;
+    out->requires_grad = false;
 
     return out;
   }
+
+  using BaseTensor::reshape;
+  /**
+   * Reshape the tensor (with autograd)
+   */
+  static TensorPtr reshape(const TensorPtr a, const std::vector<symint> &s);
+  /**
+   * For a view "out" on the same elements as "a", in the same (column-major)
+   * order, pass the gradient of "out" back to "a"
+   */
+  static void make_reshape_node(TensorPtr a, TensorPtr out);
 
   using BaseTensor::transpose;
   /**
-   * If the tensor has exactly two indices, transpose them
+   * If the tensor has exactly two indices, transpose them (with autograd)
    */
-  static TensorPtr transpose(const TensorPtr a) {
-    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-    out->transpose();
-
-    return out;
-  }
+  static TensorPtr transpose(const TensorPtr a);
 
   /**
-   * Transpose the two tensor indices
+   * Transpose the two tensor indices (with autograd)
    */
-  static TensorPtr transpose(const TensorPtr a, symint i, symint j) {
-    TensorPtr out = std::make_shared<Tensor>(*(a.get()));
-    out->transpose(i, j);
-
-    return out;
-  }
+  static TensorPtr transpose(const TensorPtr a, symint i, symint j);
+  static void make_transpose_node(TensorPtr a, TensorPtr out, const symint &i,
+                                  const symint &j);
 
   using BaseTensor::flatten;
   /**
-   * Flatten the tensor axis
+   * Flatten the tensor axis (with autograd)
    */
-  static TensorPtr flatten(const TensorPtr a, symint axis) {
-    TensorPtr out = (is_contiguous(a->shape, a->stride))
-                        ? std::make_shared<Tensor>(*(a.get()))
-                        : contiguous(a);
-    out->flatten(axis);
-
-    return out;
-  }
+  static TensorPtr flatten(const TensorPtr a, symint axis);
 
   /**
    * Use autograd to calculate gradients that are in the same graph as this
@@ -540,6 +552,7 @@ struct Tensor : public BaseTensor {
    */
   static TensorPtr matmul(TensorPtr a, TensorPtr b);
   static void make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out);
+  static void make_batched_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out);
 
   /**
    * Element-wise subtraction (with autograd)

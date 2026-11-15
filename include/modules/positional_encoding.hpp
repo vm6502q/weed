@@ -23,12 +23,19 @@ struct PositionalEncoding : public Module {
   // [max_seq_len, d_model], requires_grad=false
   ParameterPtr pe;
 
+  // Position of the first input token (nonzero only when continuing from a KV
+  // cache; runtime state, not serialized)
+  tcapint seq_offset = 0U;
+
   PositionalEncoding(tcapint max_seq_len, tcapint d_model,
                      real1_f pos_val_ = 8192.0,
                      DeviceTag device = DEFAULT_DEVICE);
 
   void migrate_cpu() override;
   void migrate_gpu() override;
+
+  void set_seq_offset(tcapint o) override { seq_offset = o; }
+  void reset_cache() override { seq_offset = 0U; }
 
   TensorPtr forward(const TensorPtr x) override;
 

@@ -18,9 +18,19 @@
 
 #include "autograd/sgd.hpp"
 #include "autograd/zero_grad.hpp"
+#include "modules/embedding.hpp"
+#include "modules/learned_positional_encoding.hpp"
+#include "modules/linear.hpp"
+#include "modules/positional_encoding.hpp"
+#include "modules/qwen_decoder_layer.hpp"
+#include "modules/sequential.hpp"
+#include "modules/transformer_encoder_layer.hpp"
+#include "ops/triu_fill.hpp"
 #include "storage/all_storage.hpp"
 #include "tensors/complex_scalar.hpp"
 #include "tensors/real_scalar.hpp"
+#include "tensors/real_tensor.hpp"
+#include "tensors/symbol_tensor.hpp"
 
 using namespace Weed;
 
@@ -1357,4 +1367,511 @@ TEST_CASE("test_matmul_gradient_sum_loss") {
   REQUIRE((*Bg)[3] == R(3));
   REQUIRE((*Bg)[4] == R(7));
   REQUIRE((*Bg)[5] == R(11));
+}
+
+// Flat (column-major) read of a real tensor, materializing any view
+static std::vector<real1_f> to_vector(TensorPtr t) {
+  // (Read on the CPU, whichever device the tensor is on.)
+  TensorPtr c = Tensor::contiguous(Tensor::detach(t)->cast(DeviceTag::CPU));
+  RealTensor *r = static_cast<RealTensor *>(c.get());
+  const tcapint n = c->get_broadcast_size();
+  std::vector<real1_f> v(n);
+  for (tcapint i = 0U; i < n; ++i) {
+    v[i] = (real1_f)(*r)[i];
+  }
+
+  return v;
+}
+
+TEST_CASE("test_linear_bias_broadcast_is_not_stale") {
+  // A bias that was once broadcast against (1, 4, out) must not force a later
+  // (1, 1, in) input to be broadcast up to (1, 4, out).
+  LinearPtr l =
+      std::make_shared<Linear>(2, 3, true, true, DType::REAL, TEST_DTAG);
+  l->eval();
+  TensorPtr x4 = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6), R(7), R(8)},
+      std::vector<tcapint>{1, 4, 2}, false, TEST_DTAG);
+  TensorPtr y4 = l->forward(x4);
+  REQUIRE(y4->shape == std::vector<tcapint>{1, 4, 3});
+
+  // Same values as token 0 of x4
+  TensorPtr x1 =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(5)},
+                               std::vector<tcapint>{1, 1, 2}, false, TEST_DTAG);
+  TensorPtr y1 = l->forward(x1);
+  REQUIRE(y1->shape == std::vector<tcapint>{1, 1, 3});
+
+  const std::vector<real1_f> v4 = to_vector(y4);
+  const std::vector<real1_f> v1 = to_vector(y1);
+  for (tcapint o = 0U; o < 3U; ++o) {
+    REQUIRE_FLOAT(v1[o], v4[4U * o]);
+  }
+}
+
+TEST_CASE("test_positional_encoding_values") {
+  const tcapint max_len = 5U;
+  const tcapint d_model = 6U;
+  const real1_f pos_val = 100.0f;
+  PositionalEncoding pe(max_len, d_model, pos_val, TEST_DTAG);
+
+  const tcapint T = 4U;
+  TensorPtr x =
+      Tensor::zeros({1U, T, d_model}, false, false, DType::REAL, TEST_DTAG);
+  const std::vector<real1_f> v = to_vector(pe.forward(x));
+  for (tcapint pos = 0U; pos < T; ++pos) {
+    for (tcapint i = 0U; i < (d_model >> 1U); ++i) {
+      const double angle = pos / std::pow((double)pos_val, (2.0 * i) / d_model);
+      // (0, pos, c) is at flat (column-major) index pos + T * c
+      REQUIRE_FLOAT(v[pos + T * (2U * i)], (real1_f)std::cos(angle));
+      REQUIRE_FLOAT(v[pos + T * (2U * i + 1U)], (real1_f)std::sin(angle));
+    }
+  }
+}
+
+static SymbolTensorPtr token_tensor(const std::vector<symint> &tokens,
+                                    const size_t start, const size_t len) {
+  return std::make_shared<SymbolTensor>(
+      std::vector<symint>(tokens.begin() + start, tokens.begin() + start + len),
+      std::vector<tcapint>{1U, (tcapint)len}, false, TEST_DTAG);
+}
+
+// Embedding with deterministic, distinct, nonzero rows
+static EmbeddingPtr test_embedding(const tcapint vocab, const tcapint d_model) {
+  EmbeddingPtr e =
+      std::make_shared<Embedding>(vocab, d_model, DType::REAL, TEST_DTAG);
+  std::vector<real1> w(vocab * d_model);
+  for (tcapint i = 0U; i < (vocab * d_model); ++i) {
+    w[i] = (real1)std::sin(0.7 + 1.3 * (double)i);
+  }
+  e->weight = std::make_shared<Parameter>(
+      w, std::vector<tcapint>{vocab, d_model}, TEST_DTAG);
+
+  return e;
+}
+
+// Feed "tokens" in chunks through the KV cache, and compare every position's
+// output with a single full-sequence pass.
+static void check_kv_cache_matches_full(Sequential &model,
+                                        const std::vector<symint> &tokens,
+                                        const std::vector<size_t> &chunks,
+                                        const tcapint out_dim) {
+  const tcapint T = (tcapint)tokens.size();
+  model.eval();
+  model.reset_cache();
+  const std::vector<real1_f> full =
+      to_vector(model.forward(token_tensor(tokens, 0U, tokens.size())));
+  REQUIRE(full.size() == (size_t)(T * out_dim));
+  REQUIRE(model.get_kv_cache_len() == T);
+
+  model.reset_cache();
+  REQUIRE(model.get_kv_cache_len() == 0U);
+  size_t start = 0U;
+  for (const size_t len : chunks) {
+    TensorPtr y = model.forward(token_tensor(tokens, start, len));
+    REQUIRE(y->shape == std::vector<tcapint>{1U, (tcapint)len, out_dim});
+    const std::vector<real1_f> part = to_vector(y);
+    for (size_t t = 0U; t < len; ++t) {
+      for (tcapint o = 0U; o < out_dim; ++o) {
+        REQUIRE_FLOAT(part[t + len * o], full[(start + t) + T * o]);
+      }
+    }
+    start += len;
+  }
+  REQUIRE(start == tokens.size());
+  model.reset_cache();
+}
+
+TEST_CASE("test_transformer_kv_cache_matches_full_pass") {
+  const tcapint vocab = 7U, d_model = 8U, d_ff = 16U, heads = 2U, max_len = 12U;
+  std::vector<ModulePtr> layers{
+      test_embedding(vocab, d_model),
+      std::make_shared<LearnedPositionalEncoding>(max_len, d_model, TEST_DTAG)};
+  for (int i = 0; i < 2; ++i) {
+    TransformerEncoderLayerPtr l = std::make_shared<TransformerEncoderLayer>(
+        d_model, heads, d_ff, TEST_DTAG);
+    l->self_attn->kv_quant_bits = 0; // exact KV cache
+    layers.push_back(l);
+  }
+  layers.push_back(std::make_shared<Linear>(d_model, vocab, true, true,
+                                            DType::REAL, TEST_DTAG));
+  Sequential model(layers);
+
+  const std::vector<symint> tokens{3, 1, 4, 1, 5, 2, 6, 0};
+  // One token at a time after a prompt (like text generation)
+  check_kv_cache_matches_full(model, tokens, {3U, 1U, 1U, 1U, 1U, 1U}, vocab);
+  // One token at a time from the start
+  check_kv_cache_matches_full(model, tokens, {1U, 1U, 1U, 1U, 1U, 1U, 1U, 1U},
+                              vocab);
+  // Several tokens at a time, continuing from a non-empty cache
+  check_kv_cache_matches_full(model, tokens, {2U, 4U, 2U}, vocab);
+
+  // The KV cache is bypassed in training mode
+  model.train();
+  TensorPtr y = model.forward(token_tensor(tokens, 0U, 4U));
+  REQUIRE(model.get_kv_cache_len() == 0U);
+  y = model.forward(token_tensor(tokens, 0U, 4U));
+  REQUIRE(y->shape == std::vector<tcapint>{1U, 4U, vocab});
+  model.eval();
+}
+
+TEST_CASE("test_qwen_kv_cache_matches_full_pass") {
+  const tcapint vocab = 7U, d_model = 8U, d_ff = 16U, heads = 4U, kv_heads = 2U;
+  std::vector<ModulePtr> layers{test_embedding(vocab, d_model)};
+  for (int i = 0; i < 2; ++i) {
+    QwenDecoderLayerPtr l =
+        std::make_shared<QwenDecoderLayer>(d_model, heads, kv_heads, d_ff, 16U);
+    l->self_attn->kv_quant_bits = 0; // exact KV cache
+    layers.push_back(l);
+  }
+  layers.push_back(std::make_shared<Linear>(d_model, vocab, false, true,
+                                            DType::REAL, TEST_DTAG));
+  Sequential model(layers);
+
+  const std::vector<symint> tokens{3, 1, 4, 1, 5, 2, 6, 0};
+  check_kv_cache_matches_full(model, tokens, {3U, 1U, 1U, 1U, 1U, 1U}, vocab);
+  check_kv_cache_matches_full(model, tokens, {2U, 4U, 2U}, vocab);
+}
+
+TEST_CASE("test_transformer_kv_cache_overflow_throws") {
+  const tcapint vocab = 5U, d_model = 4U;
+  TransformerEncoderLayerPtr l =
+      std::make_shared<TransformerEncoderLayer>(d_model, 1U, 8U, TEST_DTAG);
+  Sequential model({test_embedding(vocab, d_model), l});
+  model.eval();
+  model.set_max_kv_seq_len(3U);
+  const std::vector<symint> tokens{1, 2, 3, 4};
+  model.forward(token_tensor(tokens, 0U, 3U));
+  REQUIRE_THROWS(model.forward(token_tensor(tokens, 3U, 1U)));
+  model.reset_cache();
+}
+
+TEST_CASE("test_real_matmul_shapes_and_storage") {
+  // Row vectors, column vectors, and sparse operands all have to give the
+  // same answer as the general case (whichever kernel handles them).
+  auto dense = [](const tcapint r, const tcapint c, const double seed) {
+    std::vector<real1> v(r * c);
+    for (tcapint i = 0U; i < (r * c); ++i) {
+      v[i] = (real1)std::sin(seed + 0.9 * (double)i);
+    }
+    return std::make_shared<Tensor>(v, std::vector<tcapint>{r, c}, false,
+                                    TEST_DTAG);
+  };
+  auto check = [](TensorPtr a, TensorPtr b) {
+    const tcapint M = a->shape[0U], K = a->shape[1U], N = b->shape[1U];
+    const std::vector<real1_f> av = to_vector(a);
+    const std::vector<real1_f> bv = to_vector(b);
+    TensorPtr c = a >> b;
+    REQUIRE(c->shape == std::vector<tcapint>{M, N});
+    const std::vector<real1_f> cv = to_vector(c);
+    for (tcapint i = 0U; i < M; ++i) {
+      for (tcapint j = 0U; j < N; ++j) {
+        real1_f e = 0;
+        for (tcapint k = 0U; k < K; ++k) {
+          e += av[i + M * k] * bv[k + K * j];
+        }
+        REQUIRE_FLOAT(cv[i + M * j], e);
+      }
+    }
+  };
+
+  check(dense(3U, 4U, 0.1), dense(4U, 5U, 0.2)); // general
+  check(dense(1U, 4U, 0.3), dense(4U, 5U, 0.4)); // single row
+  check(dense(3U, 4U, 0.5), dense(4U, 1U, 0.6)); // single column
+  check(dense(3U, 1U, 0.7), dense(1U, 5U, 0.8)); // outer product
+  check(dense(1U, 4U, 0.9), dense(4U, 1U, 1.0)); // inner product
+
+  // Sparse right-hand operand (as for a zero-initialized Linear weight)
+  RealSparseVector sv;
+  sv[1U] = R(2);
+  sv[7U] = R(-3);
+  TensorPtr sparse =
+      std::make_shared<Tensor>(sv, std::vector<tcapint>{4U, 2U}, false);
+  check(dense(3U, 4U, 1.1), sparse);
+}
+
+TEST_CASE("test_axis_sum_3d") {
+  // x(i, j, k) = 100 i + 10 j + k
+  const tcapint A = 2U, B = 3U, C = 4U;
+  std::vector<real1> v(A * B * C);
+  for (tcapint i = 0U; i < A; ++i) {
+    for (tcapint j = 0U; j < B; ++j) {
+      for (tcapint k = 0U; k < C; ++k) {
+        v[i + A * (j + B * k)] = R(100 * i + 10 * j + k);
+      }
+    }
+  }
+  const tcapint dims[3U] = {A, B, C};
+  for (tcapint axis = 0U; axis < 3U; ++axis) {
+    TensorPtr x = std::make_shared<Tensor>(v, std::vector<tcapint>{A, B, C},
+                                           true, TEST_DTAG);
+    TensorPtr y = Tensor::sum(x, axis);
+    tcapint rd[3U] = {A, B, C};
+    rd[axis] = 1U;
+    REQUIRE(y->shape == std::vector<tcapint>{rd[0U], rd[1U], rd[2U]});
+    const std::vector<real1_f> yv = to_vector(y);
+    for (tcapint i = 0U; i < rd[0U]; ++i) {
+      for (tcapint j = 0U; j < rd[1U]; ++j) {
+        for (tcapint k = 0U; k < rd[2U]; ++k) {
+          real1_f e = 0;
+          for (tcapint q = 0U; q < dims[axis]; ++q) {
+            e += 100 * ((axis == 0U) ? q : i) + 10 * ((axis == 1U) ? q : j) +
+                 ((axis == 2U) ? q : k);
+          }
+          REQUIRE_FLOAT(yv[i + rd[0U] * (j + rd[1U] * k)], e);
+        }
+      }
+    }
+
+    // d/dx of a weighted sum of y: every x(i, j, k) gets the weight of the
+    // element of y that it was summed into.
+    std::vector<real1> w(yv.size());
+    for (size_t n = 0U; n < w.size(); ++n) {
+      w[n] = R(1 + n);
+    }
+    TensorPtr wt = std::make_shared<Tensor>(w, y->shape, false, TEST_DTAG);
+    Tensor::backward(Tensor::sum(y * wt));
+    const std::vector<real1_f> g = to_vector(Tensor::detach(x->grad));
+    for (tcapint i = 0U; i < A; ++i) {
+      for (tcapint j = 0U; j < B; ++j) {
+        for (tcapint k = 0U; k < C; ++k) {
+          const tcapint yi = (axis == 0U) ? 0U : i;
+          const tcapint yj = (axis == 1U) ? 0U : j;
+          const tcapint yk = (axis == 2U) ? 0U : k;
+          REQUIRE_FLOAT(g[i + A * (j + B * k)],
+                        w[yi + rd[0U] * (yj + rd[1U] * yk)]);
+        }
+      }
+    }
+  }
+}
+
+TEST_CASE("test_view_gradients") {
+  const std::vector<real1> v{R(1), R(2), R(3), R(4), R(5), R(6)};
+  const std::vector<real1> wv{R(1),    R(10),    R(100),
+                              R(1000), R(10000), R(100000)};
+
+  // reshape: same elements, same order
+  {
+    TensorPtr x = std::make_shared<Tensor>(v, std::vector<tcapint>{2, 3}, true,
+                                           TEST_DTAG);
+    TensorPtr y = Tensor::reshape(x * R(1), {3, 2});
+    Tensor::backward(Tensor::sum(y * y));
+    const std::vector<real1_f> g = to_vector(Tensor::detach(x->grad));
+    for (size_t i = 0U; i < 6U; ++i) {
+      REQUIRE_FLOAT(g[i], 2 * v[i]);
+    }
+  }
+
+  // transpose: x(i, j) lands at y(j, i)
+  {
+    TensorPtr x = std::make_shared<Tensor>(v, std::vector<tcapint>{2, 3}, true,
+                                           TEST_DTAG);
+    TensorPtr y = Tensor::transpose(x * R(1), 0, 1);
+    TensorPtr w = std::make_shared<Tensor>(wv, std::vector<tcapint>{3, 2},
+                                           false, TEST_DTAG);
+    Tensor::backward(Tensor::sum(y * w));
+    const std::vector<real1_f> g = to_vector(Tensor::detach(x->grad));
+    for (tcapint i = 0U; i < 2U; ++i) {
+      for (tcapint j = 0U; j < 3U; ++j) {
+        REQUIRE_FLOAT(g[i + 2U * j], wv[j + 3U * i]);
+      }
+    }
+  }
+
+  // batched matmul: L = sum(x @ x^T) over a batch of two 3 x 1... matrices
+  {
+    TensorPtr x = std::make_shared<Tensor>(v, std::vector<tcapint>{2, 3, 1},
+                                           true, TEST_DTAG);
+    TensorPtr xs = x * R(1);
+    TensorPtr y = xs >> Tensor::transpose(xs, -2, -1); // (2, 3, 3)
+    Tensor::backward(Tensor::sum(y));
+    // d/dx_b[i] sum_{p,q} x_b[p] x_b[q] = 2 sum_p x_b[p]
+    const std::vector<real1_f> g = to_vector(Tensor::detach(x->grad));
+    for (tcapint b = 0U; b < 2U; ++b) {
+      const real1_f s = v[b] + v[b + 2U] + v[b + 4U];
+      for (tcapint i = 0U; i < 3U; ++i) {
+        REQUIRE_FLOAT(g[b + 2U * i], 2 * s);
+      }
+    }
+  }
+}
+
+TEST_CASE("test_div_denominator_gradient_chain_rule") {
+  // L = sum(w * (a / b)), so dL/db = -w * a / b^2
+  const std::vector<real1> av{R(1), R(2), R(3)};
+  const std::vector<real1> bv{R(2), R(4), R(5)};
+  const std::vector<real1> wv{R(3), R(-1), R(10)};
+  TensorPtr a =
+      std::make_shared<Tensor>(av, std::vector<tcapint>{3}, false, TEST_DTAG);
+  TensorPtr b =
+      std::make_shared<Tensor>(bv, std::vector<tcapint>{3}, true, TEST_DTAG);
+  TensorPtr w =
+      std::make_shared<Tensor>(wv, std::vector<tcapint>{3}, false, TEST_DTAG);
+  Tensor::backward(Tensor::sum((a / b) * w));
+  const std::vector<real1_f> g = to_vector(Tensor::detach(b->grad));
+  for (size_t i = 0U; i < 3U; ++i) {
+    REQUIRE_FLOAT(g[i], -wv[i] * av[i] / (bv[i] * bv[i]));
+  }
+}
+
+TEST_CASE("test_sgd_broadcast_bias_update") {
+  // The bias is broadcast over 4 sequence positions in the forward pass, but
+  // an SGD step must still only apply its (summed) gradient once.
+  LinearPtr l =
+      std::make_shared<Linear>(2, 3, true, true, DType::REAL, TEST_DTAG);
+  l->train();
+  TensorPtr x = std::make_shared<Tensor>(
+      std::vector<real1>{R(1), R(2), R(3), R(4), R(5), R(6), R(7), R(8)},
+      std::vector<tcapint>{1, 4, 2}, false, TEST_DTAG);
+  Tensor::backward(Tensor::sum(l->forward(x)));
+  // d(sum)/d(bias[o]) = 4 (one per position), and the bias starts at 0.
+  sgd_step(l->parameters(), R(0.5));
+  l->bias->reset_broadcast();
+  const std::vector<real1_f> bias = to_vector(Tensor::detach(l->bias));
+  REQUIRE(bias.size() == 3U);
+  for (size_t o = 0U; o < 3U; ++o) {
+    REQUIRE_FLOAT(bias[o], -2.0f);
+  }
+}
+
+// The tests below use shapes that the element-wise GPU kernels can't address
+// with a single step (or that used to be mistaken for scalars), so they are
+// most useful when small tensors are forced onto the device:
+//     WEED_GSTRIDE=1 ./unittest --device-gpu
+
+TEST_CASE("test_leading_extent_one_and_broadcast") {
+  // (1, 3, 4): a contiguous tensor whose stride[0] is 0
+  const tcapint T = 3U, D = 4U;
+  std::vector<real1> xv(T * D);
+  for (tcapint i = 0U; i < (T * D); ++i) {
+    xv[i] = (real1)std::sin(0.3 + 1.37 * (double)i);
+  }
+  const std::vector<real1> bv{R(10), R(20), R(30), R(40)};
+
+  TensorPtr x = std::make_shared<Tensor>(xv, std::vector<tcapint>{1U, T, D},
+                                         false, TEST_DTAG);
+  TensorPtr b =
+      std::make_shared<Tensor>(bv, std::vector<tcapint>{D}, false, TEST_DTAG);
+
+  const std::vector<real1_f> relu = to_vector(Tensor::relu(x));
+  const std::vector<real1_f> tanh = to_vector(Tensor::tanh(x));
+  const std::vector<real1_f> sq = to_vector(x * x);
+  const std::vector<real1_f> xb = to_vector(x + b);
+  const std::vector<real1_f> xg = to_vector(x * b);
+  // transposed view: y(0, d, t) = x(0, t, d)
+  const std::vector<real1_f> xt = to_vector(Tensor::transpose(x, 1, 2) * R(2));
+  for (tcapint t = 0U; t < T; ++t) {
+    for (tcapint d = 0U; d < D; ++d) {
+      const real1_f v = xv[t + T * d];
+      REQUIRE_FLOAT(relu[t + T * d], (v > 0) ? v : 0);
+      REQUIRE_FLOAT(tanh[t + T * d], (real1_f)std::tanh(v));
+      REQUIRE_FLOAT(sq[t + T * d], v * v);
+      REQUIRE_FLOAT(xb[t + T * d], v + bv[d]);
+      REQUIRE_FLOAT(xg[t + T * d], v * bv[d]);
+      REQUIRE_FLOAT(xt[d + D * t], 2 * v);
+    }
+  }
+}
+
+TEST_CASE("test_softmax_middle_axis") {
+  const tcapint A = 2U, B = 3U, C = 4U;
+  std::vector<real1> xv(A * B * C);
+  for (tcapint i = 0U; i < (A * B * C); ++i) {
+    xv[i] = (real1)std::sin(0.9 + 0.71 * (double)i);
+  }
+  TensorPtr x = std::make_shared<Tensor>(xv, std::vector<tcapint>{A, B, C},
+                                         false, TEST_DTAG);
+  const std::vector<real1_f> y = to_vector(Tensor::softmax(x, 1));
+  const std::vector<real1_f> ly = to_vector(Tensor::logsoftmax(x, 1));
+  for (tcapint i = 0U; i < A; ++i) {
+    for (tcapint k = 0U; k < C; ++k) {
+      real1_f z = 0;
+      for (tcapint j = 0U; j < B; ++j) {
+        z += (real1_f)std::exp(xv[i + A * (j + B * k)]);
+      }
+      for (tcapint j = 0U; j < B; ++j) {
+        const tcapint n = i + A * (j + B * k);
+        REQUIRE_FLOAT(y[n], (real1_f)std::exp(xv[n]) / z);
+        REQUIRE_FLOAT(ly[n], xv[n] - (real1_f)std::log(z));
+      }
+    }
+  }
+}
+
+TEST_CASE("test_triu_fill_nonsquare") {
+  // 2 rows, 5 columns, from the 2nd superdiagonal: element (row, col) is
+  // filled if row + 2 <= col.
+  const tcapint rows = 2U, cols = 5U;
+  TensorPtr m =
+      Tensor::zeros({rows, cols}, false, false, DType::REAL, TEST_DTAG);
+  Weed::triu_fill(*m, R(-7), 2U);
+  const std::vector<real1_f> v = to_vector(m);
+  for (tcapint r = 0U; r < rows; ++r) {
+    for (tcapint c = 0U; c < cols; ++c) {
+      REQUIRE_FLOAT(v[r + rows * c], ((r + 2U) <= c) ? -7.0f : 0.0f);
+    }
+  }
+}
+
+TEST_CASE("test_embedding_repeated_tokens") {
+  // Token 1 appears twice, so its row of the gradient gets two contributions.
+  const tcapint vocab = 4U, dim = 3U;
+  EmbeddingPtr e = test_embedding(vocab, dim);
+  e->train();
+  const std::vector<symint> ids{1, 0, 3, 1, 2};
+  const tcapint N = (tcapint)ids.size();
+  SymbolTensorPtr idx = std::make_shared<SymbolTensor>(
+      ids, std::vector<tcapint>{1U, N}, false, TEST_DTAG);
+  TensorPtr y = e->forward(idx);
+  REQUIRE(y->shape == std::vector<tcapint>{1U, N, dim});
+
+  const std::vector<real1_f> w = to_vector(Tensor::detach(e->weight));
+  const std::vector<real1_f> yv = to_vector(y);
+  for (tcapint n = 0U; n < N; ++n) {
+    for (tcapint d = 0U; d < dim; ++d) {
+      REQUIRE_FLOAT(yv[n + N * d], w[(tcapint)ids[n] + vocab * d]);
+    }
+  }
+
+  Tensor::backward(Tensor::sum(y));
+  const std::vector<real1_f> g = to_vector(Tensor::detach(e->weight->grad));
+  const real1_f count[4U] = {1, 2, 1, 1};
+  for (tcapint tok = 0U; tok < vocab; ++tok) {
+    for (tcapint d = 0U; d < dim; ++d) {
+      REQUIRE_FLOAT(g[tok + vocab * d], count[tok]);
+    }
+  }
+}
+
+TEST_CASE("test_mixed_matmul_values") {
+  // (complex 2 x 3) @ (real 3 x 2), and (real 2 x 3) @ (complex 3 x 2)
+  const std::vector<complex> cv{complex(R(1), R(2)),   complex(R(0), R(-1)),
+                                complex(R(3), R(0)),   complex(R(-2), R(1)),
+                                complex(R(0.5), R(0)), complex(R(1), R(1))};
+  const std::vector<real1> rv{R(1), R(2), R(3), R(4), R(5), R(6)};
+  TensorPtr ca = std::make_shared<Tensor>(cv, std::vector<tcapint>{2, 3}, false,
+                                          TEST_DTAG);
+  TensorPtr rb = std::make_shared<Tensor>(rv, std::vector<tcapint>{3, 2}, false,
+                                          TEST_DTAG);
+  TensorPtr ra = std::make_shared<Tensor>(rv, std::vector<tcapint>{2, 3}, false,
+                                          TEST_DTAG);
+  TensorPtr cb = std::make_shared<Tensor>(cv, std::vector<tcapint>{3, 2}, false,
+                                          TEST_DTAG);
+
+  TensorPtr left = (ca >> rb)->cast(DeviceTag::CPU);
+  TensorPtr right = (ra >> cb)->cast(DeviceTag::CPU);
+  ComplexStorage *ls = static_cast<ComplexStorage *>(left->storage.get());
+  ComplexStorage *rs = static_cast<ComplexStorage *>(right->storage.get());
+  for (tcapint i = 0U; i < 2U; ++i) {
+    for (tcapint j = 0U; j < 2U; ++j) {
+      complex el = ZERO_CMPLX, er = ZERO_CMPLX;
+      for (tcapint k = 0U; k < 3U; ++k) {
+        el += cv[i + 2U * k] * rv[k + 3U * j];
+        er += rv[i + 2U * k] * cv[k + 3U * j];
+      }
+      REQUIRE_CMPLX((*ls)[i + 2U * j], el);
+      REQUIRE_CMPLX((*rs)[i + 2U * j], er);
+    }
+  }
 }

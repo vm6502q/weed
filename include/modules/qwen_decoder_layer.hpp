@@ -48,9 +48,11 @@ struct QwenDecoderLayer : public Module {
     mlp = std::make_shared<SwiGLU>(d_model_, d_ff_);
     input_layernorm = std::make_shared<RMSNorm>(d_model_, -1);
     post_attention_layernorm = std::make_shared<RMSNorm>(d_model_, -1);
+    _register_params();
   }
 
   void _register_params() {
+    param_vector.clear();
     auto p = self_attn->parameters();
     auto m = mlp->parameters();
     auto w1 = input_layernorm->parameters();
@@ -98,6 +100,10 @@ struct QwenDecoderLayer : public Module {
   }
 
   void reset_cache() override { self_attn->reset_cache(); }
+
+  tcapint get_kv_cache_len() const override {
+    return self_attn->get_kv_cache_len();
+  }
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 

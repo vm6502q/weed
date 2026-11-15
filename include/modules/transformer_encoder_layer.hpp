@@ -46,6 +46,21 @@ struct TransformerEncoderLayer : public Module {
                           const ActivationFunctionType &afn = GELU_FN,
                           const int64_t &did = -1);
 
+  /**
+   * (Re-)collect the trainable parameters, after construction or load
+   */
+  void _register_params() {
+    param_vector = self_attn->parameters();
+    auto add = [&](const std::vector<ParameterPtr> &q) {
+      param_vector.insert(param_vector.end(), q.begin(), q.end());
+    };
+    add(ff1->parameters());
+    add(ff2->parameters());
+    add(norm1->parameters());
+    add(norm2->parameters());
+    add(activation->parameters());
+  }
+
   std::vector<ParameterPtr> parameters() override { return param_vector; }
 
   void train() override {
@@ -87,6 +102,10 @@ struct TransformerEncoderLayer : public Module {
   }
 
   void reset_cache() override { self_attn->reset_cache(); }
+
+  tcapint get_kv_cache_len() const override {
+    return self_attn->get_kv_cache_len();
+  }
 
   TensorPtr forward(const TensorPtr x) override;
 

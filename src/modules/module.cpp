@@ -249,6 +249,7 @@ ModulePtr Module::load(std::istream &is) {
     if (has_rope) {
       m->rope = std::dynamic_pointer_cast<RoPE>(Module::load(is));
     }
+    m->_register_params();
 
     return m;
   }
@@ -264,6 +265,7 @@ ModulePtr Module::load(std::istream &is) {
     t->norm1 = std::dynamic_pointer_cast<LayerNorm>(LayerNorm::load(is));
     t->norm2 = std::dynamic_pointer_cast<LayerNorm>(LayerNorm::load(is));
     t->activation = load(is);
+    t->_register_params();
 
     return t;
   }
@@ -299,6 +301,7 @@ ModulePtr Module::load(std::istream &is) {
     q->input_layernorm = std::dynamic_pointer_cast<RMSNorm>(Module::load(is));
     q->post_attention_layernorm =
         std::dynamic_pointer_cast<RMSNorm>(Module::load(is));
+    q->_register_params();
 
     return q;
   }

@@ -230,6 +230,7 @@ void GpuDevice::DispatchQueue() {
     // We're fatally blocked, since we can't make any blocking calls like
     // clFinish() in a callback.
     callbackError = error;
+    callbackErrorCall = (int)item.api_call;
     wait_queue_items.clear();
     wait_refs.clear();
 
@@ -408,13 +409,17 @@ complex GpuDevice::GetComplex(BufferPtr buffer, const tcapint &idx) {
 
   return v;
 }
+// These writes must block: "val" is captured by value, so it only lives until
+// the lambda returns. A non-blocking write would leave the driver holding a
+// pointer to a dead temporary. (Some drivers copy host data when the write is
+// enqueued, and so appear to work; others read it later, and write garbage.)
 void GpuDevice::SetInt(const symint &val, BufferPtr buffer,
                        const tcapint &idx) {
   EventVecPtr waitVec = ResetWaitEvents();
   device_context->EmplaceEvent(
       [this, val, buffer, idx, waitVec](cl::Event &event) {
         tryOcl("Failed to enqueue buffer write", [&] {
-          return queue.enqueueWriteBuffer(*buffer, CL_FALSE,
+          return queue.enqueueWriteBuffer(*buffer, CL_TRUE,
                                           sizeof(symint) * idx, sizeof(symint),
                                           &val, waitVec.get(), &event);
         });
@@ -426,9 +431,9 @@ void GpuDevice::SetReal(const real1 &val, BufferPtr buffer,
   device_context->EmplaceEvent(
       [this, val, buffer, idx, waitVec](cl::Event &event) {
         tryOcl("Failed to enqueue buffer write", [&] {
-          return queue.enqueueWriteBuffer(*buffer, CL_FALSE,
-                                          sizeof(real1) * idx, sizeof(real1),
-                                          &val, waitVec.get(), &event);
+          return queue.enqueueWriteBuffer(*buffer, CL_TRUE, sizeof(real1) * idx,
+                                          sizeof(real1), &val, waitVec.get(),
+                                          &event);
         });
       });
 }
@@ -438,7 +443,7 @@ void GpuDevice::SetComplex(const complex &val, BufferPtr buffer,
   device_context->EmplaceEvent([this, val, buffer, idx,
                                 waitVec](cl::Event &event) {
     tryOcl("Failed to enqueue buffer write", [&] {
-      return queue.enqueueWriteBuffer(*buffer, CL_FALSE, sizeof(complex) * idx,
+      return queue.enqueueWriteBuffer(*buffer, CL_TRUE, sizeof(complex) * idx,
                                       sizeof(complex), &val, waitVec.get(),
                                       &event);
     });

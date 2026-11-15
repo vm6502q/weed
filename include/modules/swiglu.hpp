@@ -33,9 +33,11 @@ struct SwiGLU : public Module {
     gate_proj = std::make_shared<Linear>(hidden_size, intermediate_size, false);
     up_proj = std::make_shared<Linear>(hidden_size, intermediate_size, false);
     down_proj = std::make_shared<Linear>(intermediate_size, hidden_size, false);
+    _register_params();
   }
 
   void _register_params() {
+    param_vector.clear();
     auto g = gate_proj->parameters();
     auto u = up_proj->parameters();
     auto d = down_proj->parameters();

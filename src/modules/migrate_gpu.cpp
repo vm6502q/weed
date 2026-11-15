@@ -41,24 +41,12 @@ ParameterPtr MigrateGpu::pforward(const ParameterPtr x) {
     return x;
   }
 
-  ParameterPtr out = std::make_shared<Parameter>(*(x.get()));
-  out->storage = out->storage->gpu(device_id);
-  if (x->requires_grad) {
-    out->requires_grad = true;
-    out->make_gradient();
-    out->grad_node =
-        std::make_shared<Node>(std::vector<TensorPtr>{x}, [x, out] {
-          const DeviceTag dtag =
-              Tensor::get_dtag_by_presidence({x->grad, out->grad});
-          TensorPtr x_grad = x->grad->cast(dtag);
-          TensorPtr out_grad = out->grad->cast(dtag);
-          Weed::add_in_place(*(x_grad.get()), *(out_grad.get()));
-          x->grad = x_grad;
-        });
-  } else {
-    out->requires_grad = false;
-  }
+  // Move the storage of the parameter itself. (A copy with an autograd node
+  // back to the original would be a different Parameter object than the one
+  // that the containing modules and the optimizer hold, so an optimizer step
+  // would never reach the weights that the module actually uses.)
+  x->storage = x->storage->gpu(device_id);
 
-  return out;
+  return x;
 }
 } // namespace Weed

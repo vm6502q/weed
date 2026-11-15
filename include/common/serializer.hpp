@@ -16,7 +16,9 @@
 #include "enums/dtype.hpp"
 #include "enums/quantum_function_type.hpp"
 #include "enums/storage_type.hpp"
+#if QRACK_AVAILABLE
 #include "qrack/qneuron.hpp"
+#endif
 
 namespace Weed {
 /**
@@ -41,12 +43,14 @@ struct Serializer {
   static void read_symint(std::istream &in, symint &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(symint));
   }
+#if QRACK_AVAILABLE
   static void write_bitLenInt(std::ostream &out, const bitLenInt &x) {
     out.write(reinterpret_cast<const char *>(&x), sizeof(bitLenInt));
   }
   static void read_bitLenInt(std::istream &in, bitLenInt &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(bitLenInt));
   }
+#endif
   static void write_int64(std::ostream &out, const symint &x) {
     out.write(reinterpret_cast<const char *>(&x), sizeof(int64_t));
   }
@@ -88,6 +92,7 @@ struct Serializer {
   static void read_quantum_fn(std::istream &in, QuantumFunctionType &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(QuantumFunctionType));
   }
+#if QRACK_AVAILABLE
   static void write_qneuron_activation_fn(std::ostream &out,
                                           const Qrack::QNeuronActivationFn &x) {
     out.write(reinterpret_cast<const char *>(&x),
@@ -97,5 +102,6 @@ struct Serializer {
                                          Qrack::QNeuronActivationFn &x) {
     in.read(reinterpret_cast<char *>(&x), sizeof(Qrack::QNeuronActivationFn));
   }
+#endif
 };
 } // namespace Weed

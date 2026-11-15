@@ -14,19 +14,14 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #include <iostream>
 
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
-  GPU_GRAD_ARGS();                                                             \
-  std::shared_ptr<type1> a_storage =                                           \
-      std::dynamic_pointer_cast<type1>(din.storage);                           \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(in.storage);                            \
-  std::shared_ptr<type3> c_storage =                                           \
-      std::dynamic_pointer_cast<type3>(dout.storage);                          \
-  a_storage->dev->RequestKernel(                                               \
-      OCLAPI::api_call, args, din.get_size(),                                  \
-      {a_storage->buffer, b_storage->buffer, c_storage->buffer})
+  GPU_FLAT_GRAD(type1, type2, type3, OCLAPI::api_call)
 
 #define DEVICE_SWITCH(cpu, gpu, a, b, out)                                     \
   switch (out.storage->device) {                                               \
@@ -38,11 +33,6 @@
     cpu(a, b, out);                                                            \
   }
 
-#define GPU_GRAD_ARGS()                                                        \
-  const tcapint args[12U] {                                                    \
-    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
-  }
 
 #define CPU_RELU_GRAD()                                                        \
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
@@ -102,15 +92,7 @@ static inline void cpu_relu_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_relu(const Tensor &a, Tensor &out) {
-  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
-                          0U,       0U,           0U,         0U,
-                          0U,       0U,           0U,         0U};
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->dev->RequestKernel(OCLAPI::OCL_API_RELU, args, a.get_size(),
-                                {a_storage->buffer, o_storage->buffer});
+  GPU_FLAT_UNARY(GpuRealStorage, GpuRealStorage, OCLAPI::OCL_API_RELU);
 }
 static void gpu_relu_grad_real(Tensor &din, const Tensor &in,
                                const Tensor &dout) {
@@ -158,15 +140,7 @@ static inline void cpu_sigmoid_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_sigmoid(const Tensor &a, Tensor &out) {
-  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
-                          0U,       0U,           0U,         0U,
-                          0U,       0U,           0U,         0U};
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->dev->RequestKernel(OCLAPI::OCL_API_SIGMOID, args, a.get_size(),
-                                {a_storage->buffer, o_storage->buffer});
+  GPU_FLAT_UNARY(GpuRealStorage, GpuRealStorage, OCLAPI::OCL_API_SIGMOID);
 }
 static void gpu_sigmoid_grad_real(Tensor &din, const Tensor &in,
                                   const Tensor &dout) {
@@ -213,15 +187,7 @@ static inline void cpu_tanh_grad_mixed(Tensor &din, const Tensor &in,
 
 #if ENABLE_GPU
 static void gpu_tanh(const Tensor &a, Tensor &out) {
-  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
-                          0U,       0U,           0U,         0U,
-                          0U,       0U,           0U,         0U};
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->dev->RequestKernel(OCLAPI::OCL_API_TANH, args, a.get_size(),
-                                {a_storage->buffer, o_storage->buffer});
+  GPU_FLAT_UNARY(GpuRealStorage, GpuRealStorage, OCLAPI::OCL_API_TANH);
 }
 static void gpu_tanh_grad_real(Tensor &din, const Tensor &in,
                                const Tensor &dout) {
@@ -267,15 +233,7 @@ static inline void cpu_sin_grad_mixed(Tensor &din, const Tensor &in,
 }
 #if ENABLE_GPU
 static void gpu_sin(const Tensor &a, Tensor &out) {
-  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
-                          0U,       0U,           0U,         0U,
-                          0U,       0U,           0U,         0U};
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->dev->RequestKernel(OCLAPI::OCL_API_SIN, args, a.get_size(),
-                                {a_storage->buffer, o_storage->buffer});
+  GPU_FLAT_UNARY(GpuRealStorage, GpuRealStorage, OCLAPI::OCL_API_SIN);
 }
 static void gpu_sin_grad_real(Tensor &din, const Tensor &in,
                               const Tensor &dout) {
@@ -320,15 +278,7 @@ static inline void cpu_cos_grad_mixed(Tensor &din, const Tensor &in,
 }
 #if ENABLE_GPU
 static void gpu_cos(const Tensor &a, Tensor &out) {
-  const tcapint args[12U]{a.offset, a.stride[0U], out.offset, out.stride[0U],
-                          0U,       0U,           0U,         0U,
-                          0U,       0U,           0U,         0U};
-  GpuRealStoragePtr a_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(a.storage);
-  GpuRealStoragePtr o_storage =
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);
-  a_storage->dev->RequestKernel(OCLAPI::OCL_API_COS, args, a.get_size(),
-                                {a_storage->buffer, o_storage->buffer});
+  GPU_FLAT_UNARY(GpuRealStorage, GpuRealStorage, OCLAPI::OCL_API_COS);
 }
 static void gpu_cos_grad_real(Tensor &din, const Tensor &in,
                               const Tensor &dout) {

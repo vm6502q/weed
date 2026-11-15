@@ -28,21 +28,23 @@ PositionalEncoding::PositionalEncoding(tcapint max_seq_len_, tcapint d_model_,
     : Module(POSITIONAL_ENCODING_T), max_seq_len(max_seq_len_),
       d_model(d_model_), pos_val(pos_val_) {
 
+  // pe has shape [max_seq_len, d_model], and tensors are column-major, so
+  // element (pos, col) is at index pos + max_seq_len * col.
   const tcapint max_i = d_model >> 1U;
   std::vector<real1> values(max_seq_len * d_model);
   for (tcapint pos = 0; pos < max_seq_len; ++pos) {
     for (tcapint i = 0; i < max_i; ++i) {
-      const tcapint idx = pos * d_model + (i << 1U);
+      const tcapint col = i << 1U;
       const real1 coeff =
           (real1)(1.0 / std::pow(pos_val, ((real1)(i << 1U)) / d_model));
 
-      values[idx] = std::cos(coeff * pos);
-      values[idx + 1U] = std::sin(coeff * pos);
+      values[pos + max_seq_len * col] = std::cos(coeff * pos);
+      values[pos + max_seq_len * (col + 1U)] = std::sin(coeff * pos);
     }
     if (d_model & 1U) {
-      const tcapint idx = pos * d_model + (max_i << 1U);
+      const tcapint col = max_i << 1U;
       const real1 div = (real1)std::pow(pos_val, (2.0 * max_i) / d_model);
-      values[idx] = std::cos(pos / div);
+      values[pos + max_seq_len * col] = std::cos(pos / div);
     }
   }
 
@@ -56,9 +58,14 @@ TensorPtr PositionalEncoding::forward(const TensorPtr x) {
   // x: [B, T, D]
   const tcapint T = x->shape[1U];
 
-  // slice pe -> [T, D]
+  if ((seq_offset + T) > max_seq_len) {
+    throw std::invalid_argument(
+        "Input sequence length exceeds maximum positional encoding length!");
+  }
+
+  // slice pe -> [T, D] (starting after any tokens already in the KV cache)
   // broadcast pe_slice to [B, T, D] and add
-  return x + Tensor::slice(pe, 0, 0, T);
+  return x + Tensor::slice(pe, 0, seq_offset, T);
 }
 void PositionalEncoding::save(std::ostream &os) const {
   Module::save(os);

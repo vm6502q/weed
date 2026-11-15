@@ -27,6 +27,10 @@ struct LearnedPositionalEncoding : public Module {
 
   ParameterPtr pos_encoding; // (1, max_len, d_model)
 
+  // Position of the first input token (nonzero only when continuing from a KV
+  // cache; runtime state, not serialized)
+  tcapint seq_offset = 0U;
+
   LearnedPositionalEncoding() : Module(LEARNED_POSITIONAL_ENCODING_T) {}
 
   LearnedPositionalEncoding(const tcapint &max_len_, const tcapint &d_model_,
@@ -34,6 +38,9 @@ struct LearnedPositionalEncoding : public Module {
 
   void migrate_cpu() override;
   void migrate_gpu() override;
+
+  void set_seq_offset(tcapint o) override { seq_offset = o; }
+  void reset_cache() override { seq_offset = 0U; }
 
   TensorPtr forward(const TensorPtr x) override;
 

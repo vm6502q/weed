@@ -14,13 +14,22 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define GPU(type, p, api_call)                                                 \
+  if (a.shape.size() != 2U) {                                                  \
+    throw std::invalid_argument("triu_fill requires a 2D tensor!");            \
+  }                                                                            \
+  GpuFlatDest da(a);                                                           \
   GPU_ARGS();                                                                  \
   std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
+      std::dynamic_pointer_cast<type>(da.flat.storage);                        \
   const complex v = complex(p);                                                \
   a_storage->dev->RequestKernel(OCLAPI::api_call, args, a.shape[0],            \
-                                {a_storage->buffer}, a.shape[1], &v)
+                                {a_storage->buffer}, a.shape[1], &v);          \
+  da.commit()
 
 #define DEVICE_SWITCH(cpu, gpu, a, b, d)                                       \
   switch (a.storage->device) {                                                 \
@@ -32,9 +41,11 @@
     cpu(a, b, d);                                                              \
   }
 
+// diagonal, offset, rows, columns
 #define GPU_ARGS()                                                             \
   const tcapint args[12U] {                                                    \
-    a.shape[0], 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U                     \
+    diagonal, da.flat.offset, a.shape[0], a.shape[1], 0U, 0U, 0U, 0U, 0U, 0U,  \
+        0U, 0U                                                                 \
   }
 
 namespace Weed {

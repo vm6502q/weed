@@ -20,9 +20,11 @@ namespace Weed {
 struct Sequential : public Module {
   std::vector<ModulePtr> layers;
   std::vector<ParameterPtr> param_vector;
+  // Sequence offset set by a containing module (0 at top level)
+  tcapint seq_offset;
 
   Sequential(const std::vector<ModulePtr> &l)
-      : Module(SEQUENTIAL_T), layers(l), param_vector() {
+      : Module(SEQUENTIAL_T), layers(l), param_vector(), seq_offset(0U) {
     for (size_t i = 0U; i < layers.size(); ++i) {
       const std::vector<ParameterPtr> p = layers[i]->parameters();
       param_vector.insert(param_vector.end(), p.begin(), p.end());
@@ -58,12 +60,41 @@ struct Sequential : public Module {
   }
 
   void reset_cache() override {
+    seq_offset = 0U;
     for (const ModulePtr &m : layers) {
       m->reset_cache();
     }
   }
 
+  tcapint get_kv_cache_len() const override {
+    tcapint len = 0U;
+    for (const ModulePtr &m : layers) {
+      len = std::max(len, m->get_kv_cache_len());
+    }
+
+    return len;
+  }
+
+  void set_seq_offset(tcapint o) override {
+    seq_offset = o;
+    for (const ModulePtr &m : layers) {
+      m->set_seq_offset(o);
+    }
+  }
+
+  /**
+   * Tell positional encodings how many tokens are already in the KV cache,
+   * since (with a KV cache) forward() is only passed the new tokens.
+   */
+  void sync_seq_offset() {
+    const tcapint o = std::max(seq_offset, get_kv_cache_len());
+    for (const ModulePtr &m : layers) {
+      m->set_seq_offset(o);
+    }
+  }
+
   TensorPtr forward(const TensorPtr x) override {
+    sync_seq_offset();
     TensorPtr tmp = x;
     for (size_t i = 0U; i < layers.size(); ++i) {
       tmp = layers[i]->forward(tmp);
@@ -75,6 +106,7 @@ struct Sequential : public Module {
     if (layers.empty()) {
       return std::make_shared<Tensor>();
     }
+    sync_seq_offset();
     TensorPtr tmp = layers[0]->forward(x);
     for (size_t i = 1U; i < layers.size(); ++i) {
       tmp = layers[i]->forward(tmp);

@@ -23,7 +23,9 @@ StoragePtr GpuIntStorage::cpu() {
 void GpuIntStorage::save(std::ostream &os) const {
   Storage::save(os);
   if (data) {
-    dev->LockSync(buffer, sizeof(symint) * size, data.get(), false);
+    // "data" is the host memory of the buffer, so this maps it (which is
+    // what UnlockSync(), below, then unmaps).
+    dev->LockSync(buffer, sizeof(symint) * size, data.get());
     for (tcapint i = 0U; i < size; ++i) {
       Serializer::write_symint(os, data.get()[i]);
     }

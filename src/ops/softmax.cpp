@@ -17,6 +17,10 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 // Reuse REDUCE_HEAD from reduce.cpp pattern:
 // Given output index o (over all non-axis dims), compute base offset into a
 // along all dimensions except the softmax axis.
@@ -138,15 +142,17 @@
   });
 
 #if ENABLE_GPU
+// The kernels need contiguous tensors, with one work item per line along the
+// softmax index.
 #define DISPATCH_GPU_SOFTMAX_FWD(type, api_call)                               \
-  const tcapint outer_str =                                                    \
-      (a.shape.size() < 2U) ? 1U : a.stride[(tcapint)index == 0U ? 1U : 0U];   \
-  const tcapint args[12U]{a.offset,                                            \
-                          a.stride[(tcapint)index],                            \
+  const Tensor fa = gpu_contiguous(a);                                         \
+  gpu_require_flat(out, #api_call);                                            \
+  const tcapint args[12U]{fa.offset,                                           \
+                          gpu_inner_size(a, index),                            \
                           a.shape[(tcapint)index],                             \
                           out.offset,                                          \
-                          out.stride[(tcapint)index],                          \
-                          outer_str,                                           \
+                          0U,                                                  \
+                          0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
@@ -154,7 +160,7 @@
                           0U,                                                  \
                           0U};                                                 \
   std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
+      std::dynamic_pointer_cast<type>(fa.storage);                             \
   std::shared_ptr<type> o_storage =                                            \
       std::dynamic_pointer_cast<type>(out.storage);                            \
   a_storage->dev->RequestKernel(api_call, args,                                \
@@ -162,30 +168,31 @@
                                 {a_storage->buffer, o_storage->buffer})
 
 #define DISPATCH_GPU_SOFTMAX_BWD(t1, t2, api_call)                             \
-  const tcapint outer_str = (din.shape.size() < 2U)                            \
-                                ? 1U                                           \
-                                : din.stride[(tcapint)index == 0U ? 1U : 0U];  \
-  const tcapint args[12U]{din.offset,                                          \
-                          din.stride[(tcapint)index],                          \
+  GpuFlatDest fdin(din);                                                       \
+  const Tensor fout = gpu_contiguous(out);                                     \
+  const Tensor fdout = gpu_contiguous(dout);                                   \
+  const tcapint args[12U]{fdin.flat.offset,                                    \
+                          gpu_inner_size(din, index),                          \
                           din.shape[(tcapint)index],                           \
-                          out.offset,                                          \
-                          out.stride[(tcapint)index],                          \
-                          dout.offset,                                         \
-                          dout.stride[(tcapint)index],                         \
-                          outer_str,                                           \
+                          fout.offset,                                         \
+                          fdout.offset,                                        \
+                          0U,                                                  \
+                          0U,                                                  \
+                          0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
                           0U,                                                  \
                           0U};                                                 \
   std::shared_ptr<t1> din_storage =                                            \
-      std::dynamic_pointer_cast<t1>(din.storage);                              \
+      std::dynamic_pointer_cast<t1>(fdin.flat.storage);                        \
   std::shared_ptr<GpuRealStorage> out_storage =                                \
-      std::dynamic_pointer_cast<GpuRealStorage>(out.storage);                  \
+      std::dynamic_pointer_cast<GpuRealStorage>(fout.storage);                 \
   std::shared_ptr<t2> dout_storage =                                           \
-      std::dynamic_pointer_cast<t2>(dout.storage);                             \
+      std::dynamic_pointer_cast<t2>(fdout.storage);                            \
   din_storage->dev->RequestKernel(                                             \
       api_call, args, din.get_broadcast_size() / din.shape[index],             \
-      {din_storage->buffer, out_storage->buffer, dout_storage->buffer})
+      {din_storage->buffer, out_storage->buffer, dout_storage->buffer});       \
+  fdin.commit()
 #endif
 
 #define DEVICE_SWITCH_SOFTMAX_FWD(cpu, gpu)                                    \

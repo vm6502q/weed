@@ -26,7 +26,7 @@ struct Parameter : Tensor {
             const bool &s = true, const DType &dtype = DType::REAL,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
             const int64_t &did = -1)
-      : Tensor(shp, str, true, s, DType::REAL, dtag, did) {}
+      : Tensor(shp, str, true, s, dtype, dtag, did) {}
   Parameter(const std::vector<real1> &val, const std::vector<tcapint> &shp,
             const DeviceTag &dtag = DeviceTag::DEFAULT_DEVICE,
             const int64_t &did = -1)

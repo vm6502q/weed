@@ -14,25 +14,17 @@
 #include "ops/util.hpp"
 #include "tensors/flat_tensors.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define SUB_KERNEL()                                                           \
   const auto fn = [&](const tcapint &i, const unsigned &cpu) {                 \
     po->write(i, (*pa)[i] - (*pb)[i]);                                         \
   }
 
 #define DISPATCH_GPU_KERNEL(type, type2, type3, api_call)                      \
-  const tcapint args[12U]{a.offset,     a.stride[0U], b.offset,                \
-                          b.stride[0U], out.offset,   out.stride[0U],          \
-                          0U,           0U,           0U,                      \
-                          0U,           0U,           0U};                     \
-  std::shared_ptr<type> a_storage =                                            \
-      std::dynamic_pointer_cast<type>(a.storage);                              \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(b.storage);                             \
-  std::shared_ptr<type3> o_storage =                                           \
-      std::dynamic_pointer_cast<type3>(out.storage);                           \
-  a_storage->dev->RequestKernel(                                               \
-      api_call, args, out.get_size(),                                          \
-      {a_storage->buffer, b_storage->buffer, o_storage->buffer})
+  GPU_FLAT_BINARY(type, type2, type3, api_call)
 
 #define DEVICE_SWITCH(cpu, gpu)                                                \
   switch (out.storage->device) {                                               \

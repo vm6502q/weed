@@ -15,6 +15,10 @@
 #include "tensors/flat_tensors.hpp"
 #include "tensors/real_scalar.hpp"
 
+#if ENABLE_GPU
+#include "ops/gpu_flat.hpp"
+#endif
+
 #define CPU_INIT_1(ft)                                                         \
   GET_CONST_FLAT_TENSOR(ft, a, pa);                                            \
   const size_t n = a.get_broadcast_size()
@@ -28,18 +32,9 @@
   }
 
 #define GPU_GRAD(type1, type2, type3, api_call)                                \
-  GPU_GRAD_ARGS();                                                             \
-  std::shared_ptr<type1> a_storage =                                           \
-      std::dynamic_pointer_cast<type1>(din.storage);                           \
-  std::shared_ptr<type2> b_storage =                                           \
-      std::dynamic_pointer_cast<type2>(in.storage);                            \
-  std::shared_ptr<type3> c_storage =                                           \
-      std::dynamic_pointer_cast<type3>(dout.storage);                          \
   const real1 m = static_cast<const RealScalar *>(&out)->get_item();           \
   const complex v = complex(m);                                                \
-  a_storage->dev->RequestKernel(                                               \
-      OCLAPI::api_call, args, din.get_size(),                                  \
-      {a_storage->buffer, b_storage->buffer, c_storage->buffer}, 0U, &v)
+  GPU_FLAT_GRAD_C(type1, type2, type3, OCLAPI::api_call, &v)
 
 #define DEVICE_SWITCH(cpu, gpu, din, in, dout, out)                            \
   switch (out.storage->device) {                                               \
@@ -51,11 +46,6 @@
     cpu(din, in, dout, out);                                                   \
   }
 
-#define GPU_GRAD_ARGS()                                                        \
-  const tcapint args[12U] {                                                    \
-    din.offset, din.stride[0U], in.offset, in.stride[0U], dout.offset,         \
-        dout.stride[0U], 0U, 0U, 0U, 0U, 0U, 0U                                \
-  }
 
 #define CPU_GRAD()                                                             \
   const real1 m = static_cast<const RealScalar *>(&out)->get_item();           \
@@ -93,26 +83,6 @@
   SPARSE_CPU_1_RUN();                                                          \
   const real1 v = *std::min_element(m.begin(), m.end());
 
-#define GPU_HEADER()                                                           \
-  if (!(a_storage->data)) {                                                    \
-    a_storage->data = a_storage->Alloc(n);                                     \
-  }                                                                            \
-  real1 *gpa = a_storage->data.get();                                          \
-  const bool isMapped =                                                        \
-      a_storage->dev->LockSync(a_storage->buffer, sizeof(real1) * n, gpa)
-
-#define GPU_WRITE(SetType)                                                     \
-  o_storage->dev->SetType(v, o_storage->buffer, 0U);                           \
-  if (isMapped) {                                                              \
-    a_storage->dev->UnlockSync(a_storage->buffer, a_storage->data.get());      \
-  } else {                                                                     \
-    a_storage->data = nullptr;                                                 \
-  }
-
-#define GPU_CAST(storage1, storage2)                                           \
-  storage1 *a_storage = static_cast<storage1 *>(a.storage.get());              \
-  storage2 *o_storage = static_cast<storage2 *>(out.storage.get())
-
 namespace Weed {
 static void cpu_max(const Tensor &a, Tensor &out) {
   CPU_INIT_2_SCALAR(RealTensor, RealTensor);
@@ -146,20 +116,23 @@ static inline void cpu_grad_mixed(Tensor &din, const Tensor &in,
 }
 
 #if ENABLE_GPU
-static void gpu_max(const Tensor &a, Tensor &out) {
-  CPU_INIT_1(RealTensor);
-  GPU_CAST(GpuRealStorage, GpuRealStorage);
-  GPU_HEADER();
-  CPU_MAX();
-  GPU_WRITE(SetReal);
+// Copy the tensor to host memory in one read, reduce it with the CPU kernel,
+// and write the single result back to the device.
+template <typename Fn>
+static void gpu_extremum(const Tensor &a, Tensor &out, Fn cpu_fn) {
+  const TensorPtr ca = a.cast(DeviceTag::CPU);
+  Tensor co(std::vector<real1>{ZERO_R1}, std::vector<tcapint>{1U}, false,
+            DeviceTag::CPU);
+  cpu_fn(*ca, co);
+  const real1 v = (*static_cast<RealStorage *>(co.storage.get()))[0U];
+  GpuRealStorage *o_storage = static_cast<GpuRealStorage *>(out.storage.get());
+  o_storage->dev->SetReal(v, o_storage->buffer, out.offset);
 }
-
+static void gpu_max(const Tensor &a, Tensor &out) {
+  gpu_extremum(a, out, cpu_max);
+}
 static void gpu_min(const Tensor &a, Tensor &out) {
-  CPU_INIT_1(RealTensor);
-  GPU_CAST(GpuRealStorage, GpuRealStorage);
-  GPU_HEADER();
-  CPU_MIN();
-  GPU_WRITE(SetReal);
+  gpu_extremum(a, out, cpu_min);
 }
 
 static void gpu_grad_real(Tensor &din, const Tensor &in, const Tensor &dout,

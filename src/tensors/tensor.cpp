@@ -25,6 +25,7 @@
 #include "ops/softmax.hpp"
 #include "ops/sub.hpp"
 #include "ops/sum.hpp"
+#include "tensors/parameter.hpp"
 #include "tensors/real_scalar.hpp"
 
 #include "storage/all_storage.hpp"
@@ -292,6 +293,18 @@ TensorPtr Tensor::operator[](const tcapint &idx) const {
   return v;
 }
 
+// A Parameter outlives the operation it is used in, but match_shape()
+// broadcasts in-place. Without this, a Linear bias (or LayerNorm gamma, etc.)
+// that was once broadcast against a (B, T, ...) input keeps that extent, and
+// then every later input with B == 1 or T == 1 is itself (wrongly) broadcast
+// up to the stale (B, T, ...). (Temporaries that are deliberately broadcast,
+// as in the autograd closures, are not Parameters, and are left alone.)
+static inline void reset_parameter_broadcast(const TensorPtr &t) {
+  if (dynamic_cast<Parameter *>(t.get())) {
+    t->reset_broadcast();
+  }
+}
+
 std::vector<TensorPtr> filterParents(const std::vector<TensorPtr> &parents) {
   std::vector<TensorPtr> filtered;
   for (TensorPtr p : parents) {
@@ -460,6 +473,113 @@ void Tensor::make_logsoftmax_node(TensorPtr x, TensorPtr out, symint axis) {
   });
 }
 
+// A view made by copying the Tensor struct shares the "grad" and "grad_node" of
+// its source. That is only right while the view keeps the shape of its source:
+// as soon as the view is the parent of another node, make_gradient() gives it
+// a gradient of its own (for its own shape), and nothing passes that gradient
+// back to the source. So, a view with a new shape or stride needs its own
+// autograd node.
+static TensorPtr make_view(const TensorPtr &a) {
+  TensorPtr out = std::make_shared<Tensor>(*(a.get()));
+  out->grad_node = nullptr;
+  out->grad = nullptr;
+
+  return out;
+}
+
+TensorPtr Tensor::reshape(const TensorPtr a_, const std::vector<symint> &s) {
+  // (If "a_" isn't contiguous, this is a copy, with its own autograd node.)
+  const TensorPtr a = contiguous(a_);
+  TensorPtr out = make_view(a);
+  out->reshape(s);
+
+  if (a->requires_grad) {
+    make_reshape_node(a, out);
+  }
+
+  return out;
+}
+
+TensorPtr Tensor::flatten(const TensorPtr a_, symint axis) {
+  const TensorPtr a = contiguous(a_);
+  TensorPtr out = make_view(a);
+  out->flatten(axis);
+
+  if (a->requires_grad) {
+    make_reshape_node(a, out);
+  }
+
+  return out;
+}
+
+void Tensor::make_reshape_node(TensorPtr a, TensorPtr out) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out]() {
+        const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
+        TensorPtr a_grad = a->grad->cast(dtag);
+        TensorPtr out_grad = detach(out->grad->cast(dtag));
+
+        if (out_grad->get_broadcast_size() != a_grad->get_broadcast_size()) {
+          throw std::domain_error(
+              "Tensor::reshape() gradient size does not match its source!");
+        }
+
+        // Same elements, in the same (column-major) order
+        out_grad->shape = a_grad->shape;
+        out_grad->stride = a_grad->stride;
+
+        a_grad->upcast(out_grad->storage->dtype);
+        Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
+        a->grad = a_grad;
+      });
+}
+
+TensorPtr Tensor::transpose(const TensorPtr a) {
+  TensorPtr out = make_view(a);
+  const bool is_vector = (a->shape.size() == 1U);
+  out->transpose();
+
+  if (a->requires_grad) {
+    if (is_vector) {
+      // (n) -> (1, n) is just a reshape
+      make_reshape_node(a, out);
+    } else {
+      make_transpose_node(a, out, 0, 1);
+    }
+  }
+
+  return out;
+}
+
+TensorPtr Tensor::transpose(const TensorPtr a, symint i, symint j) {
+  TensorPtr out = make_view(a);
+  out->transpose(i, j);
+
+  if (a->requires_grad) {
+    make_transpose_node(a, out, i, j);
+  }
+
+  return out;
+}
+
+void Tensor::make_transpose_node(TensorPtr a, TensorPtr out, const symint &i,
+                                 const symint &j) {
+  out->make_gradient();
+  out->grad_node =
+      std::make_shared<Node>(std::vector<TensorPtr>{a}, [a, out, i, j]() {
+        const DeviceTag dtag = get_dtag_by_presidence({a->grad, out->grad});
+        TensorPtr a_grad = a->grad->cast(dtag);
+        // Transposing the gradient of the view (back) lines it up with "a".
+        TensorPtr out_grad = detach(out->grad->cast(dtag));
+        out_grad->transpose(i, j);
+
+        a_grad->upcast(out_grad->storage->dtype);
+        Weed::add_in_place(*(a_grad.get()), *(out_grad.get()));
+        a->grad = a_grad;
+      });
+}
+
 TensorPtr Tensor::slice(TensorPtr a, const int64_t &row) {
   const bool rg = a->requires_grad;
 
@@ -605,7 +725,9 @@ void Tensor::make_mean_node(TensorPtr a, TensorPtr out) {
         a_grad->upcast(out_grad->storage->dtype);
         TensorPtr s =
             SCALAR((real1)(ONE_R1 / (real1)a->get_broadcast_size()), out_grad);
-        TensorPtr tmp = s * out_grad;
+        // (A binary operator picks its own device, by operand size, so its
+        // result has to be brought back to the device of this node.)
+        TensorPtr tmp = (s * out_grad)->cast(dtag);
         Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
         a->grad = a_grad;
       });
@@ -804,7 +926,8 @@ void Tensor::make_match_node(TensorPtr a, TensorPtr out, const tcapint &axis) {
         dy->match_shape(dx);
 
         dx->upcast(dy->storage->dtype);
-        Weed::match_grad(axis, *dx, *a, *dy, *out);
+        TensorPtr _out = out->cast(dtag);
+        Weed::match_grad(axis, *dx, *_a, *dy, *_out);
 
         a->grad = dx;
         a->reduce_grad_broadcast();
@@ -1088,6 +1211,8 @@ TensorPtr Tensor::add(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  reset_parameter_broadcast(a);
+  reset_parameter_broadcast(b);
   if (!a->match_shape(b) && !b->match_shape(a)) {
     throw std::invalid_argument("Tensor shape mismatch in add!");
   }
@@ -1142,6 +1267,8 @@ TensorPtr Tensor::mul(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  reset_parameter_broadcast(a);
+  reset_parameter_broadcast(b);
   if (!a->match_shape(b) && !b->match_shape(a)) {
     throw std::invalid_argument("Tensor shape mismatch in mul!");
   }
@@ -1238,9 +1365,12 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
       batch *= a->shape[i];
     }
 
-    // reshape to 3D
-    TensorPtr a3 = reshape(a, {batch, M, K});
-    TensorPtr b3 = reshape(b, {batch, K, N});
+    // reshape to 3D (as views that are not part of the autograd graph: the
+    // whole batch gets a single autograd node, below)
+    // (The operands might be on different devices.)
+    const DeviceTag dtag = get_dtag_by_presidence({a, b});
+    TensorPtr a3 = reshape(detach(a), {batch, M, K})->cast(dtag);
+    TensorPtr b3 = reshape(detach(b), {batch, K, N})->cast(dtag);
 
     // allocate output
     std::vector<tcapint> out_shape;
@@ -1253,7 +1383,7 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
     TensorPtr out = allocate_like(out_shape, full_contiguous_stride(out_shape),
                                   *(a3.get()), dt, rg, s);
 
-    TensorPtr out3 = reshape(out, {batch, M, N});
+    TensorPtr out3 = reshape(detach(out), {batch, M, N});
 
     // loop over batch
     for (symint i = 0; i < batch; ++i) {
@@ -1262,10 +1392,10 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
       TensorPtr oi = slice(out3, i);
 
       Weed::matmul(*(ai.get()), *(bi.get()), *(oi.get()));
+    }
 
-      if (rg) {
-        make_matmul_node(ai, bi, oi);
-      }
+    if (rg) {
+      make_batched_matmul_node(a, b, out);
     }
 
     return out;
@@ -1292,7 +1422,8 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
 
   TensorPtr a2 = a;
   if (needs_flatten) {
-    a2 = reshape(a, {batch * M, K});
+    // (This view is not part of the autograd graph: the node is on "a".)
+    a2 = reshape(detach(a), {batch * M, K});
   }
 
   const DeviceTag dtag = get_dtag_by_presidence({a2, b});
@@ -1315,7 +1446,8 @@ TensorPtr Tensor::matmul(TensorPtr a, TensorPtr b) {
     final_shape.push_back(M);
     final_shape.push_back(N);
 
-    out = reshape(out, final_shape);
+    // "out" is new, so reshape it in-place
+    out->reshape(final_shape);
   }
 
   if (rg) {
@@ -1354,13 +1486,13 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     TensorPtr out_grad2 = out_grad;
 
     if (needs_flatten) {
-      a2 = reshape(a, {batch * M, K})->cast(dtag);
-      out_grad2 = reshape(out_grad, {batch * M, N})->cast(dtag);
+      a2 = reshape(detach(a), {batch * M, K})->cast(dtag);
+      out_grad2 = reshape(detach(out_grad), {batch * M, N})->cast(dtag);
     }
 
     if (a->requires_grad) {
       TensorPtr a_grad = a->grad->cast(dtag);
-      TensorPtr bt = transpose(b)->cast(dtag);
+      TensorPtr bt = transpose(detach(b))->cast(dtag);
 
       const DType &dt = get_dtype_by_presidence({b, out_grad});
       TensorPtr tmp = Tensor::allocate_like(
@@ -1386,13 +1518,93 @@ void Tensor::make_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
 
     if (b->requires_grad) {
       TensorPtr b_grad = b->grad->cast(dtag);
-      TensorPtr at = transpose(a2)->cast(dtag);
+      TensorPtr at = transpose(detach(a2))->cast(dtag);
 
       const DType &dt = get_dtype_by_presidence({a, out_grad});
       TensorPtr tmp = Tensor::allocate_like(*(b_grad.get()), dt, false,
                                             IS_SPARSE(out_grad));
 
       Weed::matmul(*(at.get()), *(out_grad2.get()), *(tmp.get()));
+
+      b_grad->upcast(dt);
+      Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
+      b->grad = b_grad;
+    }
+  });
+}
+
+// Autograd for batched matmul: for every matrix "i" of the batch,
+// da_i += dout_i @ b_i^T and db_i += a_i^T @ dout_i
+void Tensor::make_batched_matmul_node(TensorPtr a, TensorPtr b, TensorPtr out) {
+  out->make_gradient();
+  out->grad_node = std::make_shared<Node>(filterParents({a, b}), [a, b, out]() {
+    std::vector<BaseTensorPtr> p{out->grad};
+    if (a->requires_grad) {
+      p.push_back(a->grad);
+      p.push_back(b);
+    }
+    if (b->requires_grad) {
+      p.push_back(b->grad);
+      p.push_back(a);
+    }
+    const DeviceTag dtag = get_dtag_by_presidence(p);
+
+    const size_t rank = a->shape.size();
+    const symint M = a->shape[rank - 2U];
+    const symint K = a->shape[rank - 1U];
+    const symint N = b->shape[rank - 1U];
+    symint batch = 1;
+    for (size_t i = 0U; i < (rank - 2U); ++i) {
+      batch *= a->shape[i];
+    }
+
+    // The gradient of "out" is contiguous, and so is the gradient of each
+    // operand, so (in column-major order) index "i" of the flattened batch
+    // indices is the same matrix in all of them.
+    TensorPtr out_grad3 = reshape(detach(out->grad->cast(dtag)), {batch, M, N});
+
+    if (a->requires_grad) {
+      TensorPtr a_grad = a->grad->cast(dtag);
+      TensorPtr b3 = reshape(detach(b), {batch, K, N})->cast(dtag);
+
+      const DType &dt = get_dtype_by_presidence({b, out_grad3});
+      const std::vector<tcapint> shp{(tcapint)batch, (tcapint)M, (tcapint)K};
+      TensorPtr tmp = allocate_like(shp, full_contiguous_stride(shp),
+                                    *(out_grad3.get()), dt, false, false);
+
+      for (symint i = 0; i < batch; ++i) {
+        TensorPtr bt = slice(b3, i);
+        bt->transpose();
+        Weed::matmul(*(slice(out_grad3, i).get()), *(bt.get()),
+                     *(slice(tmp, i).get()));
+      }
+
+      tmp->shape = a_grad->shape;
+      tmp->stride = a_grad->stride;
+
+      a_grad->upcast(dt);
+      Weed::add_in_place(*(a_grad.get()), *(tmp.get()));
+      a->grad = a_grad;
+    }
+
+    if (b->requires_grad) {
+      TensorPtr b_grad = b->grad->cast(dtag);
+      TensorPtr a3 = reshape(detach(a), {batch, M, K})->cast(dtag);
+
+      const DType &dt = get_dtype_by_presidence({a, out_grad3});
+      const std::vector<tcapint> shp{(tcapint)batch, (tcapint)K, (tcapint)N};
+      TensorPtr tmp = allocate_like(shp, full_contiguous_stride(shp),
+                                    *(out_grad3.get()), dt, false, false);
+
+      for (symint i = 0; i < batch; ++i) {
+        TensorPtr at = slice(a3, i);
+        at->transpose();
+        Weed::matmul(*(at.get()), *(slice(out_grad3, i).get()),
+                     *(slice(tmp, i).get()));
+      }
+
+      tmp->shape = b_grad->shape;
+      tmp->stride = b_grad->stride;
 
       b_grad->upcast(dt);
       Weed::add_in_place(*(b_grad.get()), *(tmp.get()));
@@ -1408,6 +1620,8 @@ TensorPtr Tensor::sub(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  reset_parameter_broadcast(a);
+  reset_parameter_broadcast(b);
   if (!a->match_shape(b) && !b->match_shape(a)) {
     throw std::invalid_argument("Tensor shape mismatch in sub!");
   }
@@ -1462,6 +1676,8 @@ TensorPtr Tensor::div(TensorPtr a, TensorPtr b) {
   const bool rg = a->requires_grad || b->requires_grad;
   const bool s = IS_SPARSE(a) && IS_SPARSE(b);
   const DType dt = get_dtype_by_presidence({a, b});
+  reset_parameter_broadcast(a);
+  reset_parameter_broadcast(b);
   if (!a->match_shape(b) && !b->match_shape(a)) {
     throw std::invalid_argument("Tensor shape mismatch in div!");
   }
@@ -1506,16 +1722,20 @@ void Tensor::make_div_node(TensorPtr a, TensorPtr b, TensorPtr out) {
     if (b->requires_grad) {
       TensorPtr _a = a->cast(dtag);
       TensorPtr b_grad = b->grad->cast(dtag);
-      const DType &dt = get_dtype_by_presidence({_b, _a});
+      const DType &dt = get_dtype_by_presidence({_b, _a, out_grad});
       b_grad->upcast(dt);
       b_grad->match_shape(_a);
       b_grad->materialize_broadcast();
       TensorPtr b_sqr = Tensor::allocate_like(*(_b.get()), _b->storage->dtype,
                                               false, IS_SPARSE(b));
       Weed::mul(*(_b.get()), *(_b.get()), *(b_sqr.get()));
+      // d(a / b)/db = -a / b^2, by the chain rule times the gradient of "out"
+      TensorPtr num =
+          Tensor::allocate_like(*(b_grad.get()), dt, false, IS_SPARSE(a));
+      Weed::mul(*(out_grad.get()), *(_a.get()), *(num.get()));
       TensorPtr tmp =
           Tensor::allocate_like(*(b_grad.get()), dt, false, IS_SPARSE(a));
-      Weed::div(*(_a.get()), *(b_sqr.get()), *(tmp.get()));
+      Weed::div(*(num.get()), *(b_sqr.get()), *(tmp.get()));
       Weed::sub_in_place(*(b_grad.get()), *(tmp.get()));
       b->grad = b_grad;
       b->reduce_grad_broadcast();
@@ -1559,7 +1779,9 @@ void Tensor::make_pow_node(TensorPtr x, real1 p, TensorPtr y) {
     Weed::mul(*(dy.get()), *(_y.get()), *(dy_y.get()));
 
     TensorPtr s = SCALAR(p, dy_y);
-    TensorPtr dy_y_p = s * dy_y;
+    // (A binary operator picks its own device, by operand size, so its result
+    // has to be brought back to the device of this node.)
+    TensorPtr dy_y_p = (s * dy_y)->cast(dtag);
 
     TensorPtr r = Tensor::allocate_like(*(dx.get()), dy_y_p->storage->dtype,
                                         false, IS_SPARSE(dy_y_p));
@@ -1602,7 +1824,9 @@ void Tensor::make_exp_node(TensorPtr x, real1 log_b, TensorPtr y) {
         dx->materialize_broadcast();
 
         TensorPtr s = SCALAR(log_b, dy);
-        TensorPtr dy_v = s * dy;
+        // (A binary operator picks its own device, by operand size, so its
+        // result has to be brought back to the device of this node.)
+        TensorPtr dy_v = (s * dy)->cast(dtag);
 
         TensorPtr r = Tensor::allocate_like(*(dx.get()), dy_v->storage->dtype,
                                             false, IS_SPARSE(dy_v));
@@ -1645,7 +1869,9 @@ void Tensor::make_log_node(TensorPtr x, real1 inv_log_b, TensorPtr y) {
         dx->materialize_broadcast();
 
         TensorPtr s = SCALAR(inv_log_b, dy);
-        TensorPtr dy_v = s * dy;
+        // (A binary operator picks its own device, by operand size, so its
+        // result has to be brought back to the device of this node.)
+        TensorPtr dy_v = (s * dy)->cast(dtag);
 
         TensorPtr r = Tensor::allocate_like(*(dx.get()), dy_v->storage->dtype,
                                             false, IS_SPARSE(dy_v));

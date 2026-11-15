@@ -51,14 +51,7 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     activation = std::make_shared<GeLU>();
   }
 
-  param_vector = self_attn->parameters();
-  auto add = [&](const std::vector<ParameterPtr> &q) {
-    param_vector.insert(param_vector.end(), q.begin(), q.end());
-  };
-  add(ff1->parameters());
-  add(ff2->parameters());
-  add(norm1->parameters());
-  add(norm2->parameters());
+  _register_params();
 }
 TensorPtr TransformerEncoderLayer::forward(const TensorPtr x_) {
   size_t sz = x_->storage->size;

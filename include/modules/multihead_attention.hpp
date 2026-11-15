@@ -58,6 +58,7 @@ struct MultiHeadAttention : public Module {
   TensorPtr v_cache;
   tcapint cache_len = 0U;
   tcapint max_seq_len = 0U;
+  tcapint cache_batch = 0U;
 
   // TurboQuant
   int kv_quant_bits = 0;
@@ -82,26 +83,27 @@ struct MultiHeadAttention : public Module {
         num_kv_heads(num_kv_heads_ ? num_kv_heads_ : num_heads),
         head_dim(!head_dim_ ? d_model_ / num_heads_ : head_dim_),
         mask_val(mask_val_),
-        W_q(std::make_shared<Linear>(d_model_, d_model_, true, true,
+        // Q (and the attention output) have num_heads * head_dim features,
+        // while (for grouped-query attention) K and V have only
+        // num_kv_heads * head_dim.
+        W_q(std::make_shared<Linear>(d_model_, num_heads * head_dim, true, true,
                                      DType::REAL, dtag, did)),
-        W_k(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag, did)),
-        W_v(std::make_shared<Linear>(d_model_, d_model_, true, true,
-                                     DType::REAL, dtag, did)),
-        W_o(std::make_shared<Linear>(d_model_, d_model_, true, true,
+        W_k(std::make_shared<Linear>(d_model_, num_kv_heads * head_dim, true,
+                                     true, DType::REAL, dtag, did)),
+        W_v(std::make_shared<Linear>(d_model_, num_kv_heads * head_dim, true,
+                                     true, DType::REAL, dtag, did)),
+        W_o(std::make_shared<Linear>(num_heads * head_dim, d_model_, true, true,
                                      DType::REAL, dtag, did)),
         rope(r), use_kv_cache(_use_kv_cache), kv_quant_bits(kv_quant_bits_) {
     if (d_model % num_heads) {
       throw std::invalid_argument("d_model must be divisible by num_heads");
     }
+    if (num_heads % num_kv_heads) {
+      throw std::invalid_argument(
+          "num_heads must be divisible by num_kv_heads");
+    }
 
-    param_vector = W_q->parameters();
-    auto add = [&](const std::vector<ParameterPtr> &q) {
-      param_vector.insert(param_vector.end(), q.begin(), q.end());
-    };
-    add(W_k->parameters());
-    add(W_v->parameters());
-    add(W_o->parameters());
+    _register_params();
 
     if (mask_val == ZERO_R1) {
 #if WEED_FPPOW > 5
@@ -112,6 +114,19 @@ struct MultiHeadAttention : public Module {
       mask_val = -65536; // -2^16
 #endif
     }
+  }
+
+  /**
+   * (Re-)collect the trainable parameters, after construction or load
+   */
+  void _register_params() {
+    param_vector = W_q->parameters();
+    auto add = [&](const std::vector<ParameterPtr> &q) {
+      param_vector.insert(param_vector.end(), q.begin(), q.end());
+    };
+    add(W_k->parameters());
+    add(W_v->parameters());
+    add(W_o->parameters());
   }
 
   std::vector<ParameterPtr> parameters() override { return param_vector; }
@@ -135,13 +150,34 @@ struct MultiHeadAttention : public Module {
     }
   }
 
-  void set_max_kv_seq_len(tcapint m) override { max_seq_len = m; }
+  /**
+   * Is the KV cache in use? (It is bypassed in training mode: autograd needs
+   * the whole sequence, and the cached keys and values carry no gradient.)
+   */
+  bool is_caching() const {
+    return use_kv_cache && !(W_q && W_q->weight && W_q->weight->requires_grad);
+  }
+
+  bool is_cache_allocated() const { return k_cache || k_qcache.d; }
+
+  void set_max_kv_seq_len(tcapint m) override {
+    if (is_cache_allocated()) {
+      // The cache capacity is fixed until reset_cache().
+      return;
+    }
+    max_seq_len = m;
+  }
+
+  tcapint get_kv_cache_len() const override {
+    return is_caching() ? cache_len : 0U;
+  }
 
   void reset_cache() override {
     k_cache = nullptr;
     v_cache = nullptr;
     cache_len = 0U;
     max_seq_len = 0U;
+    cache_batch = 0U;
     k_rotation.clear();
     v_rotation.clear();
     k_qcache = QuantizedKVCache{};
