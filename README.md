@@ -7,7 +7,7 @@ Minimalist AI/ML inference and backprogation in the style of [Qrack](https://git
 This repository is for the base **C++ Weed library**. Once you have trained models in C++, you can load them for use in Python with the **Python loader** in [this repository](https://github.com/vm6502q/weed_loader).
 
 ## Development Status
-**Weed** is a rapidly-developing **work-in-progress**. Its ABI may change drastically and without notice.
+**Weed** is stable by this v1.0.0, thanks largely to a debugging overhaul by (Anthropic) Claude (Fable 5.2).
 
 The project provides a set of essential CPU and GPU **kernels**, used by `Tensor` instances that perform _autograd._ We also provide _stochastic gradient descent (SGD)_ and _Adam_ optimizer implementations. (Build and check the API reference to get started.)
 
