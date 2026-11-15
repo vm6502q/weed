@@ -806,12 +806,13 @@ TensorPtr Tensor::mean(TensorPtr a, symint axis) {
     axis += a->shape.size();
   }
 
-  TensorPtr tmp = sum(a, axis);
-  tmp->squeeze(axis);
-  tmp = tmp / (real1)(a->shape[axis]);
-  tmp->unsqueeze(axis);
+  // A broadcast index (stride 0) repeats one value, which is its own mean.
+  const real1 n = a->stride[axis] ? (real1)(a->shape[axis]) : (real1)1;
 
-  return tmp;
+  // sum() keeps the reduced index with extent 1, and it returns "a" itself
+  // when there is nothing to reduce, so the result must not be reshaped in
+  // place: that would also reshape the caller's tensor.
+  return sum(a, axis) / n;
 }
 
 TensorPtr Tensor::variance(TensorPtr a) {

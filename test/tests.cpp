@@ -1875,3 +1875,46 @@ TEST_CASE("test_mixed_matmul_values") {
     }
   }
 }
+
+TEST_CASE("test_mean_axis_1d") {
+  // The mean over the only index of a 1-D tensor, and its gradient
+  TensorPtr x =
+      std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(6)},
+                               std::vector<tcapint>{3U}, true, TEST_DTAG);
+  TensorPtr y = Tensor::mean(x, 0);
+  REQUIRE(y->get_broadcast_size() == 1U);
+  REQUIRE_FLOAT(to_vector(y)[0U], R(3));
+
+  Tensor::backward(Tensor::sum(y));
+  const std::vector<real1_f> g = to_vector(Tensor::detach(x->grad));
+  REQUIRE(g.size() == 3U);
+  for (tcapint i = 0U; i < 3U; ++i) {
+    REQUIRE_FLOAT(g[i], R(R(1) / R(3)));
+  }
+}
+
+TEST_CASE("test_mean_axis_extent_one") {
+  // The mean over an index of extent 1 must leave its argument's shape alone.
+  const std::vector<tcapint> shp{3U, 1U};
+  TensorPtr x = std::make_shared<Tensor>(std::vector<real1>{R(1), R(2), R(6)},
+                                         shp, true, TEST_DTAG);
+  TensorPtr m = Tensor::mean(x, -1);
+  REQUIRE(x->shape == shp);
+  REQUIRE(m->shape == shp);
+  const std::vector<real1_f> mv = to_vector(m);
+  REQUIRE_FLOAT(mv[0U], R(1));
+  REQUIRE_FLOAT(mv[1U], R(2));
+  REQUIRE_FLOAT(mv[2U], R(6));
+
+  // x - mean(x) is identically zero here, so its gradient cancels as well.
+  TensorPtr d = x - Tensor::mean(x, -1);
+  REQUIRE(x->shape == shp);
+  REQUIRE(d->shape == shp);
+  for (const real1_f &v : to_vector(d)) {
+    REQUIRE_FLOAT(v, R(0));
+  }
+  Tensor::backward(Tensor::sum(d));
+  for (const real1_f &v : to_vector(Tensor::detach(x->grad))) {
+    REQUIRE_FLOAT(v, R(0));
+  }
+}
