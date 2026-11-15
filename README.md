@@ -11,7 +11,7 @@ This repository is for the base **C++ Weed library**. Once you have trained mode
 
 The project provides a set of essential CPU and GPU **kernels**, used by `Tensor` instances that perform _autograd._ We also provide _stochastic gradient descent (SGD)_ and _Adam_ optimizer implementations. (Build and check the API reference to get started.)
 
-GPT-2, BERT, and Qwen loading is experimental and mostly provided as proof-of-concept, also of the fine-tuning pipeline. Implementation was from published literature design, rather than direct analysis of any open source, to implement these model architectures. Their outputs, in **Weed**, are not yet coherent English, as a result.
+GPT-2 and Qwen loading is experimental and mostly provided as proof-of-concept, also of the fine-tuning pipeline. Implementation was from published literature design, rather than direct analysis of any open source, to implement these model architectures. Their outputs, in **Weed**, are not yet coherent English, as a result.
 
 ## Why try Weed?
 
